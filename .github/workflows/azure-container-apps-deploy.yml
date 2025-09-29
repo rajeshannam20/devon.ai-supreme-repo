@@ -44,6 +44,7 @@ env:
   AZURE_RESOURCE_GROUP: devonn-${{ github.event.inputs.environment || 'development' }}-rg
   CONTAINER_APP_NAME: devonn-ai
   CONTAINER_ENV_NAME: devonn-${{ github.event.inputs.environment || 'development' }}-env
+  AZURE_RESOURCE_GROUP_TFSTATE: devonn-tfstate-rg
 
 jobs:
   build-and-push:
@@ -147,7 +148,7 @@ jobs:
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         run: |
           terraform init \
-            -backend-config="resource_group_name=${{ env.AZURE_RESOURCE_GROUP }}" \
+            -backend-config="resource_group_name=${{ env.AZURE_RESOURCE_GROUP_TFSTATE }}" \
             -backend-config="storage_account_name=${{ secrets.AZURE_STORAGE_ACCOUNT }}" \
             -backend-config="container_name=tfstate" \
             -backend-config="key=${{ github.event.inputs.environment || 'development' }}.terraform.tfstate"
