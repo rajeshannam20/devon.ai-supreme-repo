@@ -1,4 +1,3 @@
-
 # Variables for Azure Container Apps deployment
 
 variable "resource_group_name" {
@@ -25,12 +24,17 @@ variable "container_app_environment_name" {
 }
 
 variable "container_app_name" {
-  description = "Name of the Container App"
+  description = "Base name for Container Apps"
   type        = string
-  default     = "devonn-api"
+  default     = "devonn-app"
 }
 
-variable "image_name" {
-  description = "Container image name with tag"
+variable "backend_image" {
+  description = "Backend container image name with tag"
+  type        = string
+}
+
+variable "frontend_image" {
+  description = "Frontend container image name with tag"
   type        = string
 }

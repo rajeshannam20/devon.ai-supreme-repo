@@ -42,7 +42,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   AZURE_RESOURCE_GROUP: devonn-${{ github.event.inputs.environment || 'development' }}-rg
-  CONTAINER_APP_NAME: devonn-api
+  CONTAINER_APP_NAME: devonn-ai
   CONTAINER_ENV_NAME: devonn-${{ github.event.inputs.environment || 'development' }}-env
 
 jobs:
@@ -58,7 +58,7 @@ jobs:
         
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-        
+
       # ---------- Generate tags ----------
       - name: Generate backend tag
         id: backend_tag
@@ -155,7 +155,8 @@ jobs:
             -var="location=${{ github.event.inputs.deploy_region || 'eastus' }}" \
             -var="container_app_environment_name=${{ env.CONTAINER_ENV_NAME }}" \
             -var="container_app_name=${{ env.CONTAINER_APP_NAME }}" \
-            -var="image_name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-and-push.outputs.image_tag }}" \
+            -var="backend_image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-and-push.outputs.backend_tag }}" \
+            -var="frontend_image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-and-push.outputs.frontend_tag }}" \
             -var="environment=${{ github.event.inputs.environment || 'development' }}" \
             -out=tfplan
             
@@ -164,37 +165,65 @@ jobs:
         working-directory: ./src/data/manifest/terraform/azure
         run: terraform apply -auto-approve tfplan
         
-      - name: Get Container App URL
+      - name: Get Container App URLs
         if: success() && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/azure-deploy')
         working-directory: ./src/data/manifest/terraform/azure
         run: |
-          FQDN=$(terraform output -raw container_app_url)
-          echo "Container App URL: $FQDN"
-          echo "CONTAINER_APP_URL=$FQDN" >> $GITHUB_ENV
+          BACKEND_FQDN=$(terraform output -raw backend_url)
+          FRONTEND_FQDN=$(terraform output -raw frontend_url)
+          echo "Backend URL: $BACKEND_FQDN"
+          echo "Frontend URL: $FRONTEND_FQDN"
+          echo "BACKEND_URL=$BACKEND_FQDN" >> $GITHUB_ENV
+          echo "FRONTEND_URL=$FRONTEND_FQDN" >> $GITHUB_ENV
           
-      - name: Verify Deployment
+      - name: Verify Backend Deployment
         if: success() && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/azure-deploy')
         run: |
-          echo "Verifying deployment at $CONTAINER_APP_URL"
+          echo "Verifying backend deployment at $BACKEND_URL/health"
           
           max_retries=5
           counter=0
           
           while [ $counter -lt $max_retries ]
           do
-            status_code=$(curl -s -o /dev/null -w "%{http_code}" $CONTAINER_APP_URL/health || echo "failed")
+            status_code=$(curl -s -o /dev/null -w "%{http_code}" $BACKEND_URL/health || echo "failed")
             
             if [[ "$status_code" == "200" ]]; then
-              echo "✅ Deployment verified successfully!"
+              echo "✅ Backend deployment verified successfully!"
               exit 0
             else
-              echo "⏳ Waiting for deployment to be ready... (Attempt $counter of $max_retries)"
+              echo "⏳ Waiting for backend to be ready... (Attempt $counter of $max_retries)"
               sleep 10
               counter=$((counter + 1))
             fi
           done
           
-          echo "❌ Failed to verify deployment after $max_retries attempts"
+          echo "❌ Failed to verify backend after $max_retries attempts"
+          exit 1
+
+      - name: Verify Frontend Deployment
+        if: success() && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/azure-deploy')
+        run: |
+          echo "Verifying frontend deployment at $FRONTEND_URL"
+          
+          max_retries=5
+          counter=0
+          
+          while [ $counter -lt $max_retries ]
+          do
+            status_code=$(curl -s -o /dev/null -w "%{http_code}" $FRONTEND_URL || echo "failed")
+            
+            if [[ "$status_code" == "200" ]]; then
+              echo "✅ Frontend deployment verified successfully!"
+              exit 0
+            else
+              echo "⏳ Waiting for frontend to be ready... (Attempt $counter of $max_retries)"
+              sleep 10
+              counter=$((counter + 1))
+            fi
+          done
+          
+          echo "❌ Failed to verify frontend after $max_retries attempts"
           exit 1
 
   notify:

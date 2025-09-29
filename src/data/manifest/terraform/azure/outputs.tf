@@ -1,4 +1,3 @@
-
 # Outputs for Azure Container Apps deployment
 
 output "resource_group_name" {
@@ -6,9 +5,14 @@ output "resource_group_name" {
   description = "The name of the Resource Group"
 }
 
-output "container_app_url" {
-  value       = "https://${azurerm_container_app.app.latest_revision_fqdn}"
-  description = "The FQDN of the Container App"
+output "backend_url" {
+  value       = "https://${azurerm_container_app.backend.latest_revision_fqdn}"
+  description = "The FQDN of the Backend API"
+}
+
+output "frontend_url" {
+  value       = "https://${azurerm_container_app.frontend.latest_revision_fqdn}"
+  description = "The FQDN of the Frontend App"
 }
 
 output "application_insights_instrumentation_key" {
