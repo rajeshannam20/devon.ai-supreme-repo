@@ -47,10 +47,11 @@ env:
 
 jobs:
   build-and-push:
-    name: Build and Push Container
+    name: Build and Push Backend + Frontend
     runs-on: ubuntu-latest
     outputs:
-      image_tag: ${{ steps.image_tag.outputs.tag }}
+      backend_tag: ${{ steps.backend_tag.outputs.tag }}
+      frontend_tag: ${{ steps.frontend_tag.outputs.tag }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -58,38 +59,62 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
         
-      - name: Generate image tag
-        id: image_tag
+      # ---------- Generate tags ----------
+      - name: Generate backend tag
+        id: backend_tag
         run: |
-          # Use short commit SHA for tag
-          TAG="sha-$(echo ${{ github.sha }} | cut -c1-7)"
-          # Use branch name for PR
+          TAG="backend-sha-$(echo ${{ github.sha }} | cut -c1-7)"
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             TAG="pr-${{ github.event.pull_request.number }}-$TAG"
-          fi
-          # Use environment name for manual trigger
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             TAG="${{ github.event.inputs.environment || 'dev' }}-$TAG"
           fi
           echo "tag=$TAG" >> $GITHUB_OUTPUT
 
+      - name: Generate frontend tag
+        id: frontend_tag
+        run: |
+          TAG="frontend-sha-$(echo ${{ github.sha }} | cut -c1-7)"
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            TAG="pr-${{ github.event.pull_request.number }}-$TAG"
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            TAG="${{ github.event.inputs.environment || 'dev' }}-$TAG"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      # ---------- Auth ----------
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-          
-      - name: Build and push Docker image
+
+      # ---------- Build Backend ----------
+      - name: Build and push backend image
         uses: docker/build-push-action@v4
         with:
           context: .
+          file: ./Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.image_tag.outputs.tag }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.backend_tag.outputs.tag }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:backend-latest
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:backend-buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:backend-buildcache,mode=max
+
+      # ---------- Build Frontend ----------
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./Dockerfile.frontend
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.frontend_tag.outputs.tag }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:frontend-latest
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:frontend-buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:frontend-buildcache,mode=max
 
   terraform-deploy:
     name: Deploy with Terraform
