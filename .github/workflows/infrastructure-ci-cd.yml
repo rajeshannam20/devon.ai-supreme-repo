@@ -1,0 +1,643 @@
+
+name: Infrastructure CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'terraform/**'
+      - '.github/workflows/infrastructure-ci-cd.yml'
+      - 'policy/**'
+      - 'tests/infrastructure/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'terraform/**'
+      - 'policy/**'
+      - 'tests/infrastructure/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target deployment environment'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+      deployment_strategy:
+        description: 'Deployment strategy'
+        required: true
+        default: 'canary'
+        type: choice
+        options:
+          - standard
+          - canary
+          - blue-green
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+  issues: write
+  deployments: write
+
+env:
+  TF_VERSION: '1.5.0'
+  TF_LOG: 'INFO'
+  COMPLIANCE_STANDARDS: 'cis,gdpr,hipaa,pci'
+
+jobs:
+  validate:
+    name: Validate Terraform
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+      
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+        
+      - name: Terraform Init
+        run: terraform init -backend=false
+        
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Generate Documentation
+        run: |
+          # Install terraform-docs
+          curl -sSLo ./terraform-docs.tar.gz https://terraform-docs.io/downloads/terraform-docs-v0.16.0-$(uname)-amd64.tar.gz
+          tar -xzf terraform-docs.tar.gz
+          chmod +x terraform-docs
+          sudo mv terraform-docs /usr/local/bin/terraform-docs
+          
+          # Generate markdown documentation
+          terraform-docs markdown . > TERRAFORM.md
+          
+      - name: Upload Documentation
+        uses: actions/upload-artifact@v3
+        with:
+          name: terraform-docs
+          path: TERRAFORM.md
+  
+  security-scan:
+    name: Security Scan
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Run tfsec
+        uses: aquasecurity/tfsec-action@v1.0.0
+        with:
+          soft_fail: true
+          format: sarif
+          out: tfsec.sarif
+      
+      - name: Upload tfsec results
+        uses: github/codeql-action/upload-sarif@v2
+        if: success() || failure()
+        with:
+          sarif_file: tfsec.sarif
+          category: tfsec
+      
+      - name: Run checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: ./terraform
+          framework: terraform
+          soft_fail: true
+          output_format: sarif
+          output_file: checkov.sarif
+      
+      - name: Upload checkov results
+        uses: github/codeql-action/upload-sarif@v2
+        if: success() || failure()
+        with:
+          sarif_file: checkov.sarif
+          category: checkov
+      
+      - name: Install OPA
+        run: |
+          curl -L -o opa https://openpolicyagent.org/downloads/v0.43.0/opa_linux_amd64_static
+          chmod +x opa
+          sudo mv opa /usr/local/bin/
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+      
+      - name: Generate Terraform Plan for Policy Evaluation
+        run: |
+          terraform init -backend=false
+          terraform plan -out=tfplan.binary
+          terraform show -json tfplan.binary > tfplan.json
+      
+      - name: Run OPA Policy Checks
+        run: |
+          mkdir -p policy-results
+          
+          # Run RDS policy checks
+          opa eval --format pretty --data policy/aws_rds_policy.rego --input tfplan.json "data.terraform.aws.rds" > policy-results/rds-policy-results.txt
+          
+          echo "OPA Policy Check Results:"
+          cat policy-results/rds-policy-results.txt
+          
+          # Check for deny results
+          if grep -q "deny" policy-results/rds-policy-results.txt; then
+            echo "⚠️ Policy violations detected in RDS configuration"
+            # Exit with failure code in PR, but continue in workflow dispatch
+            if [ "${{ github.event_name }}" == "pull_request" ]; then
+              exit 1
+            fi
+          fi
+      
+      - name: Upload Policy Check Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: policy-check-results
+          path: policy-results/
+  
+  terraform-plan:
+    name: Terraform Plan
+    needs: [validate, security-scan]
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'production' || 'development') }}
+    outputs:
+      plan_output: ${{ steps.plan.outputs.stdout }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          
+      - name: Terraform Init
+        id: init
+        run: terraform init
+        
+      - name: Terraform Plan
+        id: plan
+        run: |
+          terraform plan -var-file=environments/${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'production' || 'development') }}.tfvars -out=tfplan
+          terraform show -json tfplan > tfplan.json
+        
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v3
+        with:
+          name: terraform-plan
+          path: |
+            tfplan
+            tfplan.json
+          
+      - name: Comment Plan on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const planOutput = fs.readFileSync('tfplan.json', 'utf8');
+            const planJson = JSON.parse(planOutput);
+            
+            // Extract resource changes for a summary
+            const resourceChanges = planJson.resource_changes || [];
+            const addCount = resourceChanges.filter(r => r.change.actions.includes('create')).length;
+            const changeCount = resourceChanges.filter(r => r.change.actions.includes('update')).length;
+            const deleteCount = resourceChanges.filter(r => r.change.actions.includes('delete')).length;
+            
+            const output = `#### Terraform Plan Summary 📝
+            
+            * Resources to add: ${addCount}
+            * Resources to change: ${changeCount}
+            * Resources to destroy: ${deleteCount}
+            
+            <details><summary>Show Details</summary>
+            
+            \`\`\`
+            ${process.env.PLAN_OUTPUT}
+            \`\`\`
+            
+            </details>
+            
+            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+        env:
+          PLAN_OUTPUT: ${{ steps.plan.outputs.stdout }}
+  
+  approval:
+    name: Deployment Approval
+    needs: terraform-plan
+    if: github.event.inputs.environment == 'production' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production-approval
+    steps:
+      - name: Manual approval step
+        run: echo "Deployment to production has been approved"
+  
+  apply:
+    name: Terraform Apply
+    needs: [terraform-plan, approval]
+    if: |
+      success() && 
+      (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'production' }}
+    concurrency: 
+      group: ${{ github.workflow }}-${{ github.event.inputs.environment || 'production' }}
+      cancel-in-progress: false
+    outputs:
+      rds_endpoint: ${{ steps.outputs.outputs.rds_endpoint }}
+      cluster_name: ${{ steps.outputs.outputs.cluster_name }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          
+      - name: Terraform Init
+        run: terraform init
+        
+      - name: Download Terraform Plan
+        uses: actions/download-artifact@v3
+        with:
+          name: terraform-plan
+        
+      - name: Create deployment status
+        id: deployment
+        uses: bobheadxi/deployments@v1
+        with:
+          step: start
+          token: ${{ secrets.GITHUB_TOKEN }}
+          env: ${{ github.event.inputs.environment || 'production' }}
+          ref: ${{ github.ref }}
+      
+      # Use selected deployment strategy
+      - name: Canary Deployment
+        if: github.event.inputs.deployment_strategy == 'canary' || github.event.inputs.deployment_strategy == null
+        run: |
+          echo "Implementing canary deployment strategy..."
+          # Apply changes to a subset of resources first (canary pattern)
+          terraform apply -var-file=environments/${{ github.event.inputs.environment || 'production' }}.tfvars -target=module.vpc -target=module.eks -auto-approve
+          
+          echo "Waiting 2 minutes to verify canary deployment..."
+          sleep 120
+          
+          echo "Proceeding with full deployment..."
+          terraform apply tfplan
+      
+      - name: Blue-Green Deployment
+        if: github.event.inputs.deployment_strategy == 'blue-green'
+        run: |
+          echo "Implementing blue-green deployment strategy..."
+          # Clone current environment as blue environment
+          export BLUE_ENV="${{ github.event.inputs.environment || 'production' }}-blue"
+          
+          # Setup blue environment
+          terraform workspace new $BLUE_ENV || terraform workspace select $BLUE_ENV
+          terraform apply -var-file=environments/${{ github.event.inputs.environment || 'production' }}.tfvars -auto-approve
+          
+          echo "Blue environment deployed, waiting for validation..."
+          sleep 180
+          
+          # Switch traffic to blue
+          echo "Switching traffic to new environment..."
+          # In a real scenario, this would update a load balancer or DNS
+          
+          echo "Deployment complete, old environment will be decommissioned later"
+      
+      - name: Standard Deployment
+        if: github.event.inputs.deployment_strategy == 'standard'
+        run: |
+          echo "Implementing standard deployment strategy..."
+          terraform apply tfplan
+      
+      - name: Extract Terraform Outputs
+        id: outputs
+        if: success()
+        run: |
+          echo "rds_endpoint=$(terraform output -raw rds_endpoint)" >> $GITHUB_OUTPUT
+          echo "cluster_name=$(terraform output -raw eks_cluster_name)" >> $GITHUB_OUTPUT
+      
+      - name: Update deployment status
+        if: always()
+        uses: bobheadxi/deployments@v1
+        with:
+          step: finish
+          token: ${{ secrets.GITHUB_TOKEN }}
+          status: ${{ job.status }}
+          deployment_id: ${{ steps.deployment.outputs.deployment_id }}
+          env: ${{ github.event.inputs.environment || 'production' }}
+  
+  post-deploy-validation:
+    name: Post-Deployment Validation
+    needs: apply
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+      
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.19'
+      
+      - name: Run Infrastructure Tests
+        run: |
+          cd tests/infrastructure
+          go mod init infrastructure-tests
+          go mod tidy
+          go test -v -timeout 30m -tags=integration
+      
+      - name: Check Database Connectivity
+        env:
+          DB_ENDPOINT: ${{ needs.apply.outputs.rds_endpoint }}
+        run: |
+          # Install PostgreSQL client
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          
+          # Test connection (password would be securely retrieved from secrets manager in real scenario)
+          PGPASSWORD=${{ secrets.DB_PASSWORD }} psql -h $DB_ENDPOINT -U ${{ secrets.DB_USERNAME }} -d ${{ secrets.DB_NAME }} -c "SELECT 1 AS connectivity_test;"
+      
+      - name: Check EKS Cluster Health
+        env:
+          CLUSTER_NAME: ${{ needs.apply.outputs.cluster_name }}
+        run: |
+          # Configure kubectl
+          aws eks update-kubeconfig --name $CLUSTER_NAME --region us-east-1
+          
+          # Check node status
+          kubectl get nodes
+          
+          # Check pod status
+          kubectl get pods --all-namespaces
+          
+          # Check service mesh status
+          kubectl get meshes -A
+      
+      - name: Load Testing
+        run: |
+          # Install k6
+          sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+          
+          # Run basic load test
+          k6 run load-tests/basic-load.js --summary-export=load-test-results.json
+      
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: validation-results
+          path: |
+            load-test-results.json
+      
+      - name: Send Deployment Notification
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "✅ Infrastructure deployment to ${{ github.event.inputs.environment || 'production' }} complete! All validation checks passed."
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+  compliance-check:
+    name: Compliance Validation
+    needs: [apply]
+    if: success()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+      
+      - name: Install Prowler
+        run: |
+          pip install prowler
+      
+      - name: Run Compliance Checks
+        run: |
+          # Run compliance checks focused on database services
+          prowler aws --services rds eks --compliance ${{ env.COMPLIANCE_STANDARDS }} --output html --output-file compliance-report
+      
+      - name: Upload Compliance Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: compliance-reports
+          path: compliance-report*
+      
+      - name: Generate Compliance Dashboard
+        run: |
+          # Parse compliance report to JSON for dashboard
+          pip install beautifulsoup4
+          python - <<EOF
+          import json
+          import re
+          from bs4 import BeautifulSoup
+          
+          # Read HTML report
+          with open('compliance-report.html', 'r') as f:
+              html = f.read()
+          
+          soup = BeautifulSoup(html, 'html.parser')
+          
+          # Extract compliance metrics
+          passed = len(soup.find_all(class_='prowler-pass'))
+          failed = len(soup.find_all(class_='prowler-fail'))
+          total = passed + failed
+          compliance_rate = (passed / total) * 100 if total > 0 else 0
+          
+          # Generate dashboard data
+          dashboard = {
+              "timestamp": "${{ github.event.repository.updated_at }}",
+              "environment": "${{ github.event.inputs.environment || 'production' }}",
+              "compliance_rate": compliance_rate,
+              "passed": passed,
+              "failed": failed,
+              "standards": "${{ env.COMPLIANCE_STANDARDS }}".split(','),
+              "report_url": "artifacts/compliance-reports/compliance-report.html"
+          }
+          
+          # Save dashboard data
+          with open('compliance-dashboard.json', 'w') as f:
+              json.dump(dashboard, f)
+          EOF
+      
+      - name: Upload Compliance Dashboard
+        uses: actions/upload-artifact@v3
+        with:
+          name: compliance-dashboard
+          path: compliance-dashboard.json
+      
+      - name: Send Compliance Report
+        if: always()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "📊 Compliance Report for ${{ github.event.inputs.environment || 'production' }} is available.",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "Infrastructure Compliance Report"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "Environment: *${{ github.event.inputs.environment || 'production' }}*\nCompliance Standards: *${{ env.COMPLIANCE_STANDARDS }}*"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "View detailed reports in GitHub Actions artifacts."
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+  rollback:
+    name: Rollback on Failure
+    needs: [apply, post-deploy-validation]
+    if: failure() && (github.event.inputs.environment == 'production' || github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+      
+      - name: Terraform Init
+        run: terraform init
+        
+      - name: Rollback to Last Known Good State
+        run: |
+          echo "Deployment failed! Rolling back to last known good state..."
+          terraform workspace select ${{ github.event.inputs.environment || 'production' }}
+          terraform plan -refresh-only -var-file=environments/${{ github.event.inputs.environment || 'production' }}.tfvars -out=rollback.tfplan
+          terraform apply rollback.tfplan
+      
+      - name: Send Rollback Notification
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "⚠️ ALERT: Infrastructure deployment to ${{ github.event.inputs.environment || 'production' }} failed! Rollback initiated.",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "⚠️ DEPLOYMENT FAILURE - ROLLBACK INITIATED",
+                    "emoji": true
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Environment:* ${{ github.event.inputs.environment || 'production' }}\n*Initiated by:* ${{ github.actor }}\n*Commit:* ${{ github.sha }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "The system has been automatically rolled back to the last known good state. Please investigate the issue."
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Workflow Run",
+                        "emoji": true
+                      },
+                      "url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+  cleanup:
+    name: Cleanup Resources
+    needs: [post-deploy-validation, compliance-check]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove Temporary Files
+        run: |
+          echo "Cleaning up temporary files and resources..."
+          # This would remove any temporary resources created during testing
+          # Like test databases, test pods, etc.

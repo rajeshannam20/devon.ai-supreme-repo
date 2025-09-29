@@ -1,0 +1,213 @@
+
+name: Azure Container Apps CI/CD
+
+on:
+  push:
+    branches: [main, azure-deploy]
+    paths-ignore:
+      - 'terraform/**'
+      - '.github/workflows/infrastructure-ci-cd.yml'
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - 'terraform/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target deployment environment'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+      deploy_region:
+        description: 'Azure region for deployment'
+        required: true
+        default: 'eastus'
+        type: choice
+        options:
+          - eastus
+          - westus2
+          - westeurope
+          - southeastasia
+
+permissions:
+  id-token: write
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  AZURE_RESOURCE_GROUP: devonn-${{ github.event.inputs.environment || 'development' }}-rg
+  CONTAINER_APP_NAME: devonn-api
+  CONTAINER_ENV_NAME: devonn-${{ github.event.inputs.environment || 'development' }}-env
+
+jobs:
+  build-and-push:
+    name: Build and Push Container
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.image_tag.outputs.tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        
+      - name: Generate image tag
+        id: image_tag
+        run: |
+          # Use short commit SHA for tag
+          TAG="sha-$(echo ${{ github.sha }} | cut -c1-7)"
+          # Use branch name for PR
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            TAG="pr-${{ github.event.pull_request.number }}-$TAG"
+          fi
+          # Use environment name for manual trigger
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            TAG="${{ github.event.inputs.environment || 'dev' }}-$TAG"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.image_tag.outputs.tag }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
+
+  terraform-deploy:
+    name: Deploy with Terraform
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'production' || 'development') }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: '1.5.0'
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          
+      - name: Terraform Init
+        working-directory: ./src/data/manifest/terraform/azure
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ env.AZURE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ secrets.AZURE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=tfstate" \
+            -backend-config="key=${{ github.event.inputs.environment || 'development' }}.terraform.tfstate"
+
+      - name: Terraform Plan
+        working-directory: ./src/data/manifest/terraform/azure
+        run: |
+          terraform plan \
+            -var="resource_group_name=${{ env.AZURE_RESOURCE_GROUP }}" \
+            -var="location=${{ github.event.inputs.deploy_region || 'eastus' }}" \
+            -var="container_app_environment_name=${{ env.CONTAINER_ENV_NAME }}" \
+            -var="container_app_name=${{ env.CONTAINER_APP_NAME }}" \
+            -var="image_name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-and-push.outputs.image_tag }}" \
+            -var="environment=${{ github.event.inputs.environment || 'development' }}" \
+            -out=tfplan
+            
+      - name: Terraform Apply
+        if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/azure-deploy'
+        working-directory: ./src/data/manifest/terraform/azure
+        run: terraform apply -auto-approve tfplan
+        
+      - name: Get Container App URL
+        if: success() && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/azure-deploy')
+        working-directory: ./src/data/manifest/terraform/azure
+        run: |
+          FQDN=$(terraform output -raw container_app_url)
+          echo "Container App URL: $FQDN"
+          echo "CONTAINER_APP_URL=$FQDN" >> $GITHUB_ENV
+          
+      - name: Verify Deployment
+        if: success() && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/azure-deploy')
+        run: |
+          echo "Verifying deployment at $CONTAINER_APP_URL"
+          
+          max_retries=5
+          counter=0
+          
+          while [ $counter -lt $max_retries ]
+          do
+            status_code=$(curl -s -o /dev/null -w "%{http_code}" $CONTAINER_APP_URL/health || echo "failed")
+            
+            if [[ "$status_code" == "200" ]]; then
+              echo "✅ Deployment verified successfully!"
+              exit 0
+            else
+              echo "⏳ Waiting for deployment to be ready... (Attempt $counter of $max_retries)"
+              sleep 10
+              counter=$((counter + 1))
+            fi
+          done
+          
+          echo "❌ Failed to verify deployment after $max_retries attempts"
+          exit 1
+
+  notify:
+    name: Send Notification
+    needs: [build-and-push, terraform-deploy]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deployment Status
+        uses: slackapi/slack-github-action@v1
+        if: env.SLACK_WEBHOOK_URL != ''
+        with:
+          payload: |
+            {
+              "text": "${{ needs.terraform-deploy.result == 'success' && '✅' || '❌' }} Azure Container App Deployment: ${{ needs.terraform-deploy.result == 'success' && 'Successful' || 'Failed' }}",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text", 
+                    "text": "${{ needs.terraform-deploy.result == 'success' && '✅ Deployment Successful' || '❌ Deployment Failed' }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Environment:*\n${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'production' || 'development') }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Region:*\n${{ github.event.inputs.deploy_region || 'eastus' }}"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK

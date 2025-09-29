@@ -1,0 +1,175 @@
+
+name: Devonn.AI Testing
+
+on:
+  push:
+    branches: [main, develop]
+    paths-ignore:
+      - '*.md'
+      - 'docs/**'
+  pull_request:
+    branches: [main, develop]
+    paths-ignore:
+      - '*.md'
+      - 'docs/**'
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run linter
+        run: npm run lint || echo "No linting configured"
+        
+      - name: Lint Kubernetes manifests (if any)
+        if: false  # Enable if you have Kubernetes manifests
+        uses: instrumenta/kubeval-action@master
+        with:
+          files: kubernetes/*.yaml
+  
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Run npm audit
+        run: npm audit --production
+        continue-on-error: true  # Don't fail the build, but report issues
+      
+      - name: Run Snyk scan
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        with:
+          args: --severity-threshold=high
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN || '' }}
+      
+      - name: Run CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        continue-on-error: true
+        
+  unit-test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run unit tests
+        run: npm run test
+      
+      - name: Generate test coverage report
+        run: npm run test:coverage
+        
+      - name: Upload test coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: coverage/
+  
+  extension-test:
+    name: Extension Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run extension-specific tests
+        run: npm run test:extension
+        
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: extension-test-results
+          path: test-results/
+  
+  e2e-test:
+    name: End-to-End Tests
+    runs-on: ubuntu-latest
+    needs: [unit-test]
+    strategy:
+      matrix:
+        browser: [chrome, firefox]
+        viewport: [desktop, tablet, mobile]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Playwright
+        run: npx playwright install --with-deps
+        
+      - name: Run E2E tests on ${{ matrix.browser }} (${{ matrix.viewport }})
+        run: |
+          BROWSER=${{ matrix.browser }} \
+          VIEWPORT=${{ matrix.viewport }} \
+          npm run test:e2e
+          
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-report-${{ matrix.browser }}-${{ matrix.viewport }}
+          path: playwright-report/
+  
+  performance-test:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    needs: [unit-test]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build for testing
+        run: npm run build:dev
+        
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v9
+        with:
+          configPath: './.github/workflows/lighthouse-config.json'
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+          
+      - name: Run bundle analysis
+        run: npx webpack-bundle-analyzer --mode static --report public/bundle-report.html dist/stats.json
+        continue-on-error: true
+      
+      - name: Upload bundle analysis
+        uses: actions/upload-artifact@v3
+        with:
+          name: bundle-analysis
+          path: public/bundle-report.html

@@ -1,0 +1,141 @@
+on:
+  push:
+    branches: [main, develop]
+    paths-ignore:
+      - '*.md'
+      - 'docs/**'
+  pull_request:
+    branches: [main, develop]
+    paths-ignore:
+      - '*.md'
+      - 'docs/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Build environment'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [development, staging, production]
+        include:
+          - environment: development
+            api_url: 'http://localhost:8000'
+          - environment: staging
+            api_url: 'https://staging-api.devonn.ai'
+          - environment: production
+            api_url: 'https://api.devonn.ai'
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+     
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+     
+      - name: Set environment variables
+        run: |
+          echo "API_URL=${{ matrix.api_url }}" >> $GITHUB_ENV
+          echo "ENVIRONMENT=${{ matrix.environment }}" >> $GITHUB_ENV
+     
+      - name: Build extension
+        run: npm run build -- --mode ${{ matrix.environment }}
+     
+      - name: Run bundle optimization for production
+        if: matrix.environment == 'production'
+        run: |
+          echo "Running production optimizations"
+          for file in dist/assets/*.js; do
+            npx terser "$file" --compress --mangle --output "$file"
+          done
+     
+      - name: Verify build integrity
+        run: |
+          if [ ! -f "dist/manifest.json" ]; then
+            echo "Build verification failed: manifest.json missing"
+            exit 1
+          fi
+          echo "Build verification passed"
+     
+      - name: Package extension
+        run: |
+          if [ ! -d "dist" ] || [ -z "$(ls -A dist)" ]; then
+            echo "❌ dist folder is empty. Build might have failed."
+            exit 1
+          fi
+          cd dist
+          zip -r ../devonn-ai-${{ matrix.environment }}.zip *
+
+
+      - name: Debug packaged file
+        run: |
+          ls -lh .
+          if [ ! -f "devonn-ai-${{ matrix.environment }}.zip" ]; then
+            echo "❌ ZIP file missing!"
+            exit 1
+          fi
+     
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: devonn-ai-${{ matrix.environment }}-extension
+          path: devonn-ai-${{ matrix.environment }}.zip
+ 
+  integration-test:
+    name: Integration Tests
+    needs: [build]
+    runs-on: ubuntu-latest
+    environment: development
+    steps:
+      - uses: actions/checkout@v3
+     
+      - name: Download development build
+        uses: actions/download-artifact@v4
+        with:
+          name: devonn-ai-development-extension
+          path: ./artifacts
+     
+      - name: Setup Chrome
+        uses: browser-actions/setup-chrome@latest
+       
+      - name: Extract extension
+        run: |
+          mkdir -p ./extension
+          unzip ./artifacts/devonn-ai-development.zip -d ./extension
+     
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+         
+      - name: Install test dependencies
+        run: npm ci --legacy-peer-deps
+
+
+      - name: Run integration tests with xvfb
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+          xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" \
+            node scripts/run-integration-tests.cjs \
+              --extension-path=./extension \
+              --browser=chrome
+     
+      - name: Upload integration test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: test-results/integration/

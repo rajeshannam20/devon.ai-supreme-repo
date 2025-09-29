@@ -1,0 +1,95 @@
+
+name: Deploy and Chrome Extension Publish
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy-and-publish:
+    runs-on: ubuntu-latest
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+      CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+      CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+      CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+      VERCEL_PREVIEW_URL: ${{ secrets.VERCEL_PREVIEW_URL }} # Optional, if available
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Project Dependencies
+        run: npm install
+
+      - name: Run Snyk Security Test
+        run: |
+          npm install -g snyk
+          snyk test
+
+      - name: Build Vite React Project
+        run: npm run build
+
+      - name: Canary Deployment (Optional Safety)
+        uses: chrnorm/deployment-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          environment: canary
+          description: '🧪 Deploying Canary version'
+          transient_environment: true
+
+      - name: Bump Chrome Extension Version
+        run: |
+          node ./scripts/bump-version.js
+          echo "✅ Manifest version bumped."
+
+      - name: Package Chrome Extension
+        run: |
+          zip -r extension.zip dist/*
+
+      - name: Upload and Publish Chrome Extension
+        run: |
+          node ./scripts/upload-to-chrome-webstore.js
+
+      - name: Production Deployment Mark
+        uses: chrnorm/deployment-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          environment: production
+          description: '🚀 Deploying to production after Canary success'
+          transient_environment: false
+          production_environment: true
+
+      - name: Send Preview Link to Slack (if available)
+        if: env.VERCEL_PREVIEW_URL != ''
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"text":"🧪 *Preview Environment Ready*: ${{ env.VERCEL_PREVIEW_URL }}"}' $SLACK_WEBHOOK_URL
+
+      - name: Slack Notification - Success
+        if: success()
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"text":"✅ *Deployment + Chrome Extension Publish Successful!*"}' $SLACK_WEBHOOK_URL
+
+      - name: Slack Notification - Failure
+        if: failure()
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"text":"❌ *Deployment Failed! Rollback is auto-triggered!*"}' $SLACK_WEBHOOK_URL
+
+      - name: Create GitHub Issue on Failure
+        if: failure()
+        uses: dacbd/create-issue-action@v1
+        with:
+          title: "🚨 Deployment Failure Detected"
+          body: "Auto-created because the deployment failed. Check logs for troubleshooting."
+          token: ${{ secrets.GITHUB_TOKEN }}

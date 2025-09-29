@@ -1,0 +1,192 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 140 100% 50%;
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 140 100% 4%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 70%;
+
+    --accent: 140 100% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 140 100% 20%;
+    --input: 140 100% 20%;
+    --ring: 140 100% 50%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 5%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 140 100% 50%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 9%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 140 100% 50%;
+  }
+
+  .light {
+    --background: 0 0% 97%;
+    --foreground: 0 0% 9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
+
+    --primary: 140 100% 30%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 140 25% 92%;
+    --secondary-foreground: 140 54% 15%;
+
+    --muted: 140 25% 92%;
+    --muted-foreground: 0 0% 40%;
+
+    --accent: 140 100% 30%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 140 30% 85%;
+    --input: 140 30% 85%;
+    --ring: 140 100% 30%;
+
+    --sidebar-background: 140 25% 96%;
+    --sidebar-foreground: 0 0% 9%;
+    --sidebar-primary: 140 100% 30%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 140 25% 90%;
+    --sidebar-accent-foreground: 0 0% 9%;
+    --sidebar-border: 140 30% 85%;
+    --sidebar-ring: 140 100% 30%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "ss01", "ss02", "cv01", "cv02";
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-300/20 dark:bg-gray-700/20 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400/30 dark:bg-gray-600/30;
+  }
+
+  /* Code highlighting styles */
+  .code-block {
+    @apply font-mono text-sm;
+  }
+
+  .comment {
+    @apply text-muted-foreground;
+  }
+
+  .keyword {
+    @apply text-blue-400 dark:text-blue-400;
+  }
+
+  .string {
+    @apply text-green-400 dark:text-green-400;
+  }
+
+  .function {
+    @apply text-violet-400 dark:text-violet-400;
+  }
+
+  .number {
+    @apply text-amber-400 dark:text-amber-400;
+  }
+
+  /* Matrix theme special effects */
+  .matrix-glow {
+    text-shadow: 0 0 5px rgba(0, 255, 65, 0.7);
+  }
+
+  .matrix-border {
+    @apply border border-[#00FF41]/30;
+  }
+  
+  .matrix-bg {
+    @apply bg-black;
+  }
+  
+  .matrix-text {
+    @apply text-[#00FF41];
+  }
+  
+  .matrix-gradient {
+    @apply bg-gradient-to-r from-[#00FF41]/80 to-[#39FF14]/80;
+  }
+
+  /* Page transitions */
+  .page-transition-enter {
+    opacity: 0;
+    transform: translate3d(0, 15px, 0);
+  }
+
+  .page-transition-enter-active {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    transition: opacity 300ms, transform 300ms;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .glass {
+    @apply bg-black/60 backdrop-blur-lg border border-[#00FF41]/20;
+  }
+
+  .matrix-card {
+    @apply bg-black/80 backdrop-blur-md border border-[#00FF41]/30 rounded-lg shadow-lg shadow-[#00FF41]/5;
+  }
+  
+  .terminal-text {
+    @apply font-mono text-[#00FF41];
+  }
+}
