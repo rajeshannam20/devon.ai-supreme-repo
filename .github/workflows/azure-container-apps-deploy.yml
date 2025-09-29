@@ -60,7 +60,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      # ---------- Generate tags ----------
+      
       - name: Generate backend tag
         id: backend_tag
         run: |
