@@ -254,24 +254,21 @@ async function runTests() {
 
 // Helper function to get the extension ID
 async function getExtensionId(browser) {
-  const page = await browser.newPage();
-  await page.goto('chrome://extensions');
+  // Find the background page or service worker for the extension
+  const targets = browser.targets();
+  const extensionTarget = targets.find(
+    (t) => t.type() === 'background_page' || t.type() === 'service_worker'
+  );
 
-  // Extract extension ID
-  const extensionId = await page.evaluate(() => {
-    const extensions = document.querySelectorAll('extensions-item');
-    for (const ext of extensions) {
-      const idElement = ext.shadowRoot.querySelector('#extension-id');
-      if (idElement && idElement.textContent.includes('ID:')) {
-        return idElement.textContent.split('ID: ')[1].trim();
-      }
-    }
-    return null;
-  });
+  if (!extensionTarget) {
+    throw new Error("Could not find extension target");
+  }
 
-  await page.close();
-  return extensionId;
+  const url = extensionTarget.url(); 
+  // Example: chrome-extension://<id>/_generated_background_page.html
+  return url.split('/')[2];
 }
+
 
 // Helper function to open the extension popup
 async function openPopup(browser, extensionId) {
