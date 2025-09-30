@@ -207,6 +207,14 @@ jobs:
         run: |
           # $BACKEND_URL is now clean, so we can use it directly
           CLEAN_BACKEND_URL=$(echo "$BACKEND_URL" | sed -E 's/.*(https?:\/\/[^ ]*).*/\1/' | xargs) 
+
+          # Sanity check: verify the cleaned URL is correct before proceeding.
+          if [[ "$CLEAN_BACKEND_URL" =~ ^https?://[^[:space:]]+$ ]]; then
+            echo "✅ Clean URL successfully extracted: $CLEAN_BACKEND_URL"
+          else
+            echo "❌ Error: Could not extract a valid URL. Raw variable content: $BACKEND_URL"
+            exit 1
+          fi
           
           echo "Verifying backend deployment at $CLEAN_BACKEND_URL/health"
           
