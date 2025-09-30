@@ -220,17 +220,25 @@ jobs:
           echo "Successfully set BACKEND_URL: ${{ steps.backend_url_output.outputs.backend_url }}"
           echo "Successfully set FRONTEND_URL: ${{ steps.frontend_url_output.outputs.frontend_url }}"
           
-      - name: Verify Backend Deployment
+      - name: Verify Backend Deployment (Workaround for Bad URL)
         if: success() && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/azure-deploy')
         run: |
-          echo "Verifying backend deployment at $BACKEND_URL/health"
+          CLEAN_BACKEND_URL=$(echo "$BACKEND_URL" | grep -o 'https://[^ ]*' | head -1 | sed 's/\r//g')
+          
+          echo "Verifying backend deployment at $CLEAN_BACKEND_URL/health"
+          
+          # Check if a valid URL was extracted
+          if [ -z "$CLEAN_BACKEND_URL" ]; then
+            echo "❌ Error: Could not extract a clean URL from \$BACKEND_URL."
+            exit 1
+          fi
           
           max_retries=5
           counter=0
           
           while [ $counter -lt $max_retries ]
           do
-            status_code=$(curl -s -o /dev/null -w "%{http_code}" $BACKEND_URL/health || echo "failed")
+            status_code=$(curl -s -o /dev/null -w "%{http_code}" "$CLEAN_BACKEND_URL/health" || echo "failed")
             
             if [[ "$status_code" == "200" ]]; then
               echo "✅ Backend deployment verified successfully!"
