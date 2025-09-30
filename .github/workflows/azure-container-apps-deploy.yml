@@ -191,8 +191,10 @@ jobs:
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         run: |
           # Extracting Backend and Frontend URLs, cleaning up unwanted characters
-          BACKEND_FQDN=$(terraform output -raw backend_url | grep -o 'https://[^ ]*' | head -n 1)
-          FRONTEND_FQDN=$(terraform output -raw frontend_url | grep -o 'https://[^ ]*' | head -n 1)
+          # BACKEND_FQDN=$(terraform output -raw backend_url | grep -o 'https://[^ ]*' | head -n 1)
+          # FRONTEND_FQDN=$(terraform output -raw frontend_url | grep -o 'https://[^ ]*' | head -n 1)
+          BACKEND_FQDN=$(terraform output -raw backend_url | tr -d '"' | sed -E 's/--[0-9]+\././' | sed 's/::.*//' | xargs)
+          FRONTEND_FQDN=$(terraform output -raw frontend_url | tr -d '"' | sed -E 's/--[0-9]+\././' | sed 's/::.*//' | xargs)
 
           echo "Backend URL: $BACKEND_FQDN"
           echo "Frontend URL: $FRONTEND_FQDN"
@@ -200,24 +202,22 @@ jobs:
           echo "BACKEND_URL=$BACKEND_FQDN" >> $GITHUB_ENV
           echo "FRONTEND_URL=$FRONTEND_FQDN" >> $GITHUB_ENV
           
-      - name: Verify Backend Deployment (Workaround for Bad URL)
+      - name: Verify Backend Deployment
         if: success() && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/azure-deploy')
         run: |
-          CLEAN_BACKEND_URL=$(echo "$BACKEND_URL" | grep -o 'https://[^ ]*' | head -1 | sed 's/\r//g')
+          # $BACKEND_URL is now clean, so we can use it directly
+          CLEAN_BACKEND_URL="$BACKEND_URL" 
           
           echo "Verifying backend deployment at $CLEAN_BACKEND_URL/health"
           
-          # Check if a valid URL was extracted
-          if [ -z "$CLEAN_BACKEND_URL" ]; then
-            echo "❌ Error: Could not extract a clean URL from \$BACKEND_URL."
-            exit 1
-          fi
+          # ... (rest of your retry logic remains the same)
           
           max_retries=5
           counter=0
           
           while [ $counter -lt $max_retries ]
           do
+            # Note: Use double quotes around the variable to protect the URL
             status_code=$(curl -s -o /dev/null -w "%{http_code}" "$CLEAN_BACKEND_URL/health" || echo "failed")
             
             if [[ "$status_code" == "200" ]]; then
