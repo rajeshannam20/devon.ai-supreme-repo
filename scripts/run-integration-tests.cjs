@@ -149,20 +149,16 @@ async function runTests() {
   let results = {};
   let overallSuccess = true;
 
-
   const chromePaths = {
     linux: '/usr/bin/google-chrome',
     darwin: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
     win32: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
   };
 
-
   const chromePath = chromePaths[process.platform] || null;
-
 
   try {
     console.log('Launching browser with extension...');
-
 
     if (!chromePath) {
       throw new Error(`No Chrome path configured for platform: ${process.platform}`);
@@ -170,7 +166,6 @@ async function runTests() {
     console.log(`Using Chrome executable: ${chromePath}`);
 
     const extensionPath = path.resolve(argv['extension-path']);
-
 
     browser = await puppeteer.launch({
       headless: false, // must be false for extensions
@@ -183,17 +178,28 @@ async function runTests() {
         '--disable-dev-shm-usage',
         '--disable-gpu',
         '--remote-debugging-port=9222',
-        `--user-data-dir=${path.resolve('./tmp/chrome-user-data')}`, // isolate profile
+        `--user-data-dir=${path.resolve('./tmp/chrome-user-data')}`,
+        '--profile-directory=Default',
       ],
     });
 
-    // 🔎 Debug: list all targets to confirm extension is loaded
-    const targets = await browser.targets();
-    console.log(
-      'Available targets after launch:',
-      targets.map(t => t.url())
-    );
+    // ✅ Wait for extension target to appear
+    let extensionTarget;
+    for (let i = 0; i < 10; i++) {
+      const targets = browser.targets();
+      extensionTarget = targets.find(
+        t => t.type() === 'background_page' || t.type() === 'service_worker'
+      );
+      if (extensionTarget) break;
+      console.log('Waiting for extension to load...');
+      await new Promise(r => setTimeout(r, 1000));
+    }
 
+    if (!extensionTarget) {
+      throw new Error('Extension did not load. No background/service_worker target found.');
+    }
+
+    console.log('Extension loaded successfully:', extensionTarget.url());
 
     console.log('Browser launched. Running test scenarios...\n');
 
@@ -210,7 +216,7 @@ async function runTests() {
           name: scenario.name,
           description: scenario.description,
           success,
-          duration
+          duration,
         };
 
         if (success) {
@@ -224,7 +230,7 @@ async function runTests() {
           name: scenario.name,
           description: scenario.description,
           success: false,
-          error: error.message
+          error: error.message,
         };
         process.stdout.write(`❌ Error: ${error.message}\n`);
         overallSuccess = false;
@@ -241,11 +247,18 @@ async function runTests() {
 
   // Write test results to file
   const resultsPath = path.join(outputDir, 'integration_test_results.json');
-  fs.writeFileSync(resultsPath, JSON.stringify({
-    timestamp: new Date().toISOString(),
-    overallSuccess,
-    results
-  }, null, 2));
+  fs.writeFileSync(
+    resultsPath,
+    JSON.stringify(
+      {
+        timestamp: new Date().toISOString(),
+        overallSuccess,
+        results,
+      },
+      null,
+      2
+    )
+  );
 
   console.log(`\n=== Test Results ===`);
   console.log(`Total Scenarios: ${scenarios.length}`);
@@ -257,6 +270,7 @@ async function runTests() {
   // Exit with appropriate code
   process.exit(overallSuccess ? 0 : 1);
 }
+
 
 // Helper function to get the extension ID
 async function getExtensionId(browser) {
