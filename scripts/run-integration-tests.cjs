@@ -250,21 +250,34 @@ async function runTests() {
 
 // Helper function to get the extension ID
 async function getExtensionId(browser) {
-  // Find the background page or service worker for the extension
-  const targets = browser.targets();
-  const extensionTarget = targets.find(
-    (t) =>
-      t.type() === 'background_page' ||
-      t.type() === 'service_worker',
-    { timeout: 5000 } 
+  // Log all targets so we can see what's available
+  const logTargets = () => {
+    console.log("Current targets:");
+    browser.targets().forEach(t =>
+      console.log(`- ${t.type()} | ${t.url()}`)
+    );
+  };
+
+  // Wait for an extension target
+  const extensionTarget = await browser.waitForTarget(
+    (t) => {
+      const url = t.url() || "";
+      return (
+        t.type() === 'background_page' ||
+        t.type() === 'service_worker' ||
+        url.startsWith('chrome-extension://')
+      );
+    },
+    { timeout: 10000 }
   );
+
+  logTargets();
 
   if (!extensionTarget) {
     throw new Error("Could not find extension target");
   }
 
-  const url = extensionTarget.url(); 
-  // Example: chrome-extension://<id>/_generated_background_page.html
+  const url = extensionTarget.url();
   return url.split('/')[2];
 }
 
