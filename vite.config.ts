@@ -25,6 +25,7 @@ export default defineConfig(({ mode }) => ({
         { src: "settings.html", dest: "." },
         { src: "settings.js", dest: "." },
         { src: "settings.css", dest: "." },
+        { src: "icons/**/*", dest: "icons" },  // This will copy everything inside "icons/"
       ],
     }),
   ].filter(Boolean),

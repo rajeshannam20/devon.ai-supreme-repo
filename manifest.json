@@ -23,7 +23,7 @@
     "https://*/*"
   ],
   "background": {
-    "service_worker": "src/extension/background.ts",
+    "service_worker": "background.js",
     "type": "module"
   },
   "options_ui": {
