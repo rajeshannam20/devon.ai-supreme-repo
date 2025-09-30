@@ -171,18 +171,26 @@ async function runTests() {
 
 
     browser = await puppeteer.launch({
-      headless: false, // required for extensions
-      executablePath: chromePath, // 👈 explicitly tell Puppeteer which Chrome to use
+      headless: false, // must be false for extensions
+      executablePath: chromePath,
       args: [
-        `--disable-extensions-except=${path.resolve(argv['extension-path'])}`,
-        `--load-extension=${path.resolve(argv['extension-path'])}`,
+        `--disable-extensions-except=${extensionPath}`,
+        `--load-extension=${extensionPath}`,
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
         '--disable-gpu',
         '--remote-debugging-port=9222',
+        `--user-data-dir=${path.resolve('./tmp/chrome-user-data')}`, // isolate profile
       ],
     });
+
+    // 🔎 Debug: list all targets to confirm extension is loaded
+    const targets = await browser.targets();
+    console.log(
+      'Available targets after launch:',
+      targets.map(t => t.url())
+    );
 
 
     console.log('Browser launched. Running test scenarios...\n');
