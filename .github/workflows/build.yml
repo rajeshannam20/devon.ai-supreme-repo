@@ -124,10 +124,6 @@ jobs:
       - name: Install test dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Check Chrome path
-        run: which google-chrome
-
-
       - name: Run integration tests with xvfb
         run: |
           sudo apt-get update
