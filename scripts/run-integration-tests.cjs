@@ -169,6 +169,8 @@ async function runTests() {
     }
     console.log(`Using Chrome executable: ${chromePath}`);
 
+    const extensionPath = path.resolve(argv['extension-path']);
+
 
     browser = await puppeteer.launch({
       headless: false, // must be false for extensions
