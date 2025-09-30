@@ -17,10 +17,14 @@ export default defineConfig(({ mode }) => ({
     componentTagger(),
      viteStaticCopy({
       targets: [
-        {
-          src: "manifest.json", // from root
-          dest: ".",            // copy to dist/
-        },
+        { src: "manifest.json", dest: "." },
+        { src: "background.js", dest: "." },
+        { src: "popup.html", dest: "." },
+        { src: "popup.js", dest: "." },
+        { src: "popup.css", dest: "." },
+        { src: "settings.html", dest: "." },
+        { src: "settings.js", dest: "." },
+        { src: "settings.css", dest: "." },
       ],
     }),
   ].filter(Boolean),
