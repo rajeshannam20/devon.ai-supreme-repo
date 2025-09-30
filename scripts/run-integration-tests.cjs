@@ -191,6 +191,10 @@ async function runTests() {
 
     console.log('Browser launched. Running test scenarios...\n');
 
+     // Wait for the extension to fully load before starting tests
+    const page = await browser.newPage();
+    await page.waitForTimeout(5000); // Wait for 5 seconds to allow the extension to load
+    
     // Run each scenario
     for (const scenario of scenarios) {
       process.stdout.write(`Testing: ${scenario.description}...`);
