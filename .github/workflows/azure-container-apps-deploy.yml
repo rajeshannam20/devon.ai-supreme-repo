@@ -181,7 +181,8 @@ jobs:
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         run: terraform apply -auto-approve tfplan
         
-      - name: Get Container App URLs
+      - name: Get Backend URL Output
+        id: backend_url_output
         if: success() && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/azure-deploy')
         working-directory: ./src/data/manifest/terraform/azure
         env:
@@ -190,12 +191,34 @@ jobs:
           ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         run: |
-          BACKEND_FQDN=$(terraform output -raw backend_url | sed 's/::debug::Terraform//g' | awk -F' ' '{print $1}' | tr -d '"')
-          FRONTEND_FQDN=$(terraform output -raw frontend_url | sed 's/::debug::Terraform//g' | awk -F' ' '{print $1}' | tr -d '"')
-          echo "Backend URL: $BACKEND_FQDN"
-          echo "Frontend URL: $FRONTEND_FQDN"
-          echo "BACKEND_URL=$BACKEND_FQDN" >> $GITHUB_ENV
-          echo "FRONTEND_URL=$FRONTEND_FQDN" >> $GITHUB_ENV
+          # Capture the raw output and remove surrounding quotes and any other leading/trailing whitespace
+          URL=$(terraform output -raw backend_url | tr -d '"' | xargs)
+          # Use $GITHUB_OUTPUT to safely pass the variable to other steps
+          echo "backend_url=$URL" >> $GITHUB_OUTPUT
+
+      - name: Get Frontend URL Output
+        id: frontend_url_output
+        if: success() && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/azure-deploy')
+        working-directory: ./src/data/manifest/terraform/azure
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET_VALUE }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          URL=$(terraform output -raw frontend_url | tr -d '"' | xargs)
+          echo "frontend_url=$URL" >> $GITHUB_OUTPUT
+
+      - name: Set Global Environment Variables
+        if: success() && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/azure-deploy')
+        run: |
+          # Set the variables for subsequent steps using the clean output from previous steps
+          echo "BACKEND_URL=${{ steps.backend_url_output.outputs.backend_url }}" >> $GITHUB_ENV
+          echo "FRONTEND_URL=${{ steps.frontend_url_output.outputs.frontend_url }}" >> $GITHUB_ENV
+          
+          # Optional: Log the final values for confirmation
+          echo "Successfully set BACKEND_URL: ${{ steps.backend_url_output.outputs.backend_url }}"
+          echo "Successfully set FRONTEND_URL: ${{ steps.frontend_url_output.outputs.frontend_url }}"
           
       - name: Verify Backend Deployment
         if: success() && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/azure-deploy')
