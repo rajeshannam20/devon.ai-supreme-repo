@@ -1,5 +1,5 @@
 
-#!/usr/bin/env node
+// #!/usr/bin/env node
 
 /**
  * Integration Test Runner for Devonn.AI Chrome Extension
@@ -59,7 +59,7 @@ const scenarios = [
     test: async (browser) => {
       const page = await browser.newPage();
       await page.goto('chrome://extensions');
-      
+
       // Check that our extension appears in the list
       const extensionContent = await page.content();
       return extensionContent.includes('Devonn.AI');
@@ -71,12 +71,12 @@ const scenarios = [
     test: async (browser) => {
       const extensionId = await getExtensionId(browser);
       const popupPage = await openPopup(browser, extensionId);
-      
+
       // Take screenshot of popup
-      await popupPage.screenshot({ 
+      await popupPage.screenshot({
         path: path.join(outputDir, 'popup_screenshot.png')
       });
-      
+
       // Check for key elements in the popup
       const title = await popupPage.$eval('h1, .title', el => el.textContent);
       return title && title.includes('Devonn');
@@ -88,22 +88,22 @@ const scenarios = [
     test: async (browser) => {
       const extensionId = await getExtensionId(browser);
       const settingsUrl = `chrome-extension://${extensionId}/settings.html`;
-      
+
       const page = await browser.newPage();
       await page.goto(settingsUrl);
-      
+
       // Take screenshot of settings page
-      await page.screenshot({ 
+      await page.screenshot({
         path: path.join(outputDir, 'settings_screenshot.png'),
         fullPage: true
       });
-      
+
       // Check for settings form
       const hasSettingsForm = await page.evaluate(() => {
-        return !!document.querySelector('form') || 
-               !!document.querySelector('.settings-container');
+        return !!document.querySelector('form') ||
+          !!document.querySelector('.settings-container');
       });
-      
+
       return hasSettingsForm;
     }
   },
@@ -113,14 +113,14 @@ const scenarios = [
     test: async (browser) => {
       const extensionId = await getExtensionId(browser);
       const popupPage = await openPopup(browser, extensionId);
-      
+
       // Inject test script to check API connectivity
       return await popupPage.evaluate(() => {
         return new Promise(resolve => {
           // Mock API check - in a real test, we'd actually call a test endpoint
           const connectionCheckEndpoint = '/api/health';
           const xhrTimeout = setTimeout(() => resolve(false), 5000);
-          
+
           try {
             const xhr = new XMLHttpRequest();
             xhr.open('GET', connectionCheckEndpoint);
@@ -153,35 +153,60 @@ async function runTests() {
   let results = {};
   let overallSuccess = true;
 
+
+  const chromePaths = {
+    linux: '/usr/bin/google-chrome',
+    darwin: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    win32: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+  };
+
+
+  const chromePath = chromePaths[process.platform] || null;
+
+
   try {
     console.log('Launching browser with extension...');
+
+
+    if (!chromePath) {
+      throw new Error(`No Chrome path configured for platform: ${process.platform}`);
+    }
+    console.log(`Using Chrome executable: ${chromePath}`);
+
+
     browser = await puppeteer.launch({
-      headless: false,  // Extensions require headful mode
+      headless: false, // required for extensions
+      executablePath: chromePath, // 👈 explicitly tell Puppeteer which Chrome to use
       args: [
         `--disable-extensions-except=${path.resolve(argv['extension-path'])}`,
         `--load-extension=${path.resolve(argv['extension-path'])}`,
         '--no-sandbox',
-      ]
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--remote-debugging-port=9222',
+      ],
     });
 
+
     console.log('Browser launched. Running test scenarios...\n');
-    
+
     // Run each scenario
     for (const scenario of scenarios) {
       process.stdout.write(`Testing: ${scenario.description}...`);
-      
+
       try {
         const startTime = Date.now();
         const success = await scenario.test(browser);
         const duration = Date.now() - startTime;
-        
+
         results[scenario.name] = {
           name: scenario.name,
           description: scenario.description,
           success,
           duration
         };
-        
+
         if (success) {
           process.stdout.write(`✅ Passed (${duration}ms)\n`);
         } else {
@@ -215,14 +240,14 @@ async function runTests() {
     overallSuccess,
     results
   }, null, 2));
-  
+
   console.log(`\n=== Test Results ===`);
   console.log(`Total Scenarios: ${scenarios.length}`);
   const passedTests = Object.values(results).filter(r => r.success).length;
   console.log(`Passed: ${passedTests}`);
   console.log(`Failed: ${scenarios.length - passedTests}`);
   console.log(`Results written to: ${resultsPath}`);
-  
+
   // Exit with appropriate code
   process.exit(overallSuccess ? 0 : 1);
 }
@@ -231,7 +256,7 @@ async function runTests() {
 async function getExtensionId(browser) {
   const page = await browser.newPage();
   await page.goto('chrome://extensions');
-  
+
   // Extract extension ID
   const extensionId = await page.evaluate(() => {
     const extensions = document.querySelectorAll('extensions-item');
@@ -243,7 +268,7 @@ async function getExtensionId(browser) {
     }
     return null;
   });
-  
+
   await page.close();
   return extensionId;
 }
