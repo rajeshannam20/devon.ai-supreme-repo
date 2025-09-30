@@ -236,14 +236,24 @@ jobs:
       - name: Verify Frontend Deployment
         if: success() && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/azure-deploy')
         run: |
-          echo "Verifying frontend deployment at $FRONTEND_URL"
+          CLEAN_FRONTEND_URL=$(echo "$FRONTEND_URL" | sed -E 's/.*(https?:\/\/[^ ]*).*/\1/' | xargs)
+          
+          # Sanity check: verify the cleaned URL is correct.
+          if [[ "$CLEAN_FRONTEND_URL" =~ ^https?://[^[:space:]]+$ ]]; then
+            echo "✅ Clean URL successfully extracted: $CLEAN_FRONTEND_URL"
+          else
+            echo "❌ Error: Could not extract a valid URL. Raw variable content: $FRONTEND_URL"
+            exit 1
+          fi
+
+          echo "Verifying frontend deployment at $CLEAN_FRONTEND_URL"
           
           max_retries=5
           counter=0
           
           while [ $counter -lt $max_retries ]
           do
-            status_code=$(curl -s -o /dev/null -w "%{http_code}" $FRONTEND_URL || echo "failed")
+            status_code=$(curl -s -o /dev/null -w "%{http_code}" "$CLEAN_FRONTEND_URL" || echo "failed")
             
             if [[ "$status_code" == "200" ]]; then
               echo "✅ Frontend deployment verified successfully!"
