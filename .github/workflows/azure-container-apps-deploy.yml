@@ -190,8 +190,8 @@ jobs:
           ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         run: |
-          BACKEND_FQDN=$(terraform output -raw backend_url | grep -o 'https://[^ ]*' | head -n 1)
-          FRONTEND_FQDN=$(terraform output -raw frontend_url | grep -o 'https://[^ ]*' | head -n 1)
+          BACKEND_FQDN=$(terraform output -raw backend_url | sed 's/::debug::Terraform//g' | tr -d '"')
+          FRONTEND_FQDN=$(terraform output -raw frontend_url | sed 's/::debug::Terraform//g' | tr -d '"')
           echo "Backend URL: $BACKEND_FQDN"
           echo "Frontend URL: $FRONTEND_FQDN"
           echo "BACKEND_URL=$BACKEND_FQDN" >> $GITHUB_ENV
