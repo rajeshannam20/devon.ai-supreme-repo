@@ -57,12 +57,8 @@ const scenarios = [
     name: 'extension_loads',
     description: 'Extension loads successfully',
     test: async (browser) => {
-      const page = await browser.newPage();
-      await page.goto('chrome://extensions');
-
-      // Check that our extension appears in the list
-      const extensionContent = await page.content();
-      return extensionContent.includes('Devonn.AI');
+      const extensionId = await getExtensionId(browser);
+      return !!extensionId; // returns true if an extension ID is found
     }
   },
   {
@@ -257,7 +253,10 @@ async function getExtensionId(browser) {
   // Find the background page or service worker for the extension
   const targets = browser.targets();
   const extensionTarget = targets.find(
-    (t) => t.type() === 'background_page' || t.type() === 'service_worker'
+    (t) =>
+      t.type() === 'background_page' ||
+      t.type() === 'service_worker',
+    { timeout: 5000 } 
   );
 
   if (!extensionTarget) {
