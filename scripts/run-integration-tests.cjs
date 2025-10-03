@@ -78,7 +78,8 @@ const scenarios = [
       // Wait for header or title to appear
       await popupPage.waitForSelector('h1, .title', { timeout: 5000 });
       const title = await popupPage.$eval('h1, .title', el => el.textContent);
-      return title && (title.includes('Devonn.AI') || title.includes('Devonn.AI Assistant'));
+      return title.includes('Devonn.AI') ||
+        (await popupPage.title()).includes('Devonn.AI Assistant');
     }
   },
   {
@@ -93,15 +94,14 @@ const scenarios = [
         fullPage: true
       });
 
-      // Wait for settings UI
-      await settingsPage.waitForSelector('form, .settings-container', { timeout: 5000 });
+      // Wait for .settings-form to be present
+      await settingsPage.waitForSelector('.settings-form', { timeout: 5000 });
 
-      const hasSettingsForm = await settingsPage.evaluate(() => {
-        return !!document.querySelector('form') ||
-               !!document.querySelector('.settings-container');
-      });
+      // Validate page title or presence of .settings-form
+      const title = await settingsPage.title();
+      const hasSettingsForm = await settingsPage.$('.settings-form') !== null;
 
-      return hasSettingsForm;
+      return hasSettingsForm || title.includes('Devonn.AI Assistant Settings');
     }
   },
   {
