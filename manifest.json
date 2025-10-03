@@ -3,6 +3,7 @@
   "manifest_version": 3,
   "name": "Devonn.AI Assistant",
   "version": "1.0.1",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA6u7QLeUPr6ivDwAW34jQANMc6VmZfn5q5eajbcExVPclstEBClBm19iZZIX0sV0yoH3pVZiab0jHzC51ettQuAONurUHbNpBpyCd3+7pm2MxWWbQ+BoYLJPd15UBTn/Dzerkj72lLSeIwrBNty0qDBwpSfEfrrh0qEJH/ftFNHrSI6VSdjHaDkND7fEivMHsTEFi+yIVwK0tubU5YfnY9US9kZz9uLuC0xvpuWVlrPduqdFFm6Uvm+Z/Q7s4kibXWitHYEl8NQHr2I95d12p4gi+I8iImZrlkRZQcv7V8D08p5smBe10NeSE/URTvxk4drmq95C0xDeZEdWDn1orswIDAQAB",
   "description": "Access Devonn.AI agents and tools directly from your browser",
   "action": {
     "default_popup": "popup.html",
