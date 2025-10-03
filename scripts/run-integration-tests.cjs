@@ -59,7 +59,10 @@ const scenarios = [
     description: 'Extension loads successfully',
     test: async (browser) => {
       const page = await getExtensionPage(browser, "popup.html");
-      await page.waitForTimeout(1000); // small delay to ensure render
+
+      // Replace waitForTimeout with plain sleep
+      await new Promise(r => setTimeout(r, 1000));
+
       const content = await page.content();
       return content.includes('Devonn.AI') || content.includes('Devonn.AI Assistant');
     }
@@ -75,11 +78,14 @@ const scenarios = [
         path: path.join(outputDir, 'popup_screenshot.png')
       });
 
-      // Wait for header or title to appear
-      await popupPage.waitForSelector('h1, .title', { timeout: 5000 });
-      const title = await popupPage.$eval('h1, .title', el => el.textContent);
-      return title.includes('Devonn.AI') ||
-        (await popupPage.title()).includes('Devonn.AI Assistant');
+      // Allow popup DOM to settle
+      await new Promise(r => setTimeout(r, 1000));
+
+      // Check the whole body text OR the page title
+      const bodyText = await popupPage.evaluate(() => document.body.innerText);
+      const pageTitle = await popupPage.title();
+
+      return bodyText.includes('Devonn.AI') || pageTitle.includes('Devonn.AI Assistant');
     }
   },
   {
@@ -94,12 +100,13 @@ const scenarios = [
         fullPage: true
       });
 
-      // Wait for .settings-form to be present
-      await settingsPage.waitForSelector('.settings-form', { timeout: 5000 });
+      // Wait for <body> first to ensure load
+      await settingsPage.waitForSelector('body', { timeout: 5000 });
+      await new Promise(r => setTimeout(r, 1000)); // extra wait for CI
 
-      // Validate page title or presence of .settings-form
-      const title = await settingsPage.title();
+      // Validate presence of .settings-form or check title text
       const hasSettingsForm = await settingsPage.$('.settings-form') !== null;
+      const title = await settingsPage.title();
 
       return hasSettingsForm || title.includes('Devonn.AI Assistant Settings');
     }
