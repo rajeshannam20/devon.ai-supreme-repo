@@ -73,7 +73,7 @@ jobs:
       - name: Upload to Chrome Web Store
         if: ${{ github.event.inputs.environment == 'production' || github.ref == 'refs/heads/main' }}
         run: |
-          node scripts/upload-to-chrome-webstore.js
+          node scripts/upload-to-chrome-webstore.cjs
         env:
           CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
           CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
