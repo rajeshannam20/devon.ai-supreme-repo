@@ -63,7 +63,7 @@ jobs:
       #     OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       
       - name: Build extension
-        run: npm run build:${{ env.ENVIRONMENT }}
+        run: npm run build -- --mode $ENVIRONMENT
       
       - name: Package extension
         run: |
