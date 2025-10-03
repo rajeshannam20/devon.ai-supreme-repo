@@ -228,9 +228,12 @@ async function getExtensionPage(browser, file) {
   await client.send('Page.navigate', {
     url: `chrome-extension://${EXTENSION_ID}/${file}`
   });
-  await client.once('Page.loadEventFired');
+  await new Promise(resolve => {
+    client.once('Page.loadEventFired', resolve);
+  });
   return page;
 }
+
 
 // Run the tests
 runTests().catch(error => {
