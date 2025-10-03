@@ -2,7 +2,7 @@
 
 /**
  * Integration Test Runner for Devonn.AI Chrome Extension
- * 
+ *
  * This script runs integration tests on the built extension by launching
  * Chrome with the extension loaded and testing its functionality.
  */
@@ -58,9 +58,7 @@ const scenarios = [
     name: 'extension_loads',
     description: 'Extension loads successfully',
     test: async (browser) => {
-      const page = await browser.newPage();
-      await waitForExtension(browser);
-      await page.goto(`chrome-extension://${EXTENSION_ID}/popup.html`, { waitUntil: 'domcontentloaded' });
+      const page = await getExtensionPage(browser, "popup.html");
       const content = await page.content();
       return content.includes('Devonn');
     }
@@ -69,13 +67,13 @@ const scenarios = [
     name: 'popup_opens',
     description: 'Extension popup opens correctly',
     test: async (browser) => {
-      const popupPage = await openPopup(browser);
-      
+      const popupPage = await getExtensionPage(browser, "popup.html");
+
       // Take screenshot of popup
-      await popupPage.screenshot({ 
+      await popupPage.screenshot({
         path: path.join(outputDir, 'popup_screenshot.png')
       });
-      
+
       // Check for key elements in the popup
       const title = await popupPage.$eval('h1, .title', el => el.textContent);
       return title && title.includes('Devonn');
@@ -85,23 +83,20 @@ const scenarios = [
     name: 'settings_accessible',
     description: 'Settings page is accessible',
     test: async (browser) => {
-      const settingsUrl = `chrome-extension://${EXTENSION_ID}/settings.html`;
-      const page = await browser.newPage();
-      await waitForExtension(browser);
-      await page.goto(settingsUrl, { waitUntil: 'domcontentloaded' });
-      
+      const settingsPage = await getExtensionPage(browser, "settings.html");
+
       // Take screenshot of settings page
-      await page.screenshot({ 
+      await settingsPage.screenshot({
         path: path.join(outputDir, 'settings_screenshot.png'),
         fullPage: true
       });
-      
+
       // Check for settings form
-      const hasSettingsForm = await page.evaluate(() => {
-        return !!document.querySelector('form') || 
+      const hasSettingsForm = await settingsPage.evaluate(() => {
+        return !!document.querySelector('form') ||
                !!document.querySelector('.settings-container');
       });
-      
+
       return hasSettingsForm;
     }
   },
@@ -109,14 +104,14 @@ const scenarios = [
     name: 'api_connectivity',
     description: 'API connectivity check',
     test: async (browser) => {
-      const popupPage = await openPopup(browser);
-      
+      const popupPage = await getExtensionPage(browser, "popup.html");
+
       // Inject test script to check API connectivity
       return await popupPage.evaluate(() => {
         return new Promise(resolve => {
           const connectionCheckEndpoint = '/api/health';
           const xhrTimeout = setTimeout(() => resolve(false), 5000);
-          
+
           try {
             const xhr = new XMLHttpRequest();
             xhr.open('GET', connectionCheckEndpoint);
@@ -149,32 +144,33 @@ async function runTests() {
   try {
     console.log('Launching browser with extension...');
     browser = await puppeteer.launch({
-      headless: false,  // Extensions require headful mode
+      headless: false, // Extensions require headful mode
       args: [
         `--disable-extensions-except=${path.resolve(argv['extension-path'])}`,
         `--load-extension=${path.resolve(argv['extension-path'])}`,
         '--no-sandbox',
+        '--disable-dev-shm-usage'
       ]
     });
 
     console.log('Browser launched. Running test scenarios...\n');
-    
+
     // Run each scenario
     for (const scenario of scenarios) {
       process.stdout.write(`Testing: ${scenario.description}...`);
-      
+
       try {
         const startTime = Date.now();
         const success = await scenario.test(browser);
         const duration = Date.now() - startTime;
-        
+
         results[scenario.name] = {
           name: scenario.name,
           description: scenario.description,
           success,
           duration
         };
-        
+
         if (success) {
           process.stdout.write(`✅ Passed (${duration}ms)\n`);
         } else {
@@ -208,36 +204,31 @@ async function runTests() {
     overallSuccess,
     results
   }, null, 2));
-  
+
   console.log(`\n=== Test Results ===`);
   console.log(`Total Scenarios: ${scenarios.length}`);
   const passedTests = Object.values(results).filter(r => r.success).length;
   console.log(`Passed: ${passedTests}`);
   console.log(`Failed: ${scenarios.length - passedTests}`);
   console.log(`Results written to: ${resultsPath}`);
-  
+
   process.exit(overallSuccess ? 0 : 1);
 }
 
-// ✅ Wait for extension background page/service worker
-async function waitForExtension(browser) {
-  let extensionTarget;
-  for (let i = 0; i < 10; i++) {
-    extensionTarget = browser.targets().find(
-      t => t.type() === 'background_page' || t.type() === 'service_worker'
-    );
-    if (extensionTarget) break;
-    await new Promise(r => setTimeout(r, 500));
-  }
-  if (!extensionTarget) throw new Error("Extension background not found");
-}
+// ✅ Helper: open extension page via CDP (bypasses ERR_BLOCKED_BY_CLIENT)
+async function getExtensionPage(browser, file) {
+  // Wait for background/service worker target
+  await browser.waitForTarget(
+    t => t.type() === 'background_page' || t.type() === 'service_worker'
+  );
 
-// Helper function to open the extension popup
-async function openPopup(browser) {
-  await waitForExtension(browser);
-  const popupUrl = `chrome-extension://${EXTENSION_ID}/popup.html`;
   const page = await browser.newPage();
-  await page.goto(popupUrl, { waitUntil: 'domcontentloaded' });
+  const client = await page.target().createCDPSession();
+  await client.send('Page.enable');
+  await client.send('Page.navigate', {
+    url: `chrome-extension://${EXTENSION_ID}/${file}`
+  });
+  await client.once('Page.loadEventFired');
   return page;
 }
 
