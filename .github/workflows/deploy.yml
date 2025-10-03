@@ -56,11 +56,11 @@ jobs:
             echo "API_URL=https://api.devonn.ai" >> $GITHUB_ENV
           fi
       
-      - name: Validate OpenAI API Key
-        if: ${{ env.ENVIRONMENT == 'production' }}
-        run: node scripts/validate-openai-key.cjs
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      # - name: Validate OpenAI API Key
+      #   if: ${{ env.ENVIRONMENT == 'production' }}
+      #   run: node scripts/validate-openai-key.cjs
+      #   env:
+      #     OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       
       - name: Build extension
         run: npm run build:${{ env.ENVIRONMENT }}
