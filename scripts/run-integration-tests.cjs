@@ -13,7 +13,7 @@ const puppeteer = require('puppeteer');
 const yargs = require('yargs/yargs');
 const { hideBin } = require('yargs/helpers');
 
-// ⚡️ Replace this with your actual extension ID from chrome://extensions
+// ⚡️ Fixed extension ID (from chrome://extensions)
 const EXTENSION_ID = "iokancpmceodmegoakoojmockeopeioh";
 
 // Parse command-line arguments
@@ -59,7 +59,8 @@ const scenarios = [
     description: 'Extension loads successfully',
     test: async (browser) => {
       const page = await browser.newPage();
-      await page.goto(`chrome-extension://${EXTENSION_ID}/popup.html`);
+      await waitForExtension(browser);
+      await page.goto(`chrome-extension://${EXTENSION_ID}/popup.html`, { waitUntil: 'domcontentloaded' });
       const content = await page.content();
       return content.includes('Devonn');
     }
@@ -85,9 +86,9 @@ const scenarios = [
     description: 'Settings page is accessible',
     test: async (browser) => {
       const settingsUrl = `chrome-extension://${EXTENSION_ID}/settings.html`;
-      
       const page = await browser.newPage();
-      await page.goto(settingsUrl);
+      await waitForExtension(browser);
+      await page.goto(settingsUrl, { waitUntil: 'domcontentloaded' });
       
       // Take screenshot of settings page
       await page.screenshot({ 
@@ -215,15 +216,28 @@ async function runTests() {
   console.log(`Failed: ${scenarios.length - passedTests}`);
   console.log(`Results written to: ${resultsPath}`);
   
-  // Exit with appropriate code
   process.exit(overallSuccess ? 0 : 1);
+}
+
+// ✅ Wait for extension background page/service worker
+async function waitForExtension(browser) {
+  let extensionTarget;
+  for (let i = 0; i < 10; i++) {
+    extensionTarget = browser.targets().find(
+      t => t.type() === 'background_page' || t.type() === 'service_worker'
+    );
+    if (extensionTarget) break;
+    await new Promise(r => setTimeout(r, 500));
+  }
+  if (!extensionTarget) throw new Error("Extension background not found");
 }
 
 // Helper function to open the extension popup
 async function openPopup(browser) {
+  await waitForExtension(browser);
   const popupUrl = `chrome-extension://${EXTENSION_ID}/popup.html`;
   const page = await browser.newPage();
-  await page.goto(popupUrl);
+  await page.goto(popupUrl, { waitUntil: 'domcontentloaded' });
   return page;
 }
 
