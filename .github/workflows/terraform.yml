@@ -231,7 +231,7 @@ jobs:
         with:
           status: success
           channel: '#deployments'
-          text: '✅ Terraform deployment successful to ${{ github.event.inputs.environment != '' && github.event.inputs.environment || 'production' }}'
+          text: "✅ Terraform deployment successful to ${{ github.event.inputs.environment != '' && github.event.inputs.environment || 'production' }}"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
@@ -241,7 +241,7 @@ jobs:
         with:
           status: failure
           channel: '#deployments'
-          text: '❌ Terraform deployment failed to ${{ github.event.inputs.environment != '' && github.event.inputs.environment || 'production' }}'
+          text: "❌ Terraform deployment failed to ${{ github.event.inputs.environment != '' && github.event.inputs.environment || 'production' }}"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
@@ -253,7 +253,7 @@ jobs:
           server_port: 465
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: 'Terraform Deployment ${{ job.status }} - ${{ github.event.inputs.environment != '' && github.event.inputs.environment || 'production' }}'
+          subject: "Terraform Deployment ${{ job.status }} - ${{ github.event.inputs.environment != '' && github.event.inputs.environment || 'production' }}"
           to: ${{ secrets.NOTIFICATION_EMAIL }}
           from: 'Devonn.AI CI/CD <noreply@devonn.ai>'
           body: |
