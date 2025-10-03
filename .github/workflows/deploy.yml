@@ -58,7 +58,7 @@ jobs:
       
       - name: Validate OpenAI API Key
         if: ${{ env.ENVIRONMENT == 'production' }}
-        run: node scripts/validate-openai-key.js
+        run: node scripts/validate-openai-key.cjs
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       
