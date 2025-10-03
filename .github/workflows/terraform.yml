@@ -159,8 +159,8 @@ jobs:
     if: github.ref == 'refs/heads/main' && needs.terraform-plan.outputs.tfplanExitCode == 2
     runs-on: ubuntu-latest
     environment: 
-      name: ${{ github.event.inputs.environment || 'production' }}
-      url: https://${{ github.event.inputs.environment || 'prod' }}.devonn.ai
+      name: ${{ github.event.inputs.environment != '' && github.event.inputs.environment || 'production' }}
+      url: https://${{ github.event.inputs.environment != '' && github.event.inputs.environment || 'prod' }}.devonn.ai
     needs: [terraform-plan]
     
     steps:
@@ -231,7 +231,7 @@ jobs:
         with:
           status: success
           channel: '#deployments'
-          text: '✅ Terraform deployment successful to ${{ github.event.inputs.environment || "production" }}'
+          text: '✅ Terraform deployment successful to ${{ github.event.inputs.environment != '' && github.event.inputs.environment || 'production' }}'
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
@@ -241,7 +241,7 @@ jobs:
         with:
           status: failure
           channel: '#deployments'
-          text: '❌ Terraform deployment failed to ${{ github.event.inputs.environment || "production" }}'
+          text: '❌ Terraform deployment failed to ${{ github.event.inputs.environment != '' && github.event.inputs.environment || 'production' }}'
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
@@ -253,11 +253,11 @@ jobs:
           server_port: 465
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: 'Terraform Deployment ${{ job.status }} - ${{ github.event.inputs.environment || "production" }}'
+          subject: 'Terraform Deployment ${{ job.status }} - ${{ github.event.inputs.environment != '' && github.event.inputs.environment || 'production' }}'
           to: ${{ secrets.NOTIFICATION_EMAIL }}
           from: 'Devonn.AI CI/CD <noreply@devonn.ai>'
           body: |
-            Terraform deployment ${{ job.status }} for environment: ${{ github.event.inputs.environment || "production" }}
+            Terraform deployment ${{ job.status }} for environment: ${{ github.event.inputs.environment != '' && github.event.inputs.environment || 'production' }}
             
             Repository: ${{ github.repository }}
             Commit: ${{ github.sha }}
