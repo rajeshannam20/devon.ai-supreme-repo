@@ -57,8 +57,12 @@ const scenarios = [
     name: 'extension_loads',
     description: 'Extension loads successfully',
     test: async (browser) => {
-      const extensionId = await getExtensionId(browser);
-      return !!extensionId; // returns true if an extension ID is found
+      const page = await browser.newPage();
+      await page.goto('chrome://extensions');
+      
+      // Check that our extension appears in the list
+      const extensionContent = await page.content();
+      return extensionContent.includes('Devonn.AI');
     }
   },
   {
@@ -67,12 +71,12 @@ const scenarios = [
     test: async (browser) => {
       const extensionId = await getExtensionId(browser);
       const popupPage = await openPopup(browser, extensionId);
-
+      
       // Take screenshot of popup
-      await popupPage.screenshot({
+      await popupPage.screenshot({ 
         path: path.join(outputDir, 'popup_screenshot.png')
       });
-
+      
       // Check for key elements in the popup
       const title = await popupPage.$eval('h1, .title', el => el.textContent);
       return title && title.includes('Devonn');
@@ -84,22 +88,22 @@ const scenarios = [
     test: async (browser) => {
       const extensionId = await getExtensionId(browser);
       const settingsUrl = `chrome-extension://${extensionId}/settings.html`;
-
+      
       const page = await browser.newPage();
       await page.goto(settingsUrl);
-
+      
       // Take screenshot of settings page
-      await page.screenshot({
+      await page.screenshot({ 
         path: path.join(outputDir, 'settings_screenshot.png'),
         fullPage: true
       });
-
+      
       // Check for settings form
       const hasSettingsForm = await page.evaluate(() => {
-        return !!document.querySelector('form') ||
-          !!document.querySelector('.settings-container');
+        return !!document.querySelector('form') || 
+               !!document.querySelector('.settings-container');
       });
-
+      
       return hasSettingsForm;
     }
   },
@@ -109,14 +113,14 @@ const scenarios = [
     test: async (browser) => {
       const extensionId = await getExtensionId(browser);
       const popupPage = await openPopup(browser, extensionId);
-
+      
       // Inject test script to check API connectivity
       return await popupPage.evaluate(() => {
         return new Promise(resolve => {
           // Mock API check - in a real test, we'd actually call a test endpoint
           const connectionCheckEndpoint = '/api/health';
           const xhrTimeout = setTimeout(() => resolve(false), 5000);
-
+          
           try {
             const xhr = new XMLHttpRequest();
             xhr.open('GET', connectionCheckEndpoint);
@@ -149,84 +153,35 @@ async function runTests() {
   let results = {};
   let overallSuccess = true;
 
-  const chromePaths = {
-    linux: '/usr/bin/google-chrome',
-    darwin: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-    win32: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-  };
-
-  const chromePath = chromePaths[process.platform] || null;
-
   try {
     console.log('Launching browser with extension...');
-
-    if (!chromePath) {
-      throw new Error(`No Chrome path configured for platform: ${process.platform}`);
-    }
-    console.log(`Using Chrome executable: ${chromePath}`);
-
-    const extensionPath = path.resolve(argv['extension-path']);
-
     browser = await puppeteer.launch({
-      headless: false, // must be false for extensions
-      executablePath: chromePath,
+      headless: false,  // Extensions require headful mode
       args: [
-        `--disable-extensions-except=${extensionPath}`,
-        `--load-extension=${extensionPath}`,
+        `--disable-extensions-except=${path.resolve(argv['extension-path'])}`,
+        `--load-extension=${path.resolve(argv['extension-path'])}`,
         '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--remote-debugging-port=9222',
-        `--user-data-dir=${path.resolve('./tmp/chrome-user-data')}`,
-        '--profile-directory=Default',
-      ],
+      ]
     });
 
-    // ✅ Wait for extension target to appear
-    let extensionTarget;
-    for (let i = 0; i < 10; i++) {
-      const targets = browser.targets();
-      extensionTarget = targets.find(
-        t =>
-          t.type() === 'background_page' ||
-          t.type() === 'service_worker' ||
-          (t.url().startsWith('chrome-extension://') &&
-            (t.url().endsWith('/popup.html') || t.url().endsWith('/settings.html')))
-      );
-
-      if (extensionTarget) break;
-      console.log('Waiting for extension to load...');
-      await new Promise(r => setTimeout(r, 1000));
-    }
-
-    if (!extensionTarget) {
-      throw new Error(
-        'Extension did not load. No background/service_worker/popup/settings target found.'
-      );
-    }
-
-
-    console.log('Extension loaded successfully:', extensionTarget.url());
-
     console.log('Browser launched. Running test scenarios...\n');
-
+    
     // Run each scenario
     for (const scenario of scenarios) {
       process.stdout.write(`Testing: ${scenario.description}...`);
-
+      
       try {
         const startTime = Date.now();
         const success = await scenario.test(browser);
         const duration = Date.now() - startTime;
-
+        
         results[scenario.name] = {
           name: scenario.name,
           description: scenario.description,
           success,
-          duration,
+          duration
         };
-
+        
         if (success) {
           process.stdout.write(`✅ Passed (${duration}ms)\n`);
         } else {
@@ -238,7 +193,7 @@ async function runTests() {
           name: scenario.name,
           description: scenario.description,
           success: false,
-          error: error.message,
+          error: error.message
         };
         process.stdout.write(`❌ Error: ${error.message}\n`);
         overallSuccess = false;
@@ -255,65 +210,43 @@ async function runTests() {
 
   // Write test results to file
   const resultsPath = path.join(outputDir, 'integration_test_results.json');
-  fs.writeFileSync(
-    resultsPath,
-    JSON.stringify(
-      {
-        timestamp: new Date().toISOString(),
-        overallSuccess,
-        results,
-      },
-      null,
-      2
-    )
-  );
-
+  fs.writeFileSync(resultsPath, JSON.stringify({
+    timestamp: new Date().toISOString(),
+    overallSuccess,
+    results
+  }, null, 2));
+  
   console.log(`\n=== Test Results ===`);
   console.log(`Total Scenarios: ${scenarios.length}`);
   const passedTests = Object.values(results).filter(r => r.success).length;
   console.log(`Passed: ${passedTests}`);
   console.log(`Failed: ${scenarios.length - passedTests}`);
   console.log(`Results written to: ${resultsPath}`);
-
+  
   // Exit with appropriate code
   process.exit(overallSuccess ? 0 : 1);
 }
 
-
 // Helper function to get the extension ID
 async function getExtensionId(browser) {
-  // Log all targets so we can see what's available
-  const logTargets = () => {
-    console.log("Current targets:");
-    browser.targets().forEach(t =>
-      console.log(`- ${t.type()} | ${t.url()}`)
-    );
-  };
-
-  // Wait for an extension target
-  const extensionTarget = await browser.waitForTarget(
-    (t) => {
-      const url = t.url() || "";
-      return (
-        t.type() === 'background_page' ||
-        t.type() === 'service_worker' ||
-        (url.startsWith('chrome-extension://') &&
-          (url.endsWith('/popup.html') || url.endsWith('/settings.html')))
-      );
-    },
-    { timeout: 15000 }
-  );
-
-  logTargets();
-
-  if (!extensionTarget) {
-    throw new Error("Could not find extension target");
-  }
-
-  const url = extensionTarget.url();
-  return url.split('/')[2];
+  const page = await browser.newPage();
+  await page.goto('chrome://extensions');
+  
+  // Extract extension ID
+  const extensionId = await page.evaluate(() => {
+    const extensions = document.querySelectorAll('extensions-item');
+    for (const ext of extensions) {
+      const idElement = ext.shadowRoot.querySelector('#extension-id');
+      if (idElement && idElement.textContent.includes('ID:')) {
+        return idElement.textContent.split('ID: ')[1].trim();
+      }
+    }
+    return null;
+  });
+  
+  await page.close();
+  return extensionId;
 }
-
 
 // Helper function to open the extension popup
 async function openPopup(browser, extensionId) {
