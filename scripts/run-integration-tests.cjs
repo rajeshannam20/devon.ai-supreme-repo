@@ -59,8 +59,9 @@ const scenarios = [
     description: 'Extension loads successfully',
     test: async (browser) => {
       const page = await getExtensionPage(browser, "popup.html");
+      await page.waitForTimeout(1000); // small delay to ensure render
       const content = await page.content();
-      return content.includes('Devonn');
+      return content.includes('Devonn.AI') || content.includes('Devonn.AI Assistant');
     }
   },
   {
@@ -74,9 +75,10 @@ const scenarios = [
         path: path.join(outputDir, 'popup_screenshot.png')
       });
 
-      // Check for key elements in the popup
+      // Wait for header or title to appear
+      await popupPage.waitForSelector('h1, .title', { timeout: 5000 });
       const title = await popupPage.$eval('h1, .title', el => el.textContent);
-      return title && title.includes('Devonn');
+      return title && (title.includes('Devonn.AI') || title.includes('Devonn.AI Assistant'));
     }
   },
   {
@@ -91,7 +93,9 @@ const scenarios = [
         fullPage: true
       });
 
-      // Check for settings form
+      // Wait for settings UI
+      await settingsPage.waitForSelector('form, .settings-container', { timeout: 5000 });
+
       const hasSettingsForm = await settingsPage.evaluate(() => {
         return !!document.querySelector('form') ||
                !!document.querySelector('.settings-container');
@@ -233,7 +237,6 @@ async function getExtensionPage(browser, file) {
   });
   return page;
 }
-
 
 // Run the tests
 runTests().catch(error => {
