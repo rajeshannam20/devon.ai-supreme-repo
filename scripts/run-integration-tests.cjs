@@ -188,16 +188,24 @@ async function runTests() {
     for (let i = 0; i < 10; i++) {
       const targets = browser.targets();
       extensionTarget = targets.find(
-        t => t.type() === 'background_page' || t.type() === 'service_worker'
+        t =>
+          t.type() === 'background_page' ||
+          t.type() === 'service_worker' ||
+          (t.url().startsWith('chrome-extension://') &&
+            (t.url().endsWith('/popup.html') || t.url().endsWith('/settings.html')))
       );
+
       if (extensionTarget) break;
       console.log('Waiting for extension to load...');
       await new Promise(r => setTimeout(r, 1000));
     }
 
     if (!extensionTarget) {
-      throw new Error('Extension did not load. No background/service_worker target found.');
+      throw new Error(
+        'Extension did not load. No background/service_worker/popup/settings target found.'
+      );
     }
+
 
     console.log('Extension loaded successfully:', extensionTarget.url());
 
@@ -289,10 +297,11 @@ async function getExtensionId(browser) {
       return (
         t.type() === 'background_page' ||
         t.type() === 'service_worker' ||
-        url.startsWith('chrome-extension://')
+        (url.startsWith('chrome-extension://') &&
+          (url.endsWith('/popup.html') || url.endsWith('/settings.html')))
       );
     },
-    { timeout: 10000 }
+    { timeout: 15000 }
   );
 
   logTargets();
