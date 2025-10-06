@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "echo \"No tests specified\" && exit 0",
-    "test:extension": "echo \"No extension tests specified\" && exit 0"
+    "test:extension": "echo \"No extension tests specified\" && exit 0",
+    "test:coverage": "echo \"No coverage available\" && exit 0"
   },
   "dependencies": {
     "@11labs/react": "^0.1.4",
