@@ -161,7 +161,7 @@ jobs:
         uses: treosh/lighthouse-ci-action@v9
         with:
           configPath: './.github/workflows/lighthouse-config.json'
-          uploadArtifacts: true
+          uploadArtifacts: 'lighthouse-results'
           temporaryPublicStorage: true
           
       - name: Run bundle analysis
