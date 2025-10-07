@@ -67,6 +67,7 @@ jobs:
       - name: Terraform Init for AWS
         if: ${{ github.event.inputs.environment == 'aws' }}
         run: terraform init
+<<<<<<< HEAD
         working-directory: ./src/data/manifest/terraform/aws
 
       - name: Terraform Init for Azure
@@ -82,6 +83,13 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
         working-directory: ./src/data/manifest/terraform/${{ github.event.inputs.environment }}
+=======
+        working-directory: ./src/data/manifest/terraform
+
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: ./src/data/manifest/terraform
+>>>>>>> 4afa8eb654b68d6466853644ea1b1ed9a33c8b81
 
       - name: Terraform Plan
         id: tf-plan
@@ -97,7 +105,11 @@ jobs:
           else 
             exit 0
           fi
+<<<<<<< HEAD
         working-directory: ./src/data/manifest/terraform/${{ github.event.inputs.environment }}
+=======
+        working-directory: ./src/data/manifest/terraform
+>>>>>>> 4afa8eb654b68d6466853644ea1b1ed9a33c8b81
 
       - name: Publish Terraform Plan
         uses: actions/upload-artifact@v4
@@ -120,7 +132,11 @@ jobs:
           echo '```' >> $GITHUB_OUTPUT
           echo "</details>" >> $GITHUB_OUTPUT
           echo "${delimiter}" >> $GITHUB_OUTPUT
+<<<<<<< HEAD
         working-directory: ./src/data/manifest/terraform/${{ github.event.inputs.environment }}
+=======
+        working-directory: ./src/data/manifest/terraform
+>>>>>>> 4afa8eb654b68d6466853644ea1b1ed9a33c8b81
 
       - name: Publish Terraform Plan to Task Summary
         env:
@@ -209,6 +225,7 @@ jobs:
       - name: Terraform Init for AWS
         if: ${{ github.event.inputs.environment == 'aws' }}
         run: terraform init
+<<<<<<< HEAD
         working-directory: ./src/data/manifest/terraform/aws
 
       - name: Terraform Init for Azure
@@ -220,6 +237,9 @@ jobs:
         if: ${{ github.event.inputs.environment == 'gcp' }}
         run: terraform init
         working-directory: ./src/data/manifest/terraform/gcp
+=======
+        working-directory: ./src/data/manifest/terraform
+>>>>>>> 4afa8eb654b68d6466853644ea1b1ed9a33c8b81
 
       - name: Download Terraform Plan
         uses: actions/download-artifact@v4
@@ -230,12 +250,20 @@ jobs:
       - name: Terraform Apply
         if: github.event.inputs.destroy != 'true'
         run: terraform apply -auto-approve tfplan
+<<<<<<< HEAD
         working-directory: ./src/data/manifest/terraform/${{ github.event.inputs.environment }}
+=======
+        working-directory: ./src/data/manifest/terraform
+>>>>>>> 4afa8eb654b68d6466853644ea1b1ed9a33c8b81
 
       - name: Terraform Destroy
         if: github.event.inputs.destroy == 'true'
         run: terraform destroy -auto-approve
+<<<<<<< HEAD
         working-directory: ./src/data/manifest/terraform/${{ github.event.inputs.environment }}
+=======
+        working-directory: ./src/data/manifest/terraform
+>>>>>>> 4afa8eb654b68d6466853644ea1b1ed9a33c8b81
 
       - name: Run Verification Script
         if: github.event.inputs.destroy != 'true'
