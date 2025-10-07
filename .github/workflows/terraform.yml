@@ -66,11 +66,11 @@ jobs:
 
       - name: Terraform Init
         run: terraform init
-        working-directory: ./terraform
+        working-directory: ./src/data/manifest/terraform
 
       - name: Terraform Validate
         run: terraform validate
-        working-directory: ./terraform
+        working-directory: ./src/data/manifest/terraform
 
       - name: Terraform Plan
         id: tf-plan
@@ -86,7 +86,7 @@ jobs:
           else 
             exit 0
           fi
-        working-directory: ./terraform
+        working-directory: ./src/data/manifest/terraform
 
       - name: Publish Terraform Plan
         uses: actions/upload-artifact@v4
@@ -109,7 +109,7 @@ jobs:
           echo '```' >> $GITHUB_OUTPUT
           echo "</details>" >> $GITHUB_OUTPUT
           echo "${delimiter}" >> $GITHUB_OUTPUT
-        working-directory: ./terraform
+        working-directory: ./src/data/manifest/terraform
 
       - name: Publish Terraform Plan to Task Summary
         env:
@@ -197,7 +197,7 @@ jobs:
 
       - name: Terraform Init
         run: terraform init
-        working-directory: ./terraform
+        working-directory: ./src/data/manifest/terraform
 
       - name: Download Terraform Plan
         uses: actions/download-artifact@v4
@@ -208,12 +208,12 @@ jobs:
       - name: Terraform Apply
         if: github.event.inputs.destroy != 'true'
         run: terraform apply -auto-approve tfplan
-        working-directory: ./terraform
+        working-directory: ./src/data/manifest/terraform
 
       - name: Terraform Destroy
         if: github.event.inputs.destroy == 'true'
         run: terraform destroy -auto-approve
-        working-directory: ./terraform
+        working-directory: ./src/data/manifest/terraform
 
       - name: Run Verification Script
         if: github.event.inputs.destroy != 'true'
