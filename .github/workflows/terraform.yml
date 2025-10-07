@@ -13,6 +13,9 @@ on:
         default: 'staging'
         type: choice
         options:
+          - aws
+          - gcp
+          - azure
           - staging
           - production
       destroy:
@@ -42,6 +45,7 @@ jobs:
           terraform_version: ${{ env.TF_VERSION }}
 
       - name: Configure AWS Credentials
+        if: ${{ github.event.inputs.environment == 'aws' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -49,6 +53,7 @@ jobs:
           aws-region: us-east-1
 
       - name: Configure Azure Credentials
+        if: ${{ github.event.inputs.environment == 'azure' }}
         uses: azure/login@v1
         with:
           creds: |
@@ -60,6 +65,7 @@ jobs:
             }
 
       - name: Configure GCP Credentials
+        if: ${{ github.event.inputs.environment == 'gcp' }}
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}
@@ -184,6 +190,7 @@ jobs:
           terraform_version: ${{ env.TF_VERSION }}
 
       - name: Configure AWS Credentials
+        if: ${{ github.event.inputs.environment == 'aws' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -191,6 +198,7 @@ jobs:
           aws-region: us-east-1
 
       - name: Configure Azure Credentials
+        if: ${{ github.event.inputs.environment == 'azure' }}
         uses: azure/login@v1
         with:
           creds: |
@@ -202,6 +210,7 @@ jobs:
             }
 
       - name: Configure GCP Credentials
+        if: ${{ github.event.inputs.environment == 'gcp' }}
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}
@@ -286,4 +295,4 @@ jobs:
             Author: ${{ github.actor }}
             Workflow: ${{ github.workflow }}
             
-            View logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            View logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
