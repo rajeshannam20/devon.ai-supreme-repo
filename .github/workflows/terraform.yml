@@ -54,7 +54,7 @@ jobs:
           creds: |
             {
               "clientId": "${{ secrets.AZURE_CLIENT_ID }}",
-              "clientSecret": "${{ secrets.AZURE_CLIENT_SECRET_VALUE }}",
+              "clientSecret": "${{ secrets.AZURE_CLIENT_SECRET }}",
               "subscriptionId": "${{ secrets.AZURE_SUBSCRIPTION_ID }}",
               "tenantId": "${{ secrets.AZURE_TENANT_ID }}"
             }
@@ -64,13 +64,24 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}
 
-      - name: Terraform Init
+      - name: Terraform Init for AWS
+        if: ${{ github.event.inputs.environment == 'aws' }}
         run: terraform init
-        working-directory: ./terraform
+        working-directory: ./src/data/manifest/terraform/aws
+
+      - name: Terraform Init for Azure
+        if: ${{ github.event.inputs.environment == 'azure' }}
+        run: terraform init
+        working-directory: ./src/data/manifest/terraform/azure
+
+      - name: Terraform Init for GCP
+        if: ${{ github.event.inputs.environment == 'gcp' }}
+        run: terraform init
+        working-directory: ./src/data/manifest/terraform/gcp
 
       - name: Terraform Validate
         run: terraform validate
-        working-directory: ./terraform
+        working-directory: ./src/data/manifest/terraform/${{ github.event.inputs.environment }}
 
       - name: Terraform Plan
         id: tf-plan
@@ -86,7 +97,7 @@ jobs:
           else 
             exit 0
           fi
-        working-directory: ./terraform
+        working-directory: ./src/data/manifest/terraform/${{ github.event.inputs.environment }}
 
       - name: Publish Terraform Plan
         uses: actions/upload-artifact@v4
@@ -109,7 +120,7 @@ jobs:
           echo '```' >> $GITHUB_OUTPUT
           echo "</details>" >> $GITHUB_OUTPUT
           echo "${delimiter}" >> $GITHUB_OUTPUT
-        working-directory: ./terraform
+        working-directory: ./src/data/manifest/terraform/${{ github.event.inputs.environment }}
 
       - name: Publish Terraform Plan to Task Summary
         env:
@@ -195,9 +206,20 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}
 
-      - name: Terraform Init
+      - name: Terraform Init for AWS
+        if: ${{ github.event.inputs.environment == 'aws' }}
         run: terraform init
-        working-directory: ./terraform
+        working-directory: ./src/data/manifest/terraform/aws
+
+      - name: Terraform Init for Azure
+        if: ${{ github.event.inputs.environment == 'azure' }}
+        run: terraform init
+        working-directory: ./src/data/manifest/terraform/azure
+
+      - name: Terraform Init for GCP
+        if: ${{ github.event.inputs.environment == 'gcp' }}
+        run: terraform init
+        working-directory: ./src/data/manifest/terraform/gcp
 
       - name: Download Terraform Plan
         uses: actions/download-artifact@v4
@@ -208,12 +230,12 @@ jobs:
       - name: Terraform Apply
         if: github.event.inputs.destroy != 'true'
         run: terraform apply -auto-approve tfplan
-        working-directory: ./terraform
+        working-directory: ./src/data/manifest/terraform/${{ github.event.inputs.environment }}
 
       - name: Terraform Destroy
         if: github.event.inputs.destroy == 'true'
         run: terraform destroy -auto-approve
-        working-directory: ./terraform
+        working-directory: ./src/data/manifest/terraform/${{ github.event.inputs.environment }}
 
       - name: Run Verification Script
         if: github.event.inputs.destroy != 'true'
@@ -264,4 +286,4 @@ jobs:
             Author: ${{ github.actor }}
             Workflow: ${{ github.workflow }}
             
-            View logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            View logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
