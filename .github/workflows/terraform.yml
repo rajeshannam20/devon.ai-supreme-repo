@@ -159,8 +159,8 @@ jobs:
     if: github.ref == 'refs/heads/main' && needs.terraform-plan.outputs.tfplanExitCode == 2
     runs-on: ubuntu-latest
     environment: 
-      name: ${{ github.event.inputs.environment || 'production' }}
-      url: https://${{ github.event.inputs.environment || 'prod' }}.devonn.ai
+      name: ${{ github.event.inputs.environment || production }}
+      url: https://${{ github.event.inputs.environment || prod }}.devonn.ai
     needs: [terraform-plan]
     
     steps:
