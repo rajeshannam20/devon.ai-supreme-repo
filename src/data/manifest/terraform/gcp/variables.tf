@@ -3,11 +3,6 @@ variable "gcp_project_id" {
   type        = string
 }
 
-variable "gcp_credentials_json" {
-  description = "The GCP service account credentials in JSON format"
-  type        = string
-}
-
 variable "gcp_region" {
   description = "The GCP region"
   default     = "us-central1"
