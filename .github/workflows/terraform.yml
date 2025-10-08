@@ -68,11 +68,7 @@ jobs:
       - name: Configure GCP Credentials
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}
-        run: |
-          # Debug: Print the Secret          
-          echo "${{ secrets.GCP_CREDENTIALS_JSON }}"   
-          echo "GCP_CREDENTIALS_JSON=${{ secrets.GCP_CREDENTIALS_JSON }}" >> $GITHUB_ENV          
+          credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}       
                                
 
       - name: Terraform Init for AWS
@@ -217,11 +213,7 @@ jobs:
       - name: Configure GCP Credentials
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}   
-        run: |
-          # Debug: Print the Secret          
-          echo "${{ secrets.GCP_CREDENTIALS_JSON }}"     
-          echo "GCP_CREDENTIALS_JSON=${{ secrets.GCP_CREDENTIALS_JSON }}" >> $GITHUB_ENV
+          credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}    
 
       - name: Terraform Init for AWS
         if: ${{ github.event.inputs.environment == 'aws' }}
