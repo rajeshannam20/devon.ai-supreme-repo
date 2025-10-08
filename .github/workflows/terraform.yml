@@ -66,33 +66,9 @@ jobs:
             }
 
       - name: Configure GCP Credentials
-        run: |
-          echo "Setting GCP credentials..."
-          
-          # Save credentials JSON to a file
-          echo "${{ secrets.GCP_CREDENTIALS_JSON }}" > $GITHUB_WORKSPACE/gcp-credentials.json
-          export GOOGLE_APPLICATION_CREDENTIALS=$GITHUB_WORKSPACE/gcp-credentials.json
-          
-          # Debug: Print the Secret          
-          echo "${{ secrets.GCP_CREDENTIALS_JSON }}" 
-          
-          # Debug: Print the current directory and file path
-          echo "Current working directory: $(pwd)"
-          echo "GOOGLE_APPLICATION_CREDENTIALS is set to: $GOOGLE_APPLICATION_CREDENTIALS"
-          
-          # Debug: Check if the credentials file exists and print its content
-          ls -l $GITHUB_WORKSPACE/gcp-credentials.json
-          cat $GITHUB_WORKSPACE/gcp-credentials.json
-              
-          # Export environment variables for Terraform
-          echo "gcp_project_id=${{ secrets.GCP_PROJECT_ID }}" >> $GITHUB_ENV
-          echo "gcp_client_email=${{ secrets.GCP_CLIENT_EMAIL }}" >> $GITHUB_ENV
-          echo "gcp_client_id=${{ secrets.GCP_CLIENT_ID }}" >> $GITHUB_ENV
-          
-          # Ensure they are available to Terraform
-          export gcp_project_id=${{ secrets.GCP_PROJECT_ID }}
-          export gcp_client_email=${{ secrets.GCP_CLIENT_EMAIL }}
-          export gcp_client_id=${{ secrets.GCP_CLIENT_ID }}
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}
                                
 
       - name: Terraform Init for AWS
@@ -235,33 +211,9 @@ jobs:
             }
 
       - name: Configure GCP Credentials
-        run: |
-          echo "Setting GCP credentials..."
-          
-          # Save credentials JSON to a file
-          echo "${{ secrets.GCP_CREDENTIALS_JSON }}" > $GITHUB_WORKSPACE/gcp-credentials.json
-          export GOOGLE_APPLICATION_CREDENTIALS=$GITHUB_WORKSPACE/gcp-credentials.json
-          
-          # Debug: Print the Secret          
-          echo "${{ secrets.GCP_CREDENTIALS_JSON }}" 
-
-          # Debug: Print the current directory and file path
-          echo "Current working directory: $(pwd)"
-          echo "GOOGLE_APPLICATION_CREDENTIALS is set to: $GOOGLE_APPLICATION_CREDENTIALS"
-          
-          # Debug: Check if the credentials file exists and print its content
-          ls -l $GITHUB_WORKSPACE/gcp-credentials.json
-          cat $GITHUB_WORKSPACE/gcp-credentials.json  
-          
-          # Export environment variables for Terraform
-          echo "gcp_project_id=${{ secrets.GCP_PROJECT_ID }}" >> $GITHUB_ENV
-          echo "gcp_client_email=${{ secrets.GCP_CLIENT_EMAIL }}" >> $GITHUB_ENV
-          echo "gcp_client_id=${{ secrets.GCP_CLIENT_ID }}" >> $GITHUB_ENV
-          
-          # Ensure they are available to Terraform
-          export gcp_project_id=${{ secrets.GCP_PROJECT_ID }}
-          export gcp_client_email=${{ secrets.GCP_CLIENT_EMAIL }}
-          export gcp_client_id=${{ secrets.GCP_CLIENT_ID }}        
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}     
 
       - name: Terraform Init for AWS
         if: ${{ github.event.inputs.environment == 'aws' }}
