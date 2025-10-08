@@ -4,13 +4,13 @@ variable "gcp_project_id" {
   default     = "devonn-chrome-extension-deploy"
 }
 
-variable "gcp_client_email" {
-  description = "The GCP client email"
+variable "gcp_credentials_json" {
+  description = "The GCP service account credentials in JSON format"
   type        = string
 }
 
-variable "gcp_private_key" {
-  description = "The GCP private key"
+variable "gcp_client_email" {
+  description = "The GCP client email"
   type        = string
 }
 

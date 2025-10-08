@@ -66,16 +66,24 @@ jobs:
             }
 
       - name: Configure GCP Credentials
-        if: ${{ github.event.inputs.environment == 'gcp' }}
         run: |
           echo "Setting GCP credentials..."
-          echo "${{ secrets.GCP_PRIVATE_KEY }}" > $GITHUB_WORKSPACE/gcp_private_key.pem
-          export GOOGLE_APPLICATION_CREDENTIALS=$GITHUB_WORKSPACE/gcp_private_key.pem
-          
-          # Set other environment variables for Terraform
+      
+          # Save credentials JSON to a file
+          echo "${{ secrets.GCP_CREDENTIALS_JSON }}" > $GITHUB_WORKSPACE/gcp-credentials.json
+          export GOOGLE_APPLICATION_CREDENTIALS=$GITHUB_WORKSPACE/gcp-credentials.json
+      
+          # Export environment variables for Terraform
           echo "gcp_project_id=${{ secrets.GCP_PROJECT_ID }}" >> $GITHUB_ENV
+          echo "gcp_region=${{ secrets.GCP_REGION }}" >> $GITHUB_ENV
           echo "gcp_client_email=${{ secrets.GCP_CLIENT_EMAIL }}" >> $GITHUB_ENV
           echo "gcp_client_id=${{ secrets.GCP_CLIENT_ID }}" >> $GITHUB_ENV
+      
+          # Ensure they are available to Terraform
+          export gcp_project_id=${{ secrets.GCP_PROJECT_ID }}
+          export gcp_region=${{ secrets.GCP_REGION }}
+          export gcp_client_email=${{ secrets.GCP_CLIENT_EMAIL }}
+          export gcp_client_id=${{ secrets.GCP_CLIENT_ID }}  
                                
 
       - name: Terraform Init for AWS
@@ -218,16 +226,24 @@ jobs:
             }
 
       - name: Configure GCP Credentials
-        if: ${{ github.event.inputs.environment == 'gcp' }}
         run: |
           echo "Setting GCP credentials..."
-          echo "${{ secrets.GCP_PRIVATE_KEY }}" > $GITHUB_WORKSPACE/gcp_private_key.pem
-          export GOOGLE_APPLICATION_CREDENTIALS=$GITHUB_WORKSPACE/gcp_private_key.pem
-          
-          # Set other environment variables for Terraform
+      
+          # Save credentials JSON to a file
+          echo "${{ secrets.GCP_CREDENTIALS_JSON }}" > $GITHUB_WORKSPACE/gcp-credentials.json
+          export GOOGLE_APPLICATION_CREDENTIALS=$GITHUB_WORKSPACE/gcp-credentials.json
+      
+          # Export environment variables for Terraform
           echo "gcp_project_id=${{ secrets.GCP_PROJECT_ID }}" >> $GITHUB_ENV
+          echo "gcp_region=${{ secrets.GCP_REGION }}" >> $GITHUB_ENV
           echo "gcp_client_email=${{ secrets.GCP_CLIENT_EMAIL }}" >> $GITHUB_ENV
-          echo "gcp_client_id=${{ secrets.GCP_CLIENT_ID }}" >> $GITHUB_ENV                    
+          echo "gcp_client_id=${{ secrets.GCP_CLIENT_ID }}" >> $GITHUB_ENV
+      
+          # Ensure they are available to Terraform
+          export gcp_project_id=${{ secrets.GCP_PROJECT_ID }}
+          export gcp_region=${{ secrets.GCP_REGION }}
+          export gcp_client_email=${{ secrets.GCP_CLIENT_EMAIL }}
+          export gcp_client_id=${{ secrets.GCP_CLIENT_ID }}                 
 
       - name: Terraform Init for AWS
         if: ${{ github.event.inputs.environment == 'aws' }}
