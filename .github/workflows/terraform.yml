@@ -13,9 +13,6 @@ on:
         default: 'staging'
         type: choice
         options:
-          - aws
-          - gcp
-          - azure
           - staging
           - production
       destroy:
@@ -43,10 +40,8 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
-          
-          
+
       - name: Configure AWS Credentials
-        if: ${{ github.event.inputs.environment == 'aws' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -54,13 +49,12 @@ jobs:
           aws-region: us-east-1
 
       - name: Configure Azure Credentials
-        if: ${{ github.event.inputs.environment == 'azure' }}
         uses: azure/login@v1
         with:
           creds: |
             {
               "clientId": "${{ secrets.AZURE_CLIENT_ID }}",
-              "clientSecret": "${{ secrets.AZURE_CLIENT_SECRET_VALUE }}",
+              "clientSecret": "${{ secrets.AZURE_CLIENT_SECRET }}",
               "subscriptionId": "${{ secrets.AZURE_SUBSCRIPTION_ID }}",
               "tenantId": "${{ secrets.AZURE_TENANT_ID }}"
             }
@@ -69,33 +63,14 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}
-          create_credentials_file: true
-          export_environment_variables: true
-          universe: googleapis.com
-          cleanup_credentials: true
-          access_token_lifetime: 3600s
-          access_token_scopes: https://www.googleapis.com/auth/cloud-platform
-          id_token_include_email: false        
-                               
 
-      - name: Terraform Init for AWS
-        if: ${{ github.event.inputs.environment == 'aws' }}
+      - name: Terraform Init
         run: terraform init
-        working-directory: ./src/data/manifest/terraform/aws
-
-      - name: Terraform Init for Azure
-        if: ${{ github.event.inputs.environment == 'azure' }}
-        run: terraform init
-        working-directory: ./src/data/manifest/terraform/azure
-
-      - name: Terraform Init for GCP
-        if: ${{ github.event.inputs.environment == 'gcp' }}
-        run: terraform init
-        working-directory: ./src/data/manifest/terraform/gcp
+        working-directory: ./terraform
 
       - name: Terraform Validate
         run: terraform validate
-        working-directory: ./src/data/manifest/terraform/${{ github.event.inputs.environment }}
+        working-directory: ./terraform
 
       - name: Terraform Plan
         id: tf-plan
@@ -111,7 +86,7 @@ jobs:
           else 
             exit 0
           fi
-        working-directory: ./src/data/manifest/terraform/${{ github.event.inputs.environment }}
+        working-directory: ./terraform
 
       - name: Publish Terraform Plan
         uses: actions/upload-artifact@v4
@@ -134,7 +109,7 @@ jobs:
           echo '```' >> $GITHUB_OUTPUT
           echo "</details>" >> $GITHUB_OUTPUT
           echo "${delimiter}" >> $GITHUB_OUTPUT
-        working-directory: ./src/data/manifest/terraform/${{ github.event.inputs.environment }}
+        working-directory: ./terraform
 
       - name: Publish Terraform Plan to Task Summary
         env:
@@ -184,8 +159,8 @@ jobs:
     if: github.ref == 'refs/heads/main' && needs.terraform-plan.outputs.tfplanExitCode == 2
     runs-on: ubuntu-latest
     environment: 
-      name: ${{ github.event.inputs.environment != '' && github.event.inputs.environment || 'production' }}
-      url: https://${{ github.event.inputs.environment != '' && github.event.inputs.environment || 'prod' }}.devonn.ai
+      name: ${{ github.event.inputs.environment || 'production' }}
+      url: https://${{ github.event.inputs.environment || 'prod' }}.devonn.ai
     needs: [terraform-plan]
     
     steps:
@@ -198,7 +173,6 @@ jobs:
           terraform_version: ${{ env.TF_VERSION }}
 
       - name: Configure AWS Credentials
-        if: ${{ github.event.inputs.environment == 'aws' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -206,13 +180,12 @@ jobs:
           aws-region: us-east-1
 
       - name: Configure Azure Credentials
-        if: ${{ github.event.inputs.environment == 'azure' }}
         uses: azure/login@v1
         with:
           creds: |
             {
               "clientId": "${{ secrets.AZURE_CLIENT_ID }}",
-              "clientSecret": "${{ secrets.AZURE_CLIENT_SECRET_VALUE }}",
+              "clientSecret": "${{ secrets.AZURE_CLIENT_SECRET }}",
               "subscriptionId": "${{ secrets.AZURE_SUBSCRIPTION_ID }}",
               "tenantId": "${{ secrets.AZURE_TENANT_ID }}"
             }
@@ -221,31 +194,10 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}
-          create_credentials_file: true
-          export_environment_variables: true
-          universe: googleapis.com
-          cleanup_credentials: true
-          access_token_lifetime: 3600s
-          access_token_scopes: https://www.googleapis.com/auth/cloud-platform
-          id_token_include_email: false  
 
-      - name: Set GCP credentials for Terraform
-        run: echo "GCP_CREDENTIALS_JSON=${{ secrets.GCP_CREDENTIALS_JSON }}" >> $GITHUB_ENV     
-
-      - name: Terraform Init for AWS
-        if: ${{ github.event.inputs.environment == 'aws' }}
+      - name: Terraform Init
         run: terraform init
-        working-directory: ./src/data/manifest/terraform/aws
-
-      - name: Terraform Init for Azure
-        if: ${{ github.event.inputs.environment == 'azure' }}
-        run: terraform init
-        working-directory: ./src/data/manifest/terraform/azure
-
-      - name: Terraform Init for GCP
-        if: ${{ github.event.inputs.environment == 'gcp' }}
-        run: terraform init
-        working-directory: ./src/data/manifest/terraform/gcp
+        working-directory: ./terraform
 
       - name: Download Terraform Plan
         uses: actions/download-artifact@v4
@@ -256,12 +208,12 @@ jobs:
       - name: Terraform Apply
         if: github.event.inputs.destroy != 'true'
         run: terraform apply -auto-approve tfplan
-        working-directory: ./src/data/manifest/terraform/${{ github.event.inputs.environment }}
+        working-directory: ./terraform
 
       - name: Terraform Destroy
         if: github.event.inputs.destroy == 'true'
         run: terraform destroy -auto-approve
-        working-directory: ./src/data/manifest/terraform/${{ github.event.inputs.environment }}
+        working-directory: ./terraform
 
       - name: Run Verification Script
         if: github.event.inputs.destroy != 'true'
@@ -279,7 +231,7 @@ jobs:
         with:
           status: success
           channel: '#deployments'
-          text: "✅ Terraform deployment successful to ${{ github.event.inputs.environment != '' && github.event.inputs.environment || 'production' }}"
+          text: '✅ Terraform deployment successful to ${{ github.event.inputs.environment || "production" }}'
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
@@ -289,7 +241,7 @@ jobs:
         with:
           status: failure
           channel: '#deployments'
-          text: "❌ Terraform deployment failed to ${{ github.event.inputs.environment != '' && github.event.inputs.environment || 'production' }}"
+          text: '❌ Terraform deployment failed to ${{ github.event.inputs.environment || "production" }}'
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
@@ -301,11 +253,11 @@ jobs:
           server_port: 465
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "Terraform Deployment ${{ job.status }} - ${{ github.event.inputs.environment != '' && github.event.inputs.environment || 'production' }}"
+          subject: 'Terraform Deployment ${{ job.status }} - ${{ github.event.inputs.environment || "production" }}'
           to: ${{ secrets.NOTIFICATION_EMAIL }}
           from: 'Devonn.AI CI/CD <noreply@devonn.ai>'
           body: |
-            Terraform deployment ${{ job.status }} for environment: ${{ github.event.inputs.environment != '' && github.event.inputs.environment || 'production' }}
+            Terraform deployment ${{ job.status }} for environment: ${{ github.event.inputs.environment || "production" }}
             
             Repository: ${{ github.repository }}
             Commit: ${{ github.sha }}
