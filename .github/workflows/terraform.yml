@@ -75,13 +75,11 @@ jobs:
       
           # Export environment variables for Terraform
           echo "gcp_project_id=${{ secrets.GCP_PROJECT_ID }}" >> $GITHUB_ENV
-          echo "gcp_region=${{ secrets.GCP_REGION }}" >> $GITHUB_ENV
           echo "gcp_client_email=${{ secrets.GCP_CLIENT_EMAIL }}" >> $GITHUB_ENV
           echo "gcp_client_id=${{ secrets.GCP_CLIENT_ID }}" >> $GITHUB_ENV
       
           # Ensure they are available to Terraform
           export gcp_project_id=${{ secrets.GCP_PROJECT_ID }}
-          export gcp_region=${{ secrets.GCP_REGION }}
           export gcp_client_email=${{ secrets.GCP_CLIENT_EMAIL }}
           export gcp_client_id=${{ secrets.GCP_CLIENT_ID }}  
                                
