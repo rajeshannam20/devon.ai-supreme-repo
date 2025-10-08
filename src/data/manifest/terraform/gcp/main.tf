@@ -23,16 +23,28 @@ resource "google_compute_instance" "backend" {
   name         = "devonn-ai-${var.environment}-backend"
   machine_type = var.instance_type
   zone         = var.gcp_zone
+
+  # Boot disk configuration
   boot_disk {
     initialize_params {
       image = var.gcp_image
     }
   }
 
+  # Tags
   tags = ["devonn-ai"]
 
+  # Metadata
   metadata = {
     environment = var.environment
+  }
+
+  # Network interface block (Required)
+  network_interface {
+    network = "default"  # Default VPC
+    access_config {     # Required for an external IP address
+      // No external IP if you don't want it
+    }
   }
 }
 
@@ -43,15 +55,27 @@ resource "google_compute_instance" "frontend" {
   name         = "devonn-ai-${var.environment}-frontend"
   machine_type = var.instance_type
   zone         = var.gcp_zone
+
+  # Boot disk configuration
   boot_disk {
     initialize_params {
       image = var.gcp_image
     }
   }
 
+  # Tags
   tags = ["devonn-ai"]
 
+  # Metadata
   metadata = {
     environment = var.environment
+  }
+
+  # Network interface block (Required)
+  network_interface {
+    network = "default"  # Default VPC
+    access_config {     # Required for an external IP address
+      // No external IP if you don't want it
+    }
   }
 }
