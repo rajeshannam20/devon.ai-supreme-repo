@@ -4,6 +4,12 @@ variable "gcp_project_id" {
   default     = "devonn-chrome-extension-deploy"
 }
 
+variable "GCP_CREDENTIALS_JSON" {
+  description = "GCP credentials in JSON format"
+  type        = string
+  sensitive   = true
+}
+
 variable "gcp_region" {
   description = "The GCP region"
   default     = "us-central1"
