@@ -72,6 +72,8 @@ jobs:
           # Save credentials JSON to a file
           echo "${{ secrets.GCP_CREDENTIALS_JSON }}" > $GITHUB_WORKSPACE/gcp-credentials.json
           export GOOGLE_APPLICATION_CREDENTIALS=$GITHUB_WORKSPACE/gcp-credentials.json
+
+          echo "JSONSecret: ${{ secrets.GCP_CREDENTIALS_JSON }}" | jq .
           
           # Debug: Print the current directory and file path
           echo "Current working directory: $(pwd)"
@@ -239,6 +241,8 @@ jobs:
           echo "${{ secrets.GCP_CREDENTIALS_JSON }}" > $GITHUB_WORKSPACE/gcp-credentials.json
           export GOOGLE_APPLICATION_CREDENTIALS=$GITHUB_WORKSPACE/gcp-credentials.json
           
+          echo "JSONSecret: ${{ secrets.GCP_CREDENTIALS_JSON }}" | jq .
+
           # Debug: Print the current directory and file path
           echo "Current working directory: $(pwd)"
           echo "GOOGLE_APPLICATION_CREDENTIALS is set to: $GOOGLE_APPLICATION_CREDENTIALS"
