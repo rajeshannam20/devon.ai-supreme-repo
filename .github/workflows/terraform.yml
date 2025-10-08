@@ -43,6 +43,9 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
+          
+      - name: Set GCP Credentials for Terraform
+        run: echo "GCP_CREDENTIALS_JSON=${{ secrets.GCP_CREDENTIALS_JSON }}" >> $GITHUB_ENV
 
       - name: Configure AWS Credentials
         if: ${{ github.event.inputs.environment == 'aws' }}
