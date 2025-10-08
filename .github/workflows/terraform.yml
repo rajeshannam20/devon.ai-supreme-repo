@@ -72,7 +72,7 @@ jobs:
           # Save credentials JSON to a file
           echo "${{ secrets.GCP_CREDENTIALS_JSON }}" > $GITHUB_WORKSPACE/gcp-credentials.json
           export GOOGLE_APPLICATION_CREDENTIALS=$GITHUB_WORKSPACE/gcp-credentials.json
-      
+          
           # Debug: Print the current directory and file path
           echo "Current working directory: $(pwd)"
           echo "GOOGLE_APPLICATION_CREDENTIALS is set to: $GOOGLE_APPLICATION_CREDENTIALS"
@@ -81,15 +81,24 @@ jobs:
           ls -l $GITHUB_WORKSPACE/gcp-credentials.json
           cat $GITHUB_WORKSPACE/gcp-credentials.json | head -n 10  # Show the first few lines to verify content
 
+          # Step 1: Clean the credentials file (removes unwanted characters)
+          echo "Cleaning GCP credentials..."
+          echo "${{ secrets.GCP_CREDENTIALS_JSON }}" | tr -d '\n' > $GITHUB_WORKSPACE/gcp-credentials.json
+          cat $GITHUB_WORKSPACE/gcp-credentials.json | head -n 10  # Debug: show cleaned file
+
+          # Step 2: Validate the credentials JSON format
+          echo "Validating GCP credentials JSON..."
+          cat $GITHUB_WORKSPACE/gcp-credentials.json | jq . || exit 1  # Ensure it's valid JSON
+
           # Export environment variables for Terraform
           echo "gcp_project_id=${{ secrets.GCP_PROJECT_ID }}" >> $GITHUB_ENV
           echo "gcp_client_email=${{ secrets.GCP_CLIENT_EMAIL }}" >> $GITHUB_ENV
           echo "gcp_client_id=${{ secrets.GCP_CLIENT_ID }}" >> $GITHUB_ENV
-      
+          
           # Ensure they are available to Terraform
           export gcp_project_id=${{ secrets.GCP_PROJECT_ID }}
           export gcp_client_email=${{ secrets.GCP_CLIENT_EMAIL }}
-          export gcp_client_id=${{ secrets.GCP_CLIENT_ID }}  
+          export gcp_client_id=${{ secrets.GCP_CLIENT_ID }}
                                
 
       - name: Terraform Init for AWS
@@ -238,7 +247,7 @@ jobs:
           # Save credentials JSON to a file
           echo "${{ secrets.GCP_CREDENTIALS_JSON }}" > $GITHUB_WORKSPACE/gcp-credentials.json
           export GOOGLE_APPLICATION_CREDENTIALS=$GITHUB_WORKSPACE/gcp-credentials.json
-      
+          
           # Debug: Print the current directory and file path
           echo "Current working directory: $(pwd)"
           echo "GOOGLE_APPLICATION_CREDENTIALS is set to: $GOOGLE_APPLICATION_CREDENTIALS"
@@ -247,17 +256,24 @@ jobs:
           ls -l $GITHUB_WORKSPACE/gcp-credentials.json
           cat $GITHUB_WORKSPACE/gcp-credentials.json | head -n 10  # Show the first few lines to verify content
 
+          # Step 1: Clean the credentials file (removes unwanted characters)
+          echo "Cleaning GCP credentials..."
+          echo "${{ secrets.GCP_CREDENTIALS_JSON }}" | tr -d '\n' > $GITHUB_WORKSPACE/gcp-credentials.json
+          cat $GITHUB_WORKSPACE/gcp-credentials.json | head -n 10  # Debug: show cleaned file
+
+          # Step 2: Validate the credentials JSON format
+          echo "Validating GCP credentials JSON..."
+          cat $GITHUB_WORKSPACE/gcp-credentials.json | jq . || exit 1  # Ensure it's valid JSON
+
           # Export environment variables for Terraform
           echo "gcp_project_id=${{ secrets.GCP_PROJECT_ID }}" >> $GITHUB_ENV
-          echo "gcp_region=${{ secrets.GCP_REGION }}" >> $GITHUB_ENV
           echo "gcp_client_email=${{ secrets.GCP_CLIENT_EMAIL }}" >> $GITHUB_ENV
           echo "gcp_client_id=${{ secrets.GCP_CLIENT_ID }}" >> $GITHUB_ENV
-      
+          
           # Ensure they are available to Terraform
           export gcp_project_id=${{ secrets.GCP_PROJECT_ID }}
-          export gcp_region=${{ secrets.GCP_REGION }}
           export gcp_client_email=${{ secrets.GCP_CLIENT_EMAIL }}
-          export gcp_client_id=${{ secrets.GCP_CLIENT_ID }}                 
+          export gcp_client_id=${{ secrets.GCP_CLIENT_ID }}              
 
       - name: Terraform Init for AWS
         if: ${{ github.event.inputs.environment == 'aws' }}
