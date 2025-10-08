@@ -1,4 +1,5 @@
 provider "google" {
+  credentials = file("/home/runner/work/devon.ai-supreme-repo/devon.ai-supreme-repo/gcp-credentials.json") 
   project     = var.gcp_project_id
   region      = var.gcp_region
 }
