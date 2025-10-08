@@ -68,7 +68,14 @@ jobs:
       - name: Configure GCP Credentials
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}       
+          credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}
+          create_credentials_file: true
+          export_environment_variables: true
+          universe: googleapis.com
+          cleanup_credentials: true
+          access_token_lifetime: 3600s
+          access_token_scopes: https://www.googleapis.com/auth/cloud-platform
+          id_token_include_email: false        
                                
 
       - name: Terraform Init for AWS
@@ -213,7 +220,14 @@ jobs:
       - name: Configure GCP Credentials
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}   
+          credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}
+          create_credentials_file: true
+          export_environment_variables: true
+          universe: googleapis.com
+          cleanup_credentials: true
+          access_token_lifetime: 3600s
+          access_token_scopes: https://www.googleapis.com/auth/cloud-platform
+          id_token_include_email: false  
 
       - name: Set GCP credentials for Terraform
         run: echo "GCP_CREDENTIALS_JSON=${{ secrets.GCP_CREDENTIALS_JSON }}" >> $GITHUB_ENV     
