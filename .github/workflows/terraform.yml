@@ -73,7 +73,7 @@ jobs:
           echo "${{ secrets.GCP_CREDENTIALS_JSON }}" > $GITHUB_WORKSPACE/gcp-credentials.json
           export GOOGLE_APPLICATION_CREDENTIALS=$GITHUB_WORKSPACE/gcp-credentials.json
 
-          echo "${{ secrets.GCP_CREDENTIALS_JSON }}" | od -c
+          echo "${{ secrets.GCP_CREDENTIALS_JSON }}" | jq .
           
           # Debug: Print the current directory and file path
           echo "Current working directory: $(pwd)"
@@ -241,7 +241,7 @@ jobs:
           echo "${{ secrets.GCP_CREDENTIALS_JSON }}" > $GITHUB_WORKSPACE/gcp-credentials.json
           export GOOGLE_APPLICATION_CREDENTIALS=$GITHUB_WORKSPACE/gcp-credentials.json
           
-          echo "${{ secrets.GCP_CREDENTIALS_JSON }}" | od -c
+          echo "${{ secrets.GCP_CREDENTIALS_JSON }}" | jq .
 
           # Debug: Print the current directory and file path
           echo "Current working directory: $(pwd)"
