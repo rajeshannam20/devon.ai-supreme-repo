@@ -81,9 +81,9 @@ jobs:
           ls -l $GITHUB_WORKSPACE/gcp-credentials.json
           cat $GITHUB_WORKSPACE/gcp-credentials.json | head -n 10  # Show the first few lines to verify content
 
-          # Step 1: Clean the credentials file (removes unwanted characters)
+          # Step 1: Clean up any surrounding whitespace but leave the structure intact
           echo "Cleaning GCP credentials..."
-          echo "${{ secrets.GCP_CREDENTIALS_JSON }}" | tr -d '\n' > $GITHUB_WORKSPACE/gcp-credentials.json
+          echo "${{ secrets.GCP_CREDENTIALS_JSON }}" | jq . > $GITHUB_WORKSPACE/gcp-credentials.json || exit 1
           cat $GITHUB_WORKSPACE/gcp-credentials.json | head -n 10  # Debug: show cleaned file
 
           # Step 2: Validate the credentials JSON format
@@ -256,9 +256,9 @@ jobs:
           ls -l $GITHUB_WORKSPACE/gcp-credentials.json
           cat $GITHUB_WORKSPACE/gcp-credentials.json | head -n 10  # Show the first few lines to verify content
 
-          # Step 1: Clean the credentials file (removes unwanted characters)
+          # Step 1: Clean up any surrounding whitespace but leave the structure intact
           echo "Cleaning GCP credentials..."
-          echo "${{ secrets.GCP_CREDENTIALS_JSON }}" | tr -d '\n' > $GITHUB_WORKSPACE/gcp-credentials.json
+          echo "${{ secrets.GCP_CREDENTIALS_JSON }}" | jq . > $GITHUB_WORKSPACE/gcp-credentials.json || exit 1
           cat $GITHUB_WORKSPACE/gcp-credentials.json | head -n 10  # Debug: show cleaned file
 
           # Step 2: Validate the credentials JSON format
@@ -273,7 +273,7 @@ jobs:
           # Ensure they are available to Terraform
           export gcp_project_id=${{ secrets.GCP_PROJECT_ID }}
           export gcp_client_email=${{ secrets.GCP_CLIENT_EMAIL }}
-          export gcp_client_id=${{ secrets.GCP_CLIENT_ID }}              
+          export gcp_client_id=${{ secrets.GCP_CLIENT_ID }}         
 
       - name: Terraform Init for AWS
         if: ${{ github.event.inputs.environment == 'aws' }}
