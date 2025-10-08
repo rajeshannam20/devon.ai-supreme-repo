@@ -79,19 +79,8 @@ jobs:
           
           # Debug: Check if the credentials file exists and print its content
           ls -l $GITHUB_WORKSPACE/gcp-credentials.json
-          cat $GITHUB_WORKSPACE/gcp-credentials.json | head -n 10  # Show the first few lines to verify content
-          
-          # Step 1: Clean up any surrounding whitespace but leave the structure intact
-          echo "Cleaning GCP credentials..."
-          cat $GITHUB_WORKSPACE/gcp-credentials.json | jq . > $GITHUB_WORKSPACE/gcp-credentials-cleaned.json || exit 1
-          
-          # Debug: Show cleaned file
-          cat $GITHUB_WORKSPACE/gcp-credentials-cleaned.json | head -n 10  # Show cleaned content
-          
-          # Step 2: Validate the credentials JSON format
-          echo "Validating GCP credentials JSON..."
-          cat $GITHUB_WORKSPACE/gcp-credentials-cleaned.json | jq . || exit 1  # Ensure it's valid JSON
-          
+          cat $GITHUB_WORKSPACE/gcp-credentials.json
+              
           # Export environment variables for Terraform
           echo "gcp_project_id=${{ secrets.GCP_PROJECT_ID }}" >> $GITHUB_ENV
           echo "gcp_client_email=${{ secrets.GCP_CLIENT_EMAIL }}" >> $GITHUB_ENV
@@ -256,18 +245,7 @@ jobs:
           
           # Debug: Check if the credentials file exists and print its content
           ls -l $GITHUB_WORKSPACE/gcp-credentials.json
-          cat $GITHUB_WORKSPACE/gcp-credentials.json | head -n 10  # Show the first few lines to verify content
-          
-          # Step 1: Clean up any surrounding whitespace but leave the structure intact
-          echo "Cleaning GCP credentials..."
-          cat $GITHUB_WORKSPACE/gcp-credentials.json | jq . > $GITHUB_WORKSPACE/gcp-credentials-cleaned.json || exit 1
-          
-          # Debug: Show cleaned file
-          cat $GITHUB_WORKSPACE/gcp-credentials-cleaned.json | head -n 10  # Show cleaned content
-          
-          # Step 2: Validate the credentials JSON format
-          echo "Validating GCP credentials JSON..."
-          cat $GITHUB_WORKSPACE/gcp-credentials-cleaned.json | jq . || exit 1  # Ensure it's valid JSON
+          cat $GITHUB_WORKSPACE/gcp-credentials.json  
           
           # Export environment variables for Terraform
           echo "gcp_project_id=${{ secrets.GCP_PROJECT_ID }}" >> $GITHUB_ENV
