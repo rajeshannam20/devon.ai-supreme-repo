@@ -1,20 +1,5 @@
-variable "gcp_project_id" {
-  description = "The GCP project ID"
-  type        = string
-}
-
-variable "gcp_client_email" {
-  description = "The GCP client email"
-  type        = string
-}
-
-variable "gcp_private_key" {
-  description = "The GCP private key (Base64 encoded)"
-  type        = string
-}
-
-variable "gcp_client_id" {
-  description = "The GCP client ID"
+variable "gcp_credentials_json" {
+  description = "The GCP service account credentials in JSON format"
   type        = string
 }
 

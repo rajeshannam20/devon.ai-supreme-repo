@@ -69,10 +69,8 @@ jobs:
         if: ${{ github.event.inputs.environment == 'gcp' }}
         run: |
           echo "Setting GCP credentials..."
-          echo "project_id=${{ secrets.GCP_PROJECT_ID }}" >> $GITHUB_ENV
-          echo "client_email=${{ secrets.GCP_CLIENT_EMAIL }}" >> $GITHUB_ENV
-          echo "private_key=${{ secrets.GCP_PRIVATE_KEY }}" >> $GITHUB_ENV
-          echo "client_id=${{ secrets.GCP_CLIENT_ID }}" >> $GITHUB_ENV
+          echo "${{ secrets.GCP_CREDENTIALS_JSON }}" > $GITHUB_WORKSPACE/gcp-credentials.json
+          export GOOGLE_APPLICATION_CREDENTIALS=$GITHUB_WORKSPACE/gcp-credentials.json
 
       - name: Terraform Init for AWS
         if: ${{ github.event.inputs.environment == 'aws' }}
@@ -217,10 +215,8 @@ jobs:
         if: ${{ github.event.inputs.environment == 'gcp' }}
         run: |
           echo "Setting GCP credentials..."
-          echo "project_id=${{ secrets.GCP_PROJECT_ID }}" >> $GITHUB_ENV
-          echo "client_email=${{ secrets.GCP_CLIENT_EMAIL }}" >> $GITHUB_ENV
-          echo "private_key=${{ secrets.GCP_PRIVATE_KEY }}" >> $GITHUB_ENV
-          echo "client_id=${{ secrets.GCP_CLIENT_ID }}" >> $GITHUB_ENV          
+          echo "${{ secrets.GCP_CREDENTIALS_JSON }}" > $GITHUB_WORKSPACE/gcp-credentials.json
+          export GOOGLE_APPLICATION_CREDENTIALS=$GITHUB_WORKSPACE/gcp-credentials.json      
 
       - name: Terraform Init for AWS
         if: ${{ github.event.inputs.environment == 'aws' }}
