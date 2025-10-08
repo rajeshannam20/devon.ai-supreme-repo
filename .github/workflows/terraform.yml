@@ -71,7 +71,9 @@ jobs:
           echo "Setting GCP credentials..."
           echo "${{ secrets.GCP_CREDENTIALS_JSON }}" > $GITHUB_WORKSPACE/gcp-credentials.json
           export GOOGLE_APPLICATION_CREDENTIALS=$GITHUB_WORKSPACE/gcp-credentials.json
-        shell: bash
+          # Convert the credentials to a string and set the environment variable for Terraform
+          export GCP_CREDENTIALS_JSON=$(cat $GITHUB_WORKSPACE/gcp-credentials.json)
+          echo "GCP_CREDENTIALS_JSON=${GCP_CREDENTIALS_JSON}" >> $GITHUB_ENV
 
       - name: Terraform Init for AWS
         if: ${{ github.event.inputs.environment == 'aws' }}
