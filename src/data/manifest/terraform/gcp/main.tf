@@ -1,6 +1,7 @@
 provider "google" {
-  project = var.gcp_project_id
-  region  = var.gcp_region
+  credentials = jsondecode(var.gcp_credentials_json)  
+  project     = jsondecode(var.gcp_credentials_json).project_id  
+  region      = var.gcp_region
 }
 
 # ----------------------------------------------------
