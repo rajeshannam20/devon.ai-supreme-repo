@@ -73,6 +73,14 @@ jobs:
           echo "${{ secrets.GCP_CREDENTIALS_JSON }}" > $GITHUB_WORKSPACE/gcp-credentials.json
           export GOOGLE_APPLICATION_CREDENTIALS=$GITHUB_WORKSPACE/gcp-credentials.json
       
+          # Debug: Print the current directory and file path
+          echo "Current working directory: $(pwd)"
+          echo "GOOGLE_APPLICATION_CREDENTIALS is set to: $GOOGLE_APPLICATION_CREDENTIALS"
+          
+          # Debug: Check if the credentials file exists and print its content
+          ls -l $GITHUB_WORKSPACE/gcp-credentials.json
+          cat $GITHUB_WORKSPACE/gcp-credentials.json | head -n 10  # Show the first few lines to verify content
+
           # Export environment variables for Terraform
           echo "gcp_project_id=${{ secrets.GCP_PROJECT_ID }}" >> $GITHUB_ENV
           echo "gcp_client_email=${{ secrets.GCP_CLIENT_EMAIL }}" >> $GITHUB_ENV
@@ -231,6 +239,14 @@ jobs:
           echo "${{ secrets.GCP_CREDENTIALS_JSON }}" > $GITHUB_WORKSPACE/gcp-credentials.json
           export GOOGLE_APPLICATION_CREDENTIALS=$GITHUB_WORKSPACE/gcp-credentials.json
       
+          # Debug: Print the current directory and file path
+          echo "Current working directory: $(pwd)"
+          echo "GOOGLE_APPLICATION_CREDENTIALS is set to: $GOOGLE_APPLICATION_CREDENTIALS"
+          
+          # Debug: Check if the credentials file exists and print its content
+          ls -l $GITHUB_WORKSPACE/gcp-credentials.json
+          cat $GITHUB_WORKSPACE/gcp-credentials.json | head -n 10  # Show the first few lines to verify content
+
           # Export environment variables for Terraform
           echo "gcp_project_id=${{ secrets.GCP_PROJECT_ID }}" >> $GITHUB_ENV
           echo "gcp_region=${{ secrets.GCP_REGION }}" >> $GITHUB_ENV
