@@ -9,16 +9,6 @@ variable "gcp_credentials_json" {
   type        = string
 }
 
-variable "gcp_client_email" {
-  description = "The GCP client email"
-  type        = string
-}
-
-variable "gcp_client_id" {
-  description = "The GCP client ID"
-  type        = string
-}
-
 variable "gcp_region" {
   description = "The GCP region"
   default     = "us-central1"
