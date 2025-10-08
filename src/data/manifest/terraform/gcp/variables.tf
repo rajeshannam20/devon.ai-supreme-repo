@@ -1,20 +1,30 @@
-variable "gcp_credentials_json" {
-  description = "The GCP credentials in JSON format"
-  type        = string
-}
-
 variable "gcp_project_id" {
   description = "The GCP project ID"
   type        = string
 }
 
+variable "gcp_client_email" {
+  description = "The GCP client email"
+  type        = string
+}
+
+variable "gcp_private_key" {
+  description = "The GCP private key (Base64 encoded)"
+  type        = string
+}
+
+variable "gcp_client_id" {
+  description = "The GCP client ID"
+  type        = string
+}
+
 variable "gcp_region" {
-  description = "The GCP region to deploy to"
+  description = "The GCP region"
   default     = "us-central1"
 }
 
 variable "gcp_zone" {
-  description = "The GCP zone to deploy to"
+  description = "The GCP zone"
   default     = "us-central1-a"
 }
 
@@ -30,6 +40,5 @@ variable "instance_type" {
 
 variable "environment" {
   description = "The environment (e.g., production, staging)"
-  type        = string
   default     = "development"
 }

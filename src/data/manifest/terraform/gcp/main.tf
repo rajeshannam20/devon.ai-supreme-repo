@@ -1,7 +1,13 @@
 provider "google" {
-  credentials = jsondecode(var.gcp_credentials_json)  # This decodes the credentials JSON string into the credentials object
   project     = var.gcp_project_id
   region      = var.gcp_region
+  credentials = jsonencode({
+    type        = "service_account"
+    project_id  = var.gcp_project_id
+    private_key = base64decode(var.gcp_private_key)
+    client_email = var.gcp_client_email
+    client_id   = var.gcp_client_id
+  })
 }
 
 # ----------------------------------------------------
