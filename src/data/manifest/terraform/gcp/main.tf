@@ -1,6 +1,7 @@
 provider "google" {
-  project     = var.gcp_project_id
-  region      = var.gcp_region
+  credentials = file(var.gcp_private_key) 
+  project     = var.gcp_project_id  
+  region      = var.gcp_region     
 }
 
 # ----------------------------------------------------

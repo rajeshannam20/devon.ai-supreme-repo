@@ -1,6 +1,22 @@
 variable "gcp_project_id" {
   description = "The GCP project ID"
   type        = string
+  default     = "devonn-chrome-extension-deploy"
+}
+
+variable "gcp_client_email" {
+  description = "The GCP client email"
+  type        = string
+}
+
+variable "gcp_private_key" {
+  description = "The GCP private key"
+  type        = string
+}
+
+variable "gcp_client_id" {
+  description = "The GCP client ID"
+  type        = string
 }
 
 variable "gcp_region" {
