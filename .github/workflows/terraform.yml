@@ -73,24 +73,35 @@ jobs:
           credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}
 
       - name: Terraform Init
+        working-directory: ./src/data/manifest/terraform/azure
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}      
         run: |
           terraform init \
             -backend-config="resource_group_name=${{ env.AZURE_RESOURCE_GROUP_TFSTATE }}" \
             -backend-config="storage_account_name=${{ secrets.AZURE_STORAGE_ACCOUNT }}" \
             -backend-config="container_name=tfstate" \
             -backend-config="key=${{ github.event.inputs.environment || 'development' }}.terraform.tfstate"
+
+      - name: Terraform Validate
         working-directory: ./src/data/manifest/terraform/azure
         env:
           ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
           ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Terraform Validate
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}      
         run: terraform validate
-        working-directory: ./src/data/manifest/terraform/azure
 
       - name: Terraform Plan
+        working-directory: ./src/data/manifest/terraform/azure
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}      
         id: tf-plan
         run: |
           export exitcode=0
@@ -104,7 +115,6 @@ jobs:
           else 
             exit 0
           fi
-        working-directory: ./src/data/manifest/terraform/azure
 
       - name: Publish Terraform Plan
         uses: actions/upload-artifact@v4
@@ -208,18 +218,18 @@ jobs:
           credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}
 
       - name: Terraform Init
+        working-directory: ./src/data/manifest/terraform/azure
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}      
         run: |
           terraform init \
             -backend-config="resource_group_name=${{ env.AZURE_RESOURCE_GROUP_TFSTATE }}" \
             -backend-config="storage_account_name=${{ secrets.AZURE_STORAGE_ACCOUNT }}" \
             -backend-config="container_name=tfstate" \
             -backend-config="key=${{ github.event.inputs.environment || 'development' }}.terraform.tfstate"
-        working-directory: ./src/data/manifest/terraform/azure
-        env:
-          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Download Terraform Plan
         uses: actions/download-artifact@v4
@@ -229,13 +239,23 @@ jobs:
 
       - name: Terraform Apply
         if: github.event.inputs.destroy != 'true'
-        run: terraform apply -auto-approve tfplan
         working-directory: ./src/data/manifest/terraform/azure
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET_VALUE }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}        
+        run: terraform apply -auto-approve tfplan
 
       - name: Terraform Destroy
         if: github.event.inputs.destroy == 'true'
-        run: terraform destroy -auto-approve
         working-directory: ./src/data/manifest/terraform/azure
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET_VALUE }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}        
+        run: terraform destroy -auto-approve
 
       - name: Run Verification Script
         if: github.event.inputs.destroy != 'true'
