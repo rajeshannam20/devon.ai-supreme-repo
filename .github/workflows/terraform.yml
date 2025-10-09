@@ -113,18 +113,18 @@ jobs:
             -var="backend_image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-and-push.outputs.backend_tag }}" \
             -var="frontend_image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-and-push.outputs.frontend_tag }}" \
             -var="environment=${{ github.event.inputs.environment || 'development' }}" \
-            -out=./src/data/manifest/terraform/azure/tfplan
+            -out=./src/data/manifest/terraform/azure
 
       - name: Echo Terraform Plan File Location
         run: |
-          echo "Terraform plan has been generated at: ./src/data/manifest/terraform/azure/tfplan"
-          ls -l ./src/data/manifest/terraform/azure/tfplan 
+          echo "Terraform plan has been generated at: ./src/data/manifest/terraform/azure"
+          ls -l ./src/data/manifest/terraform/azure
 
       - name: Publish Terraform Plan
         uses: actions/upload-artifact@v4
         with:
           name: tfplan
-          path: ./src/data/manifest/terraform/azure/tfplan
+          path: ./src/data/manifest/terraform/azure
 
       - name: Create String Output
         id: tf-plan-string
