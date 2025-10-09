@@ -84,7 +84,8 @@ jobs:
             -backend-config="resource_group_name=${{ env.AZURE_RESOURCE_GROUP_TFSTATE }}" \
             -backend-config="storage_account_name=${{ secrets.AZURE_STORAGE_ACCOUNT }}" \
             -backend-config="container_name=tfstate" \
-            -backend-config="key=${{ github.event.inputs.environment || 'development' }}.terraform.tfstate"
+            -backend-config="key=${{ github.event.inputs.environment || 'development' }}.terraform.tfstate" \
+            -backend-config="use_azuread_authentication=true"  
 
       - name: Terraform Validate
         working-directory: ./src/data/manifest/terraform/azure
@@ -229,7 +230,8 @@ jobs:
             -backend-config="resource_group_name=${{ env.AZURE_RESOURCE_GROUP_TFSTATE }}" \
             -backend-config="storage_account_name=${{ secrets.AZURE_STORAGE_ACCOUNT }}" \
             -backend-config="container_name=tfstate" \
-            -backend-config="key=${{ github.event.inputs.environment || 'development' }}.terraform.tfstate"
+            -backend-config="key=${{ github.event.inputs.environment || 'development' }}.terraform.tfstate" \
+            -backend-config="use_azuread_authentication=true"  
 
       - name: Download Terraform Plan
         uses: actions/download-artifact@v4
