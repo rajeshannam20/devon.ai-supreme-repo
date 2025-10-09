@@ -110,8 +110,8 @@ jobs:
             -var="location=${{ github.event.inputs.deploy_region || 'eastus' }}" \
             -var="container_app_environment_name=${{ env.CONTAINER_ENV_NAME }}" \
             -var="container_app_name=${{ env.CONTAINER_APP_NAME }}" \
-            -var="backend_image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-and-push.outputs.backend_tag }}" \
-            -var="frontend_image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-and-push.outputs.frontend_tag }}" \
+            -var="backend_image=ghcr.io/rajeshannam20/devon.ai-supreme-repo:backend-latest" \  
+            -var="frontend_image=ghcr.io/rajeshannam20/devon.ai-supreme-repo:frontend-latest" \
             -var="environment=${{ github.event.inputs.environment || 'development' }}" \
             -out=tfplan
 
