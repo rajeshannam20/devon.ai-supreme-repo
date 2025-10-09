@@ -22,6 +22,10 @@ on:
         type: boolean
 
 env:
+  AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+  AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
   TF_VERSION: '1.5.0'
   TF_LOG: INFO
   AZURE_RESOURCE_GROUP: devonn-${{ github.event.inputs.environment || 'development' }}-rg
@@ -76,6 +80,11 @@ jobs:
             -backend-config="container_name=tfstate" \
             -backend-config="key=${{ github.event.inputs.environment || 'development' }}.terraform.tfstate"
         working-directory: ./src/data/manifest/terraform/azure
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Terraform Validate
         run: terraform validate
@@ -206,6 +215,11 @@ jobs:
             -backend-config="container_name=tfstate" \
             -backend-config="key=${{ github.event.inputs.environment || 'development' }}.terraform.tfstate"
         working-directory: ./src/data/manifest/terraform/azure
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Download Terraform Plan
         uses: actions/download-artifact@v4
