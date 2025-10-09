@@ -113,13 +113,18 @@ jobs:
             -var="backend_image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-and-push.outputs.backend_tag }}" \
             -var="frontend_image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-and-push.outputs.frontend_tag }}" \
             -var="environment=${{ github.event.inputs.environment || 'development' }}" \
-            -out=tfplan
+            -out=./src/data/manifest/terraform/azure/tfplan
+
+      - name: Echo Terraform Plan File Location
+        run: |
+          echo "Terraform plan has been generated at: ./src/data/manifest/terraform/azure/tfplan"
+          ls -l ./src/data/manifest/terraform/azure/tfplan 
 
       - name: Publish Terraform Plan
         uses: actions/upload-artifact@v4
         with:
           name: tfplan
-          path: terraform/tfplan
+          path: ./src/data/manifest/terraform/azure/tfplan
 
       - name: Create String Output
         id: tf-plan-string
@@ -234,7 +239,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: tfplan
-          path: terraform/
+          path: ./src/data/manifest/terraform/azure/
 
       - name: Terraform Apply
         if: github.event.inputs.destroy != 'true'
