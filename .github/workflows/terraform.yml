@@ -96,6 +96,10 @@ jobs:
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}      
         run: terraform validate
 
+      - name: Clean up old plan
+        run: |
+          rm -f ./tfplan
+
       - name: Terraform Plan
         working-directory: ./src/data/manifest/terraform/azure
         env:
