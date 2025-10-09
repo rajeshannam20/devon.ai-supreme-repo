@@ -28,6 +28,11 @@ env:
   CONTAINER_APP_NAME: devonn-ai
   CONTAINER_ENV_NAME: devonn-${{ github.event.inputs.environment || 'development' }}-env  
 
+permissions:
+  id-token: write
+  contents: read
+  packages: write
+
 jobs:
   terraform-plan:
     name: Terraform Plan
