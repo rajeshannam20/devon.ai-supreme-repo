@@ -96,10 +96,6 @@ jobs:
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}      
         run: terraform validate
 
-      - name: Ensure tfplan directory exists
-        run: |
-          mkdir -p ./src/data/manifest/terraform/azure
-
       - name: Terraform Plan
         working-directory: ./src/data/manifest/terraform/azure
         env:
@@ -117,18 +113,20 @@ jobs:
             -var="backend_image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-and-push.outputs.backend_tag }}" \
             -var="frontend_image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-and-push.outputs.frontend_tag }}" \
             -var="environment=${{ github.event.inputs.environment || 'development' }}" \
-            -out=./src/data/manifest/terraform/azure/tfplan
+            -out=tfplan
 
-      - name: Echo Terraform Plan File Location
+      - name: Find Terraform Plan File
         run: |
-          echo "Terraform plan has been generated at: ./src/data/manifest/terraform/azure"
+          echo "Searching for the tfplan file..."
+          find . -name "tfplan" 
+          echo "Listing all files in ./src/data/manifest/terraform/azure..."
           ls -l ./src/data/manifest/terraform/azure
 
       - name: Publish Terraform Plan
         uses: actions/upload-artifact@v4
         with:
           name: tfplan
-          path: ./src/data/manifest/terraform/azure
+          path: ./
 
       - name: Create String Output
         id: tf-plan-string
@@ -243,7 +241,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: tfplan
-          path: ./src/data/manifest/terraform/azure/
+          path: ./
 
       - name: Terraform Apply
         if: github.event.inputs.destroy != 'true'
