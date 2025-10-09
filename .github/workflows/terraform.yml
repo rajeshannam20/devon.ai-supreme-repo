@@ -31,6 +31,7 @@ env:
   AZURE_RESOURCE_GROUP: devonn-${{ github.event.inputs.environment || 'development' }}-rg
   CONTAINER_APP_NAME: devonn-ai
   CONTAINER_ENV_NAME: devonn-${{ github.event.inputs.environment || 'development' }}-env  
+  AZURE_RESOURCE_GROUP_TFSTATE: devonn-tfstate-rg  
 
 permissions:
   id-token: write
