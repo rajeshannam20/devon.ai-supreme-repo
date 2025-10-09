@@ -54,11 +54,10 @@ jobs:
           creds: |
             {
               "clientId": "${{ secrets.AZURE_CLIENT_ID }}",
-              "clientSecret": "${{ secrets.AZURE_CLIENT_SECRET }}",
+              "clientSecret": "${{ secrets.AZURE_CLIENT_SECRET_VALUE }}",
               "subscriptionId": "${{ secrets.AZURE_SUBSCRIPTION_ID }}",
               "tenantId": "${{ secrets.AZURE_TENANT_ID }}"
             }
-
       - name: Configure GCP Credentials
         uses: google-github-actions/auth@v2
         with:
@@ -66,11 +65,11 @@ jobs:
 
       - name: Terraform Init
         run: terraform init
-        working-directory: ./terraform
+        working-directory: ./src/data/manifest/terraform/azure
 
       - name: Terraform Validate
         run: terraform validate
-        working-directory: ./terraform
+        working-directory: ./src/data/manifest/terraform/azure
 
       - name: Terraform Plan
         id: tf-plan
@@ -86,7 +85,7 @@ jobs:
           else 
             exit 0
           fi
-        working-directory: ./terraform
+        working-directory: ./src/data/manifest/terraform/azure
 
       - name: Publish Terraform Plan
         uses: actions/upload-artifact@v4
@@ -109,14 +108,13 @@ jobs:
           echo '```' >> $GITHUB_OUTPUT
           echo "</details>" >> $GITHUB_OUTPUT
           echo "${delimiter}" >> $GITHUB_OUTPUT
-        working-directory: ./terraform
+        working-directory: ./src/data/manifest/terraform/azure
 
       - name: Publish Terraform Plan to Task Summary
         env:
           SUMMARY: ${{ steps.tf-plan-string.outputs.summary }}
         run: |
           echo "$SUMMARY" >> $GITHUB_STEP_SUMMARY
-
       - name: Comment PR
         uses: actions/github-script@v7
         if: github.event_name == 'pull_request'
@@ -153,14 +151,13 @@ jobs:
                 body: output
               })
             }
-
   terraform-apply:
     name: Terraform Apply
     if: github.ref == 'refs/heads/main' && needs.terraform-plan.outputs.tfplanExitCode == 2
     runs-on: ubuntu-latest
     environment: 
-      name: ${{ github.event.inputs.environment || 'production' }}
-      url: https://${{ github.event.inputs.environment || 'prod' }}.devonn.ai
+      name: ${{ github.event.inputs.environment != '' && github.event.inputs.environment || 'production' }}
+      url: https://${{ github.event.inputs.environment != '' && github.event.inputs.environment || 'prod' }}.devonn.ai
     needs: [terraform-plan]
     
     steps:
@@ -189,7 +186,6 @@ jobs:
               "subscriptionId": "${{ secrets.AZURE_SUBSCRIPTION_ID }}",
               "tenantId": "${{ secrets.AZURE_TENANT_ID }}"
             }
-
       - name: Configure GCP Credentials
         uses: google-github-actions/auth@v2
         with:
@@ -197,7 +193,7 @@ jobs:
 
       - name: Terraform Init
         run: terraform init
-        working-directory: ./terraform
+        working-directory: ./src/data/manifest/terraform/azure
 
       - name: Download Terraform Plan
         uses: actions/download-artifact@v4
@@ -208,12 +204,12 @@ jobs:
       - name: Terraform Apply
         if: github.event.inputs.destroy != 'true'
         run: terraform apply -auto-approve tfplan
-        working-directory: ./terraform
+        working-directory: ./src/data/manifest/terraform/azure
 
       - name: Terraform Destroy
         if: github.event.inputs.destroy == 'true'
         run: terraform destroy -auto-approve
-        working-directory: ./terraform
+        working-directory: ./src/data/manifest/terraform/azure
 
       - name: Run Verification Script
         if: github.event.inputs.destroy != 'true'
@@ -224,14 +220,13 @@ jobs:
           else
             echo "No verification script found"
           fi
-
       - name: Slack Success Notification
         if: success()
         uses: 8398a7/action-slack@v3
         with:
           status: success
           channel: '#deployments'
-          text: '✅ Terraform deployment successful to ${{ github.event.inputs.environment || "production" }}'
+          text: "✅ Terraform deployment successful to ${{ github.event.inputs.environment != '' && github.event.inputs.environment || 'production' }}"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
@@ -241,7 +236,7 @@ jobs:
         with:
           status: failure
           channel: '#deployments'
-          text: '❌ Terraform deployment failed to ${{ github.event.inputs.environment || "production" }}'
+          text: "❌ Terraform deployment failed to ${{ github.event.inputs.environment != '' && github.event.inputs.environment || 'production' }}"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
@@ -253,11 +248,11 @@ jobs:
           server_port: 465
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: 'Terraform Deployment ${{ job.status }} - ${{ github.event.inputs.environment || "production" }}'
+          subject: "Terraform Deployment ${{ job.status }} - ${{ github.event.inputs.environment != '' && github.event.inputs.environment || 'production' }}"
           to: ${{ secrets.NOTIFICATION_EMAIL }}
           from: 'Devonn.AI CI/CD <noreply@devonn.ai>'
           body: |
-            Terraform deployment ${{ job.status }} for environment: ${{ github.event.inputs.environment || 'production' }}
+            Terraform deployment ${{ job.status }} for environment: ${{ github.event.inputs.environment != '' && github.event.inputs.environment || 'production' }}
             
             Repository: ${{ github.repository }}
             Commit: ${{ github.sha }}
