@@ -109,12 +109,12 @@ jobs:
         with:
           soft_fail: true
           format: sarif
-          additional_args: --output tfsec.sarif 
+          additional_args: -O tfsec.sarif
       
       - name: Run checkov
         uses: bridgecrewio/checkov-action@master
         with:
-          directory: ./terraform
+          directory: ./src/data/manifest/terraform/azure
           framework: terraform
           soft_fail: true
           output_format: sarif
