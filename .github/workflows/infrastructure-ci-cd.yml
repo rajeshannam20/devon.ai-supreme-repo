@@ -217,7 +217,7 @@ jobs:
           find . -name "tfplan.json"           
       
       - name: Run OPA Policy Checks
-        working-directory: ./       
+        working-directory: ./src/data/manifest/terraform/azure      
         run: |
           mkdir -p policy-results
 
