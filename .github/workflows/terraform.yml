@@ -96,8 +96,11 @@ jobs:
           AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
           AZURE_STORAGE_ACCOUNT: ${{ secrets.AZURE_STORAGE_ACCOUNT }}
         run: |
-          # Try to break the lease on the blob and capture any errors
-          LEASE_BREAK_OUTPUT=$(az storage blob lease break --blob-name production.terraform.tfstate \
+          # Set default environment if not provided
+          ENVIRONMENT=${{ github.event.inputs.environment || 'production' }}
+      
+          # Check the environment and handle lease breaking for staging or production
+          LEASE_BREAK_OUTPUT=$(az storage blob lease break --blob-name "${ENVIRONMENT}.terraform.tfstate" \
             --container-name tfstate \
             --account-name ${{ secrets.AZURE_STORAGE_ACCOUNT }} \
             --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
