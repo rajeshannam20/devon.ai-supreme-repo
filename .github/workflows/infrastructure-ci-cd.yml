@@ -109,8 +109,17 @@ jobs:
         with:
           soft_fail: true
           format: sarif
-          output_file: tfsec.sarif
+          additional_args: --output tfsec.sarif 
       
+      - name: Run checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: ./terraform
+          framework: terraform
+          soft_fail: true
+          output_format: sarif
+          output_file: checkov.sarif
+
       - name: Debug SARIF files
         run: |
           echo "Listing current directory files..."
@@ -125,25 +134,17 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         if: success() || failure()
         with:
-          sarif_file: tfsec
+          sarif_file: ./tfsec.sarif
           category: tfsec
-      
-      - name: Run checkov
-        uses: bridgecrewio/checkov-action@master
-        with:
-          directory: ./terraform
-          framework: terraform
-          soft_fail: true
-          output_format: sarif
-          output_file: checkov
-      
-
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
       - name: Upload checkov results
         uses: github/codeql-action/upload-sarif@v3
         if: success() || failure()
         with:
-          sarif_file: checkov
+          sarif_file: ./checkov.sarif
           category: checkov
+          token: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Install OPA
         run: |
