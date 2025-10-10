@@ -202,12 +202,16 @@ jobs:
 
           # Check if tfplan.binary exists before proceeding
           if [ -f tfplan.binary ]; then
-            terraform show -json tfplan.binary > tfplan.json
+            terraform show -json tfplan.binary > ./tfplan.json
             echo "tfplan.binary  exists!"
           else
             echo "Error: tfplan.binary does not exist."
             exit 1
           fi
+
+          # Debugging - List the current directory files after generating tfplan.json
+          echo "Listing current directory files after generating tfplan.json..."
+          ls -alh .
 
           echo "Searching for the tfplan.json file..."
           find . -name "tfplan.json"           
