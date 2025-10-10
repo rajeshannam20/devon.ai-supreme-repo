@@ -266,11 +266,15 @@ jobs:
           echo "Displaying the first 20 lines of tfplan.json:"
           head -n 20 ./tfplan.json
       
-          # Attempt to parse a specific section of tfplan.json using jq
+          # Check if tfplan.json is a valid JSON using python tool
+          echo "Validating tfplan.json with Python..."
+          python -m json.tool ./tfplan.json || echo "Invalid JSON detected in tfplan.json"
+      
+          # Debugging: Output the variables section
           echo "Trying to parse the variables section with jq:"
           jq '.variables' ./tfplan.json || echo "Error occurred while parsing the 'variables' section with jq"
       
-          # If tfplan.json seems fine, pretty print the entire content of tfplan.json
+          # Attempt to pretty print the tfplan.json content with jq
           echo "Displaying the content of tfplan.json using jq for pretty print:"
           jq . ./tfplan.json || echo "Error occurred while parsing tfplan.json with jq"
       
