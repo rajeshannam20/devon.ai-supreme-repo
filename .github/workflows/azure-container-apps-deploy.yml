@@ -162,22 +162,18 @@ jobs:
           AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
           AZURE_STORAGE_ACCOUNT: ${{ secrets.AZURE_STORAGE_ACCOUNT }}
         run: |
-          # Check if a lease exists on the blob
-          LEASE_STATUS=$(az storage blob lease show --blob-name production.terraform.tfstate \
+          # Try to break the lease on the blob and capture any errors
+          LEASE_BREAK_OUTPUT=$(az storage blob lease break --blob-name production.terraform.tfstate \
             --container-name tfstate \
             --account-name ${{ secrets.AZURE_STORAGE_ACCOUNT }} \
             --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
-            --query "lease.state" -o tsv)
+            --output tsv --only-show-errors)
       
-          # If lease exists, break it
-          if [ "$LEASE_STATUS" == "leased" ]; then
-            echo "Lease found, breaking lease on the state file..."
-            az storage blob lease break --blob-name production.terraform.tfstate \
-              --container-name tfstate \
-              --account-name ${{ secrets.AZURE_STORAGE_ACCOUNT }} \
-              --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}"
-          else
+          # Check if the output contains an error related to the lease not being present
+          if [[ "$LEASE_BREAK_OUTPUT" == *"LeaseNotPresentWithLeaseOperation"* ]]; then
             echo "No lease found, skipping lease break."
+          else
+            echo "Lease found and broken: $LEASE_BREAK_OUTPUT"
           fi
 
       - name: Terraform Plan
