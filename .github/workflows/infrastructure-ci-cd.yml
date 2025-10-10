@@ -160,6 +160,7 @@ jobs:
           terraform_version: ${{ env.TF_VERSION }}
       
       - name: Generate Terraform Plan for Policy Evaluation
+        working-directory: ./src/data/manifest/terraform/azure 
         run: |
           terraform init -backend=false
           terraform plan -out=tfplan.binary
@@ -213,10 +214,12 @@ jobs:
           terraform_version: ${{ env.TF_VERSION }}
           
       - name: Terraform Init
+        working-directory: ./src/data/manifest/terraform/azure      
         id: init
         run: terraform init
         
       - name: Terraform Plan
+        working-directory: ./src/data/manifest/terraform/azure      
         id: plan
         run: |
           terraform plan -var-file=environments/${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'production' || 'development') }}.tfvars -out=tfplan
