@@ -208,6 +208,9 @@ jobs:
             echo "Error: tfplan.binary does not exist."
             exit 1
           fi
+
+          echo "Searching for the tfplan.json file..."
+          find . -name "tfplan.json"           
       
       - name: Run OPA Policy Checks
         working-directory: ./       
@@ -215,7 +218,7 @@ jobs:
           mkdir -p policy-results
           
           # Run RDS policy checks
-          opa eval --format pretty --data policy/aws_rds_policy.rego --input tfplan.json "data.terraform.aws.rds" > policy-results/rds-policy-results.txt
+          opa eval --format pretty --data policy/aws_rds_policy.rego --input ./tfplan.json "data.terraform.aws.rds" > policy-results/rds-policy-results.txt
           
           echo "OPA Policy Check Results:"
           cat policy-results/rds-policy-results.txt
