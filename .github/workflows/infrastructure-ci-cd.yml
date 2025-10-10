@@ -197,7 +197,13 @@ jobs:
             -var="environment=${{ github.event.inputs.environment || 'production' }}" \
             -out=tfplan.binary
 
-          terraform show -json tfplan.binary > tfplan.json
+          # Check if tfplan.binary exists before proceeding
+          if [ -f tfplan.binary ]; then
+            terraform show -json tfplan.binary > tfplan.json
+          else
+            echo "Error: tfplan.binary does not exist."
+            exit 1
+          fi
       
       - name: Run OPA Policy Checks
         run: |
