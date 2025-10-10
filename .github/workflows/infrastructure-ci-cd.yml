@@ -118,7 +118,7 @@ jobs:
           framework: terraform
           soft_fail: true
           output_format: sarif
-          output_file: checkov.sarif
+          output_file: ./checkov.sarif
 
       - name: Debug SARIF files
         run: |
