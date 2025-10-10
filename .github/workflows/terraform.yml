@@ -290,7 +290,15 @@ jobs:
           ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET_VALUE }}
           ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}        
-        run: terraform destroy -auto-approve 
+        run: |
+          terraform destroy -auto-approve \
+            -var="resource_group_name=${{ env.AZURE_RESOURCE_GROUP }}" \
+            -var="location=${{ github.event.inputs.deploy_region || 'eastus' }}" \
+            -var="container_app_environment_name=${{ env.CONTAINER_ENV_NAME }}" \
+            -var="container_app_name=${{ env.CONTAINER_APP_NAME }}" \
+            -var="backend_image=ghcr.io/rajeshannam20/devon.ai-supreme-repo:backend-latest" \
+            -var="frontend_image=ghcr.io/rajeshannam20/devon.ai-supreme-repo:frontend-latest" \
+            -var="environment=${{ github.event.inputs.environment || 'production' }}"
 
       - name: Run Verification Script
         if: github.event.inputs.destroy != 'true'
