@@ -220,6 +220,10 @@ jobs:
         working-directory: ./       
         run: |
           mkdir -p policy-results
+
+          #Debugging
+          pwd 
+          ls -alh . 
           
           # Run RDS policy checks
           opa eval --format pretty --data policy/aws_rds_policy.rego --input ./tfplan.json "data.terraform.aws.rds" > policy-results/rds-policy-results.txt
