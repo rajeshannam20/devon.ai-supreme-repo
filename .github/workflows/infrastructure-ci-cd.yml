@@ -234,15 +234,15 @@ jobs:
             exit 1
           fi
       
-          # Run RDS policy checks
-          opa eval --format pretty --data policy/aws_rds_policy.rego --input ./tfplan.json "data.terraform.aws.rds" > policy-results/rds-policy-results.txt
-          
+          # Run Azure policy checks (update query path to Azure resources)
+          opa eval --format pretty --data policy/azure_container_app_policy.rego --input ./tfplan.json "data.terraform.azure.container_app_name" > policy-results/azure-policy-results.txt
+      
           echo "OPA Policy Check Results:"
-          cat policy-results/rds-policy-results.txt
-          
+          cat policy-results/azure-policy-results.txt
+      
           # Check for deny results
-          if grep -q "deny" policy-results/rds-policy-results.txt; then
-            echo "⚠️ Policy violations detected in RDS configuration"
+          if grep -q "deny" policy-results/azure-policy-results.txt; then
+            echo "⚠️ Policy violations detected in Azure container app configuration"
             # Exit with failure code in PR, but continue in workflow dispatch
             if [ "${{ github.event_name }}" == "pull_request" ]; then
               exit 1
