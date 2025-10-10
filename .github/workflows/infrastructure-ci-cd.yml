@@ -235,12 +235,21 @@ jobs:
           fi
       
           # Run Azure policy checks (update query path to Azure resources)
-          opa eval --format pretty --data policy/azure_container_app_policy.rego --input ./tfplan.json "data.terraform.azure.container_app_name" > policy-results/azure-policy-results.txt
+          echo "Running OPA policy checks on Azure resources..."
+          opa eval --format pretty --data policy/azure_container_app_policy.rego --input ./tfplan.json "data.terraform.azure.container_app_name" > policy-results/azure-policy-results.txt 2>&1
+      
+          # Check if there was an error with the OPA command
+          if [ $? -ne 0 ]; then
+            echo "Error: OPA evaluation failed."
+            echo "OPA error details:"
+            cat policy-results/azure-policy-results.txt
+            exit 1
+          fi
       
           echo "OPA Policy Check Results:"
           cat policy-results/azure-policy-results.txt
       
-          # Check for deny results
+          # Check for deny results in the policy output
           if grep -q "deny" policy-results/azure-policy-results.txt; then
             echo "⚠️ Policy violations detected in Azure container app configuration"
             # Exit with failure code in PR, but continue in workflow dispatch
@@ -248,6 +257,7 @@ jobs:
               exit 1
             fi
           fi
+
       
       - name: Upload Policy Check Results
         uses: actions/upload-artifact@v4
