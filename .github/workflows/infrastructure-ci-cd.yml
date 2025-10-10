@@ -197,6 +197,13 @@ jobs:
             -var="environment=${{ github.event.inputs.environment || 'production' }}" \
             -out=tfplan.binary
 
+          echo "Searching for the tfplan.binary file..."
+          find . -name "tfplan.binary" 
+
+          # Debugging - List directory before checking for tfplan.binary
+          echo "Listing current directory files before checking for tfplan.binary..."
+          ls -alh ./src/data/manifest/terraform/azure
+
           # Check if tfplan.binary exists before proceeding
           if [ -f tfplan.binary ]; then
             terraform show -json tfplan.binary > tfplan.json
@@ -206,6 +213,7 @@ jobs:
           fi
       
       - name: Run OPA Policy Checks
+        working-directory: ./src/data/manifest/terraform/azure       
         run: |
           mkdir -p policy-results
           
