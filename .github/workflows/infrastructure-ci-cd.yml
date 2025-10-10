@@ -134,17 +134,18 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         if: success() || failure()
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}        
           sarif_file: ./tfsec.sarif
           category: tfsec
-          token: ${{ secrets.GITHUB_TOKEN }}
+
           
       - name: Upload checkov results
         uses: github/codeql-action/upload-sarif@v3
         if: success() || failure()
         with:
-          sarif_file: ./checkov.sarif
-          category: checkov
           token: ${{ secrets.GITHUB_TOKEN }}
+          sarif_file: ./results.sarif
+          category: checkov
       
       - name: Install OPA
         run: |
