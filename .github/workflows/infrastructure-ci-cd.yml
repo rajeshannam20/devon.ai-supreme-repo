@@ -262,9 +262,13 @@ jobs:
             exit 1
           fi
       
-          # Debugging: Output the entire content of tfplan.json (pretty print)
-          echo "Displaying the content of tfplan.json:"
-          jq . ./tfplan.json  # Pretty print the entire JSON content to understand its structure
+          # Debugging: Output the first 20 lines of tfplan.json to check for any invalid characters
+          echo "Displaying the first 20 lines of tfplan.json:"
+          head -n 20 ./tfplan.json
+      
+          # If tfplan.json seems fine, pretty print the entire content of tfplan.json
+          echo "Displaying the content of tfplan.json using jq for pretty print:"
+          jq . ./tfplan.json || echo "Error occurred while parsing tfplan.json with jq"
       
           # Run Azure policy checks (update query path to Azure resources)
           echo "Running OPA policy checks on Azure resources..."
