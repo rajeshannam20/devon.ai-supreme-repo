@@ -262,9 +262,9 @@ jobs:
             exit 1
           fi
       
-          # Debugging: Output a snippet of tfplan.json to verify structure
-          echo "Displaying a snippet of tfplan.json:"
-          jq '.resource_changes[0]' ./tfplan.json  # You can adjust the jq query based on your TFPlan structure
+          # Debugging: Output the entire content of tfplan.json (pretty print)
+          echo "Displaying the content of tfplan.json:"
+          jq . ./tfplan.json  # Pretty print the entire JSON content to understand its structure
       
           # Run Azure policy checks (update query path to Azure resources)
           echo "Running OPA policy checks on Azure resources..."
