@@ -73,6 +73,23 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}
 
+      - name: Install jq
+        run: sudo apt-get install jq
+
+      - name: Force Unlock Terraform State (if locked)
+        run: |
+          # Fetch the current state lock ID dynamically using terraform show
+          LOCK_ID=$(terraform show -json | jq -r '.resources[] | select(.type=="terraform_remote_state") | .instances[].attributes.lock_id')
+          
+          # If a lock exists, force unlock
+          if [ "$LOCK_ID" != "null" ]; then
+            echo "Lock found, unlocking state..."
+            terraform force-unlock $LOCK_ID
+          else
+            echo "No lock found."
+          fi
+        working-directory: ./src/data/manifest/terraform/azure
+
       - name: Terraform Init
         working-directory: ./src/data/manifest/terraform/azure
         env:
