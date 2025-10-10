@@ -111,6 +111,16 @@ jobs:
           format: sarif
           output_file: tfsec.sarif
       
+      - name: Debug SARIF files
+        run: |
+          echo "Listing current directory files..."
+          ls -alh
+          echo "Checking if tfsec.sarif exists..."
+          if [ -f tfsec.sarif ]; then echo "tfsec.sarif exists"; else echo "tfsec.sarif does not exist"; fi
+          echo "Checking if checkov.sarif exists..."
+          if [ -f checkov.sarif ]; then echo "checkov.sarif exists"; else echo "checkov.sarif does not exist"; fi
+
+
       - name: Upload tfsec results
         uses: github/codeql-action/upload-sarif@v3
         if: success() || failure()
@@ -127,15 +137,6 @@ jobs:
           output_format: sarif
           output_file: checkov.sarif
       
-      - name: Debug SARIF files
-        run: |
-          echo "Listing current directory files..."
-          ls -alh
-          echo "Checking if tfsec.sarif exists..."
-          if [ -f tfsec.sarif ]; then echo "tfsec.sarif exists"; else echo "tfsec.sarif does not exist"; fi
-          echo "Checking if checkov.sarif exists..."
-          if [ -f checkov.sarif ]; then echo "checkov.sarif exists"; else echo "checkov.sarif does not exist"; fi
-
 
       - name: Upload checkov results
         uses: github/codeql-action/upload-sarif@v3
