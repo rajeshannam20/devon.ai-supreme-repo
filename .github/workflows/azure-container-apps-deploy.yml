@@ -157,14 +157,28 @@ jobs:
         run: |
           curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
       
-      - name: Break Lease on Terraform State (Unlock)
+      - name: Check Lease on Terraform State and Break if Exists
         env:
-          AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}      
+          AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
+          AZURE_STORAGE_ACCOUNT: ${{ secrets.AZURE_STORAGE_ACCOUNT }}
         run: |
-          az storage blob lease break --blob-name development.terraform.tfstate \
+          # Check if a lease exists on the blob
+          LEASE_STATUS=$(az storage blob lease show --blob-name production.terraform.tfstate \
             --container-name tfstate \
-            --account-name devonntfstatestorage \
-            --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}"
+            --account-name ${{ secrets.AZURE_STORAGE_ACCOUNT }} \
+            --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
+            --query "lease.state" -o tsv)
+      
+          # If lease exists, break it
+          if [ "$LEASE_STATUS" == "leased" ]; then
+            echo "Lease found, breaking lease on the state file..."
+            az storage blob lease break --blob-name production.terraform.tfstate \
+              --container-name tfstate \
+              --account-name ${{ secrets.AZURE_STORAGE_ACCOUNT }} \
+              --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}"
+          else
+            echo "No lease found, skipping lease break."
+          fi
 
       - name: Terraform Plan
         working-directory: ./src/data/manifest/terraform/azure
