@@ -106,8 +106,11 @@ jobs:
           # Check if the output contains an error related to the lease not being present
           if [[ "$LEASE_BREAK_OUTPUT" == *"LeaseNotPresentWithLeaseOperation"* ]]; then
             echo "No lease found, skipping lease break."
+          elif [[ "$LEASE_BREAK_OUTPUT" == *"Lease broken"* ]]; then
+            echo "Lease found and broken."
           else
-            echo "Lease found and broken: $LEASE_BREAK_OUTPUT"
+            echo "Unknown error: $LEASE_BREAK_OUTPUT"
+            exit 1
           fi
 
       - name: Terraform Validate
