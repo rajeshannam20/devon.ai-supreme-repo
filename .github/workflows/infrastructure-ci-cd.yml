@@ -82,7 +82,7 @@ jobs:
           terraform-docs markdown . > TERRAFORM.md
           
       - name: Upload Documentation
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: terraform-docs
           path: TERRAFORM.md
@@ -162,7 +162,7 @@ jobs:
           fi
       
       - name: Upload Policy Check Results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: policy-check-results
           path: policy-results/
@@ -200,7 +200,7 @@ jobs:
           terraform show -json tfplan > tfplan.json
         
       - name: Upload Terraform Plan
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: terraform-plan
           path: |
@@ -426,7 +426,7 @@ jobs:
           k6 run load-tests/basic-load.js --summary-export=load-test-results.json
       
       - name: Upload Test Results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: validation-results
           path: |
@@ -468,7 +468,7 @@ jobs:
           prowler aws --services rds eks --compliance ${{ env.COMPLIANCE_STANDARDS }} --output html --output-file compliance-report
       
       - name: Upload Compliance Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: compliance-reports
           path: compliance-report*
@@ -511,7 +511,7 @@ jobs:
           EOF
       
       - name: Upload Compliance Dashboard
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: compliance-dashboard
           path: compliance-dashboard.json
