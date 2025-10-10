@@ -220,11 +220,20 @@ jobs:
         working-directory: ./src/data/manifest/terraform/azure      
         run: |
           mkdir -p policy-results
-
-          #Debugging
-          pwd 
-          ls -alh . 
+      
+          # Debugging
+          echo "Current working directory: $(pwd)"
+          echo "Listing current directory files..."
+          ls -alh .
           
+          # Check if tfplan.json exists
+          if [ -f ./tfplan.json ]; then
+            echo "tfplan.json exists!"
+          else
+            echo "Error: tfplan.json does not exist."
+            exit 1
+          fi
+      
           # Run RDS policy checks
           opa eval --format pretty --data policy/aws_rds_policy.rego --input ./tfplan.json "data.terraform.aws.rds" > policy-results/rds-policy-results.txt
           
