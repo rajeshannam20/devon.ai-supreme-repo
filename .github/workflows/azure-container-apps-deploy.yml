@@ -138,9 +138,6 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          
-      - name: Install jq
-        run: sudo apt-get install jq
 
       - name: Terraform Init
         working-directory: ./src/data/manifest/terraform/azure
@@ -156,19 +153,18 @@ jobs:
             -backend-config="container_name=tfstate" \
             -backend-config="key=${{ github.event.inputs.environment || 'development' }}.terraform.tfstate"
 
-      - name: Force Unlock Terraform State (if locked)
-        working-directory: ./src/data/manifest/terraform/azure      
+      - name: Install Azure CLI
         run: |
-          # Fetch the current state lock ID dynamically using terraform show
-          LOCK_ID=$(terraform show -json | jq -r '.resources[] | select(.type=="terraform_remote_state") | .instances[].attributes.lock_id')
-          
-          # If a lock exists, force unlock
-          if [ "$LOCK_ID" != "null" ]; then
-            echo "Lock found, unlocking state..."
-            terraform force-unlock $LOCK_ID
-          else
-            echo "No lock found."
-          fi
+          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+      
+      - name: Break Lease on Terraform State (Unlock)
+        env:
+          AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}      
+        run: |
+          az storage blob lease break --blob-name development.terraform.tfstate \
+            --container-name tfstate \
+            --account-name devonntfstatestorage \
+            --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}"
 
       - name: Terraform Plan
         working-directory: ./src/data/manifest/terraform/azure
