@@ -125,7 +125,7 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         if: success() || failure()
         with:
-          sarif_file: tfsec.sarif
+          sarif_file: tfsec
           category: tfsec
       
       - name: Run checkov
@@ -135,14 +135,14 @@ jobs:
           framework: terraform
           soft_fail: true
           output_format: sarif
-          output_file: checkov.sarif
+          output_file: checkov
       
 
       - name: Upload checkov results
         uses: github/codeql-action/upload-sarif@v3
         if: success() || failure()
         with:
-          sarif_file: checkov.sarif
+          sarif_file: checkov
           category: checkov
       
       - name: Install OPA
