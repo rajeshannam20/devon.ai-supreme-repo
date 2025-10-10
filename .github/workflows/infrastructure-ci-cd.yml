@@ -266,6 +266,10 @@ jobs:
           echo "Displaying the first 20 lines of tfplan.json:"
           head -n 20 ./tfplan.json
       
+          # Attempt to parse a specific section of tfplan.json using jq
+          echo "Trying to parse the variables section with jq:"
+          jq '.variables' ./tfplan.json || echo "Error occurred while parsing the 'variables' section with jq"
+      
           # If tfplan.json seems fine, pretty print the entire content of tfplan.json
           echo "Displaying the content of tfplan.json using jq for pretty print:"
           jq . ./tfplan.json || echo "Error occurred while parsing tfplan.json with jq"
