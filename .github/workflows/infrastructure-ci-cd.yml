@@ -74,7 +74,7 @@ jobs:
         run: |
           # Install terraform-docs
           curl -sSLo ./terraform-docs.tar.gz https://terraform-docs.io/downloads/terraform-docs-v0.16.0-$(uname)-amd64.tar.gz
-          tar -xzf terraform-docs.tar.gz
+          file -xzf terraform-docs.tar.gz
           chmod +x terraform-docs
           sudo mv terraform-docs /usr/local/bin/terraform-docs
           
