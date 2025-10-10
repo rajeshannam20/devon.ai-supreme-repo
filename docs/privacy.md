@@ -40,6 +40,6 @@ You control whether to provide API keys, whether to send page content, and you c
 
 ## Contact
 
-For privacy questions, contact: **REPLACE_WITH_CONTACT_EMAIL_OR_GITHUB_URL**
+For privacy questions, contact: **wesship8@gmail.com**
 
 By using the extension you agree to this policy.
