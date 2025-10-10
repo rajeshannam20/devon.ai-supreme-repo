@@ -73,7 +73,7 @@ jobs:
       - name: Generate Documentation
         run: |
           # Install terraform-docs
-          curl -sSLo ./terraform-docs.tar.gz https://terraform-docs.io/downloads/terraform-docs-v0.18.0-linux-amd64.tar.gz
+          curl -sSLo ./terraform-docs.tar.gz https://github.com/terraform-docs/terraform-docs/releases/download/v0.19.0/terraform-docs-v0.19.0-linux-amd64.tar.gz
           
           # Check if the file is in gzip format
           if ! file terraform-docs.tar.gz | grep -q 'gzip compressed data'; then
@@ -87,7 +87,8 @@ jobs:
           sudo mv terraform-docs /usr/local/bin/terraform-docs
           
           # Generate markdown documentation
-          terraform-docs markdown . > TERRAFORM.md           
+          terraform-docs markdown . > TERRAFORM.md
+
           
       - name: Upload Documentation
         uses: actions/upload-artifact@v4
