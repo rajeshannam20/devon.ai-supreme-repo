@@ -180,15 +180,20 @@ jobs:
           # Install TypeScript and ts-node
           npm install typescript ts-node --legacy-peer-deps
 
-          # Log environment and ensure the correct TypeScript setup
-          echo "Node Version: $(node -v)"
-          echo "NPM Version: $(npm -v)"
-
-          # Make sure to run `cdktf synth` using the correct loader for TypeScript
-          echo "Running cdktf synth"
+          # Check if required files are present
+          echo "Checking project structure..."
+          ls -l ./src/data/manifest/terraform
+      
+          # Run cdktf get to fetch dependencies
+          echo "Running cdktf get..."
           cdktf get
-          cdktf synth
-          echo "CDKTF synth completed with exit code $?"
+      
+          # Run cdktf synth to synthesize the configuration
+          echo "Running cdktf synth..."
+          npx cdktf synth
+          
+          # Capture exit code
+          echo "CDKTF synth completed with exit code $?."
 
       - name: Generate Terraform Plan for Policy Evaluation
         working-directory: ./src/data/manifest/terraform
