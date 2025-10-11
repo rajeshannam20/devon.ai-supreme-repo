@@ -133,7 +133,6 @@ jobs:
           framework: terraform
           soft_fail: true
           output_format: sarif
-          output_file: ./checkov.sarif
 
       - name: Debug SARIF files
         run: |
@@ -238,9 +237,11 @@ jobs:
               exit 1
             fi
 
-            # # Use tail to remove initial lines and retain only relevant content from tfplan.json
-            # echo "Filtering tfplan.json content..."
-            # tail -n +15 tfplan.json > filtered_tfplan.json && mv filtered_tfplan.json tfplan.json
+            # Remove lines 1-7 and 9-12 and keep the 8th line (which is in JSON format)
+            # sed command explanation:
+            # - '1,7d' removes lines 1 to 7
+            # - '9,12d' removes lines 9 to 12
+            sed -e '1,7d' -e '9,12d' tfplan.json > filtered_tfplan.json && mv filtered_tfplan.json tfplan.json
 
             # Check if the JSON file is empty
             if [ ! -s tfplan.json ]; then
