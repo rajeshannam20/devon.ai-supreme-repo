@@ -223,18 +223,18 @@ jobs:
             -var="backend_image=ghcr.io/rajeshannam20/devon.ai-supreme-repo:backend-latest" \
             -var="frontend_image=ghcr.io/rajeshannam20/devon.ai-supreme-repo:frontend-latest" \
             -var="environment=${{ github.event.inputs.environment || 'production' }}" \
-            -out=tfplan.binary
+            -out=tfplan
 
-          echo "Searching for the tfplan.binary file..."
-          find . -name "tfplan.binary" 
+          echo "Searching for the tfplan file..."
+          find . -name "tfplan" 
 
-          if [ -f tfplan.binary ]; then
+          if [ -f tfplan ]; then
             # Generate tfplan.json directly
-            terraform show -json tfplan.binary -no-color > tfplan.json 2>/dev/null
+            terraform show -json tfplan -no-color > tfplan.json 2>/dev/null
           
             # Check for errors during terraform show
             if [ $? -ne 0 ]; then
-              echo "Error: terraform show failed to process tfplan.binary"
+              echo "Error: terraform show failed to process tfplan"
               exit 1
             fi
 
@@ -244,9 +244,9 @@ jobs:
               echo '{"planned_values":{"root_module":{"resources":[]}}}' > tfplan.json
             fi
           
-            echo "tfplan.binary exists and tfplan.json generated."
+            echo "tfplan exists and tfplan.json generated."
           else
-            echo "Error: tfplan.binary does not exist."
+            echo "Error: tfplan does not exist."
             exit 1
           fi         
 
