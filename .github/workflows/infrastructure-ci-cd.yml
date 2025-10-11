@@ -282,7 +282,7 @@ jobs:
           opa eval --format pretty \
             --data policy/azure_container_app_policy.rego \
             --input tfplan.json \
-            "data.variables.resource_group_name" \
+            "data.variables.resource_group_name.value" \
             > policy-results/azure-policy-results.txt 2>&1
 
           # Check for OPA errors
