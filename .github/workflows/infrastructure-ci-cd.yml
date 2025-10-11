@@ -229,21 +229,20 @@ jobs:
           find . -name "tfplan.binary" 
 
           if [ -f tfplan.binary ]; then
-            # Check if the plan has any resources
-            PLAN_JSON=$(terraform show -json tfplan.binary -no-color 2>/dev/null)
-            
-            if [ -z "$PLAN_JSON" ]; then
+            # Generate tfplan.json directly
+            terraform show -json tfplan.binary -no-color > tfplan.json 2>/dev/null
+          
+            # Check if the JSON file is empty
+            if [ ! -s tfplan.json ]; then
               echo "Warning: Terraform plan is empty. Creating minimal valid JSON for OPA."
               echo '{"planned_values":{"root_module":{"resources":[]}}}' > tfplan.json
-            else
-              echo "$PLAN_JSON" > tfplan.json
             fi
           
             echo "tfplan.binary exists and tfplan.json generated."
           else
             echo "Error: tfplan.binary does not exist."
             exit 1
-          fi          
+          fi         
 
           # Debugging - List the current directory files after generating tfplan.json
           echo "Listing current directory files after generating tfplan.json..."
