@@ -238,9 +238,9 @@ jobs:
               exit 1
             fi
 
-            # Use tail to remove initial lines and retain only relevant content from tfplan.json
-            echo "Filtering tfplan.json content..."
-            tail -n +15 tfplan.json > filtered_tfplan.json && mv filtered_tfplan.json tfplan.json
+            # # Use tail to remove initial lines and retain only relevant content from tfplan.json
+            # echo "Filtering tfplan.json content..."
+            # tail -n +15 tfplan.json > filtered_tfplan.json && mv filtered_tfplan.json tfplan.json
 
             # Check if the JSON file is empty
             if [ ! -s tfplan.json ]; then
@@ -271,15 +271,9 @@ jobs:
           echo "Listing current directory files..."
           ls -alh .
 
-          # Print the contents of tfplan for debugging purposes
-          echo "tfplan file content:"
-          cat tfplan
-          echo "tfplan first 5 lines:"
-          head -n 5 tfplan
-
-          # Print the contents of tfplan.json for debugging purposes
-          echo "tfplan file content:"
-          cat tfplan.json
+          # Print the contents of tfplan.json with line numbers
+          echo "Inspecting tfplan.json with line numbers..."
+          nl tfplan.json
           echo "tfplan first 5 lines:"
           head -n 5 tfplan.json
           
