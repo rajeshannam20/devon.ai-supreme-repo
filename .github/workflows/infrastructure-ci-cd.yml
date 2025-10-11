@@ -172,6 +172,9 @@ jobs:
         working-directory: ./src/data/manifest/terraform
         run: |
 
+          # Install TypeScript, ts-node, and cdktf-cli
+          npm install typescript ts-node cdktf-cli --legacy-peer-deps
+
           # Check if required files are present
           echo "Checking project structure..."
           ls -l 
