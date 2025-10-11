@@ -155,12 +155,6 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
       
-      - name: Install Node.js and dependencies
-        working-directory: ./src/data/manifest/terraform      
-        run: |
-          npm install -g cdktf-cli
-          npm install --legacy-peer-deps
-
       - name: Verify if cdktf.json exists
         working-directory: ./src/data/manifest/terraform
         run: |
@@ -177,12 +171,12 @@ jobs:
       - name: Synthesize Terraform configuration from TypeScript
         working-directory: ./src/data/manifest/terraform
         run: |
-          # Install TypeScript and ts-node
-          npm install typescript ts-node --legacy-peer-deps
 
           # Check if required files are present
           echo "Checking project structure..."
           ls -l 
+
+          rm -rf .gen
       
           # Set debug log level for more details
           export CDKTF_LOG_LEVEL=debug
