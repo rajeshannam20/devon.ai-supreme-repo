@@ -266,17 +266,6 @@ jobs:
         working-directory: ./src/data/manifest/terraform/azure      
         run: |
           mkdir -p policy-results
-      
-          # Debugging
-          echo "Current working directory: $(pwd)"
-          echo "Listing current directory files..."
-          ls -alh .
-
-          # Print the contents of tfplan.json with line numbers
-          echo "Inspecting tfplan.json with line numbers..."
-          nl tfplan.json
-          echo "tfplan first 5 lines:"
-          head -n 5 tfplan.json
           
           # Check if tfplan.json exists
           if [ -f ./tfplan.json ]; then
@@ -293,7 +282,7 @@ jobs:
           opa eval --format pretty \
             --data policy/azure_container_app_policy.rego \
             --input tfplan.json \
-            "data.terraform.azure.container_app" \
+            "data.variables.resource_group_name" \
             > policy-results/azure-policy-results.txt 2>&1
 
           # Check for OPA errors
