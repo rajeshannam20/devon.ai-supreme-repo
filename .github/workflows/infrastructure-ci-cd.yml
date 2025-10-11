@@ -230,7 +230,7 @@ jobs:
 
           # Check if tfplan.binary exists before proceeding
           if [ -f tfplan.binary ]; then
-            terraform show -json tfplan.binary | jq . > ./tfplan.json
+            terraform show -json tfplan.binary -no-color > ./tfplan.json
             echo "tfplan.binary  exists!"
           else
             echo "Error: tfplan.binary does not exist."
