@@ -2,28 +2,28 @@
   "terraform": {},
   "module": {
     "rds": {
-      "source": "./rds"
+      "source": "./rds.ts"
     },
     "eks": {
-      "source": "./eks"
+      "source": "./eks.ts"
     },
     "vpc": {
-      "source": "./vpc"
+      "source": "./vpc.ts"
     },
     "kubernetes": {
-      "source": "./kubernetes"
+      "source": "./kubernetes.ts"
     },
     "security": {
-      "source": "./security"
+      "source": "./security.ts"
     },
     "service_mesh": {
-      "source": "./service-mesh"
+      "source": "./service-mesh.ts"
     },
     "variables": {
-      "source": "./variables"
+      "source": "./variables.ts"
     },
     "outputs": {
-      "source": "./outputs"
+      "source": "./outputs.ts"
     }
   }
 }

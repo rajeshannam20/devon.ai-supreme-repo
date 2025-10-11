@@ -7,14 +7,14 @@
     "hashicorp/google"
   ],
   "terraformModules": [
-    "./eks",
-    "./rds",
-    "./vpc",
-    "./kubernetes",
-    "./security",
-    "./service-mesh",
-    "./variables",
-    "./outputs"
+    "./eks.ts",
+    "./rds.ts",
+    "./vpc.ts",
+    "./kubernetes.ts",
+    "./security.ts",
+    "./service-mesh.ts",
+    "./variables.ts",
+    "./outputs.ts"
   ],
   "projectId": "6e89c213-0ae4-41d1-be00-a100eba44f17"
 }
