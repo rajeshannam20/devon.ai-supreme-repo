@@ -158,8 +158,8 @@ jobs:
       - name: Install Node.js and dependencies
         working-directory: ./src/data/manifest/terraform      
         run: |
-          curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-          sudo apt-get install -y nodejs
+          # curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+          # sudo apt-get install -y nodejs
           npm install -g cdktf-cli
           npm install --legacy-peer-deps
 
@@ -180,7 +180,11 @@ jobs:
         working-directory: ./src/data/manifest/terraform
         run: |
           echo "Running cdktf synth"
+          # Log current directory contents and try to synthesize Terraform config
+          ls -lh
           npx --loader ts-node/esm index.ts
+          # Log the output of the command if it fails
+          echo "CDKTF synth failed with exit code $?"
 
       - name: Generate Terraform Plan for Policy Evaluation
         working-directory: ./src/data/manifest/terraform
