@@ -271,7 +271,7 @@ jobs:
           opa eval --format pretty --debug --verbose \
             --data policy/azure_container_app_policy.rego \
             --input tfplan.json \
-            "data.variables.container_app_name.value" \
+            "data.variables.resource_group_name.value" \
             > policy-results/azure-policy-results.txt 2>&1
 
           # Capture the exit code and log it
