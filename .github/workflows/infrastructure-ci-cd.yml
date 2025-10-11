@@ -232,6 +232,12 @@ jobs:
             # Generate tfplan.json directly
             terraform show -json tfplan.binary -no-color > tfplan.json 2>/dev/null
           
+            # Check for errors during terraform show
+            if [ $? -ne 0 ]; then
+              echo "Error: terraform show failed to process tfplan.binary"
+              exit 1
+            fi
+
             # Check if the JSON file is empty
             if [ ! -s tfplan.json ]; then
               echo "Warning: Terraform plan is empty. Creating minimal valid JSON for OPA."
