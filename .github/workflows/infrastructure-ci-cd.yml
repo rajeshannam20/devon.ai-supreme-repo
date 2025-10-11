@@ -260,6 +260,12 @@ jobs:
           echo "Current working directory: $(pwd)"
           echo "Listing current directory files..."
           ls -alh .
+
+          # Print the contents of tfplan.json for debugging purposes
+          echo "tfplan file content:"
+          cat tfplan.json
+          echo "tfplan first 5 lines:"
+          head -n 5 tfplan.jon
           
           # Check if tfplan.json exists
           if [ -f ./tfplan.json ]; then
