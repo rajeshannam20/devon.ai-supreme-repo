@@ -262,9 +262,12 @@ jobs:
             exit 1
           fi
       
-          # Debugging: Output first 20 lines
-          echo "Displaying the first 20 lines of tfplan.json:"
-          head -n 20 ./tfplan.json
+          # Debugging:
+          echo "Displaying the  tfplan.json:"
+          cat ./tfplan.json
+
+          echo "Displaying the  tfplan.binary:"
+          cat ./tfplan.binary        
 
           # Validate JSON
           echo "Validating tfplan.json with Python..."
