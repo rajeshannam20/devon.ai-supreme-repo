@@ -158,10 +158,9 @@ jobs:
       - name: Install Node.js and dependencies
         working-directory: ./src/data/manifest/terraform      
         run: |
-          # curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-          # sudo apt-get install -y nodejs
           npm install -g cdktf-cli
           npm install --legacy-peer-deps
+          npm install typescript ts-node
 
       - name: Verify if cdktf.json exists
         working-directory: ./src/data/manifest/terraform
