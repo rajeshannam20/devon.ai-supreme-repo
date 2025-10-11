@@ -179,6 +179,11 @@ jobs:
         run: |
           # Install TypeScript and ts-node
           npm install typescript ts-node --legacy-peer-deps
+
+          # Log environment and ensure the correct TypeScript setup
+          echo "Node Version: $(node -v)"
+          echo "NPM Version: $(npm -v)"
+          
           # Make sure to run `cdktf synth` using the correct loader for TypeScript
           echo "Running cdktf synth"
           npx --loader ts-node/esm index.ts
