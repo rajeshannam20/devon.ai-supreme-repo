@@ -156,6 +156,7 @@ jobs:
           terraform_version: ${{ env.TF_VERSION }}
       
       - name: Install Node.js and dependencies
+        working-directory: ./src/data/manifest/terraform      
         run: |
           curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -
           sudo apt-get install -y nodejs
@@ -165,6 +166,9 @@ jobs:
       - name: Synthesize Terraform configuration from TypeScript
         working-directory: ./src/data/manifest/terraform
         run: |
+          echo "PWD:"
+          pwd
+          ls -lh .
           cdktf synth  
 
       - name: Generate Terraform Plan for Policy Evaluation
