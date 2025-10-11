@@ -160,7 +160,6 @@ jobs:
         run: |
           npm install -g cdktf-cli
           npm install --legacy-peer-deps
-          npm install typescript ts-node
 
       - name: Verify if cdktf.json exists
         working-directory: ./src/data/manifest/terraform
@@ -178,12 +177,12 @@ jobs:
       - name: Synthesize Terraform configuration from TypeScript
         working-directory: ./src/data/manifest/terraform
         run: |
+          # Install TypeScript and ts-node
+          npm install typescript ts-node
+          # Make sure to run `cdktf synth` using the correct loader for TypeScript
           echo "Running cdktf synth"
-          # Log current directory contents and try to synthesize Terraform config
-          ls -lh
           npx --loader ts-node/esm index.ts
-          # Log the output of the command if it fails
-          echo "CDKTF synth failed with exit code $?"
+          echo "CDKTF synth completed with exit code $?"
 
       - name: Generate Terraform Plan for Policy Evaluation
         working-directory: ./src/data/manifest/terraform
