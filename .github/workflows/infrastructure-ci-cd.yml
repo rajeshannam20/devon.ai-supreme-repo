@@ -182,7 +182,7 @@ jobs:
 
           # Check if required files are present
           echo "Checking project structure..."
-          ls -l ./src/data/manifest/terraform
+          ls -l 
       
           # Run cdktf get to fetch dependencies
           echo "Running cdktf get..."
