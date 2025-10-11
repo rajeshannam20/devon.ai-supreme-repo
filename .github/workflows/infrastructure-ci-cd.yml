@@ -178,7 +178,7 @@ jobs:
         working-directory: ./src/data/manifest/terraform
         run: |
           # Install TypeScript and ts-node
-          npm install typescript ts-node
+          npm install typescript ts-node --legacy-peer-deps
           # Make sure to run `cdktf synth` using the correct loader for TypeScript
           echo "Running cdktf synth"
           npx --loader ts-node/esm index.ts
