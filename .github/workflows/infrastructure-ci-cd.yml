@@ -169,7 +169,7 @@ jobs:
           pwd
           ls -lh .
           echo "Checking if cdktf.json exists..."
-          find . -name "cdktf.json"  
+          find . -name "cdktf.json" 
           if [ ! -f ./cdktf.json ]; then
             echo "Error: cdktf.json not found! Please ensure it exists in the directory."
             exit 1  

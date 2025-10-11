@@ -6,5 +6,14 @@
     "hashicorp/azurerm",
     "hashicorp/google"
   ],
-  "terraformModules": []
+  "terraformModules": [
+    "./src/data/manifest/terraform/eks.ts",
+    "./src/data/manifest/terraform/rds.ts",
+    "./src/data/manifest/terraform/vpc.ts",
+    "./src/data/manifest/terraform/kubernetes.ts",
+    "./src/data/manifest/terraform/security.ts",
+    "./src/data/manifest/terraform/service-mesh.ts",
+    "./src/data/manifest/terraform/variables.ts",
+    "./src/data/manifest/terraform/outputs.ts"
+  ]
 }
