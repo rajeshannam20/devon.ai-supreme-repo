@@ -262,42 +262,41 @@ jobs:
             exit 1
           fi
       
-          # Debugging: Output the first 20 lines of tfplan.json to check for any invalid characters
+          # Debugging: Output first 20 lines
           echo "Displaying the first 20 lines of tfplan.json:"
           head -n 20 ./tfplan.json
-      
-          # Check if tfplan.json is a valid JSON using python tool
+
+          # Validate JSON
           echo "Validating tfplan.json with Python..."
-          python -m json.tool ./tfplan.json || echo "Invalid JSON detected in tfplan.json"
-      
-          # Debugging: Output the variables section
-          echo "Trying to parse the variables section with jq:"
-          jq '.variables' ./tfplan.json || echo "Error occurred while parsing the 'variables' section with jq"
-      
-          # Attempt to pretty print the tfplan.json content with jq
-          echo "Displaying the content of tfplan.json using jq for pretty print:"
-          jq . ./tfplan.json || echo "Error occurred while parsing tfplan.json with jq"
-      
-          # Run Azure policy checks (update query path to Azure resources)
+          python -m json.tool ./tfplan.json || echo "Warning: tfplan.json might be malformed"
+
+          # Attempt to pretty print variables
+          echo "Displaying variables section with jq:"
+          jq '.variables' ./tfplan.json || echo "Warning: Failed to parse variables with jq"
+
+          # --- CHANGED: OPA query path updated from AWS to Azure ---
           echo "Running OPA policy checks on Azure resources..."
-          opa eval --format pretty --data policy/azure_container_app_policy.rego --input ./tfplan.json "data.terraform.azure.container_app_name" > policy-results/azure-policy-results.txt 2>&1
-      
-          # Check if there was an error with the OPA command
+          opa eval --format pretty \
+            --data policy/azure_container_app_policy.rego \
+            --input ./tfplan.json \
+            "data.terraform.azure.container_app" \
+            > policy-results/azure-policy-results.txt 2>&1
+          # ----------------------------------------------------------------
+
+          # Check for OPA errors
           if [ $? -ne 0 ]; then
             echo "Error: OPA evaluation failed."
             echo "OPA error details:"
             cat policy-results/azure-policy-results.txt
             exit 1
           fi
-      
-          # Display the OPA policy check results
+
           echo "OPA Policy Check Results:"
           cat policy-results/azure-policy-results.txt
-      
-          # Check for deny results in the policy output
+
+          # Check for deny results
           if grep -q "deny" policy-results/azure-policy-results.txt; then
             echo "⚠️ Policy violations detected in Azure container app configuration"
-            # Exit with failure code in PR, but continue in workflow dispatch
             if [ "${{ github.event_name }}" == "pull_request" ]; then
               exit 1
             fi
