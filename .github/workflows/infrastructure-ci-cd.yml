@@ -157,10 +157,10 @@ jobs:
       
       - name: Install Node.js and dependencies
         run: |
-          curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+          curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -
           sudo apt-get install -y nodejs
           npm install -g cdktf-cli
-          npm install
+          npm install --legacy-peer-deps
 
       - name: Synthesize Terraform configuration from TypeScript
         working-directory: ./src/data/manifest/terraform
@@ -180,7 +180,7 @@ jobs:
           mkdir -p policy-results
           
           # Run RDS policy checks
-          opa eval --format pretty --data policy/aws_rds_policy.rego --input ./src/data/manifest/terraform/tfplan.json "data.terraform.aws.rds" > policy-results/rds-policy-results.txt
+          opa eval --format pretty --data ./policy/aws_rds_policy.rego --input ./src/data/manifest/terraform/tfplan.json "data.terraform.aws.rds" > policy-results/rds-policy-results.txt
           
           echo "OPA Policy Check Results:"
           cat policy-results/rds-policy-results.txt
