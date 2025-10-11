@@ -163,12 +163,22 @@ jobs:
           npm install -g cdktf-cli
           npm install --legacy-peer-deps
 
-      - name: Synthesize Terraform configuration from TypeScript
+      - name: Verify if cdktf.json exists
         working-directory: ./src/data/manifest/terraform
         run: |
           echo "PWD:"
           pwd
           ls -lh .
+          echo "Checking if cdktf.json exists..."
+          find . -name "cdktf.json"  
+          if [ ! -f ./cdktf.json ]; then
+            echo "Error: cdktf.json not found! Please ensure it exists in the directory."
+            exit 1  
+          fi
+
+      - name: Synthesize Terraform configuration from TypeScript
+        working-directory: ./src/data/manifest/terraform
+        run: |
           cdktf synth  
 
       - name: Generate Terraform Plan for Policy Evaluation
