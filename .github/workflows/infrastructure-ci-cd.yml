@@ -262,22 +262,8 @@ jobs:
             exit 1
           fi   
 
-          # Validate JSON
-          echo "Validating tfplan.json with Python..."
-          python -m json.tool ./tfplan.json || echo "Warning: tfplan.json might be malformed"
-
-          # Attempt to pretty print variables
-          echo "Displaying variables section with jq:"
-          jq '.variables' ./tfplan.json || echo "Warning: Failed to parse variables with jq"
-
-          # --- CHANGED: OPA query path updated from AWS to Azure ---
-          echo "Running OPA policy checks on Azure resources..."
-          opa eval --format pretty \
-            --data policy/azure_container_app_policy.rego \
-            --input ./tfplan.json \
-            "data.terraform.azure.container_app" \
-            > policy-results/azure-policy-results.txt 2>&1
-          # ----------------------------------------------------------------
+          # Run RDS policy checks
+          opa eval --format pretty --data policy/azure_container_app_policy.rego --input tfplan.json "data.terraform.azure.container_app" > policy-results/azure-policy-results.txt
 
           # Check for OPA errors
           if [ $? -ne 0 ]; then
