@@ -267,6 +267,24 @@ jobs:
         run: |
           mkdir -p policy-results
           
+          # Check if tfplan.json exists
+          if [ -f ./tfplan.json ]; then
+            echo "tfplan.json exists!"
+          else
+            echo "Error: tfplan.json does not exist."
+            exit 1
+          fi   
+      
+          # Validate the JSON structure (optional)
+          python -m json.tool tfplan.json || echo "Warning: tfplan.json might be malformed"
+      
+          # Debug: Print contents of tfplan.json
+          echo "tfplan.json content:"
+          cat tfplan.json
+
+          echo "Listing contents of /policy-results directory before file creation:"
+          ls -alh policy-results/
+
           # Run Azure OPA checks
           opa eval --format pretty --debug --verbose \
             --data policy/azure_container_app_policy.rego \
