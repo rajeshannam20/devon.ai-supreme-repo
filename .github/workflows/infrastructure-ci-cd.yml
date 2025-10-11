@@ -265,7 +265,7 @@ jobs:
           echo "tfplan file content:"
           cat tfplan.json
           echo "tfplan first 5 lines:"
-          head -n 5 tfplan.jon
+          head -n 5 tfplan.json
           
           # Check if tfplan.json exists
           if [ -f ./tfplan.json ]; then
