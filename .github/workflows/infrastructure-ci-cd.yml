@@ -260,14 +260,7 @@ jobs:
           else
             echo "Error: tfplan.json does not exist."
             exit 1
-          fi
-      
-          # Debugging:
-          echo "Displaying the  tfplan.json:"
-          cat ./tfplan.json
-
-          echo "Displaying the  tfplan.binary:"
-          cat ./tfplan.binary        
+          fi   
 
           # Validate JSON
           echo "Validating tfplan.json with Python..."
