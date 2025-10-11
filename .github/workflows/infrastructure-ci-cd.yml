@@ -111,7 +111,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-      
+        
       - name: Run tfsec
         uses: aquasecurity/tfsec-action@v1.0.0
         with:
@@ -155,19 +155,32 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
       
+      - name: Install Node.js and dependencies
+        run: |
+          curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+          npm install -g cdktf-cli
+          npm install
+
+      - name: Synthesize Terraform configuration from TypeScript
+        working-directory: ./src/data/manifest/terraform
+        run: |
+          cdktf synth  
 
       - name: Generate Terraform Plan for Policy Evaluation
+        working-directory: ./src/data/manifest/terraform
         run: |
           terraform init -backend=false
           terraform plan -out=tfplan.binary
           terraform show -json tfplan.binary > tfplan.json        
       
       - name: Run OPA Policy Checks   
+        working-directory: ./
         run: |
           mkdir -p policy-results
           
           # Run RDS policy checks
-          opa eval --format pretty --data policy/aws_rds_policy.rego --input tfplan.json "data.terraform.aws.rds" > policy-results/rds-policy-results.txt
+          opa eval --format pretty --data policy/aws_rds_policy.rego --input ./src/data/manifest/terraform/tfplan.json "data.terraform.aws.rds" > policy-results/rds-policy-results.txt
           
           echo "OPA Policy Check Results:"
           cat policy-results/rds-policy-results.txt
