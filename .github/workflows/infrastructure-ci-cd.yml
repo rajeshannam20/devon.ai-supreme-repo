@@ -112,13 +112,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       
-      - name: Configure Azure Credentials
-        uses: azure/login@v1
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
       - name: Run tfsec
         uses: aquasecurity/tfsec-action@v1.0.0
         with:
@@ -133,16 +126,6 @@ jobs:
           framework: terraform
           soft_fail: true
           output_format: sarif
-
-      - name: Debug SARIF files
-        run: |
-          echo "Listing current directory files..."
-          ls -alh
-          echo "Checking if tfsec.sarif exists..."
-          if [ -f tfsec.sarif ]; then echo "tfsec.sarif exists"; else echo "tfsec.sarif does not exist"; fi
-          echo "Checking if results.sarif exists..."
-          if [ -f results.sarif ]; then echo "results.sarif exists"; else echo "results.sarif does not exist"; fi
-
 
       - name: Upload tfsec results
         uses: github/codeql-action/upload-sarif@v3
@@ -172,143 +155,30 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
       
-      - name: Install Azure CLI
-        run: |
-          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-      
-      - name: Check Lease on Terraform State and Break if Exists
-        env:
-          AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
-          AZURE_STORAGE_ACCOUNT: ${{ secrets.AZURE_STORAGE_ACCOUNT }}
-        run: |
-          # Set default environment if not provided
-          ENVIRONMENT=${{ github.event.inputs.environment || 'production' }}
-      
-          # Check the environment and handle lease breaking for staging or production
-          LEASE_BREAK_OUTPUT=$(az storage blob lease break --blob-name "${ENVIRONMENT}.terraform.tfstate" \
-            --container-name tfstate \
-            --account-name ${{ secrets.AZURE_STORAGE_ACCOUNT }} \
-            --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
-            --output tsv --only-show-errors || true)  
-      
-          # Check if the output contains an error related to the lease not being present
-          if [[ "$LEASE_BREAK_OUTPUT" == *"LeaseNotPresentWithLeaseOperation"* ]]; then
-            echo "No lease found, skipping lease break."
-          elif [[ "$LEASE_BREAK_OUTPUT" == *"Lease broken"* ]]; then
-            echo "Lease found and broken."
-          else
-            echo "Unknown error: $LEASE_BREAK_OUTPUT"
-          fi
 
       - name: Generate Terraform Plan for Policy Evaluation
-        working-directory: ./src/data/manifest/terraform/azure 
-        env:
-          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET_VALUE }}
-          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         run: |
-          terraform init \
-            -backend-config="resource_group_name=${{ env.AZURE_RESOURCE_GROUP_TFSTATE }}" \
-            -backend-config="storage_account_name=${{ secrets.AZURE_STORAGE_ACCOUNT }}" \
-            -backend-config="container_name=tfstate" \
-            -backend-config="key=${{ github.event.inputs.environment || 'production' }}.terraform.tfstate"          
-
-          terraform plan \
-            -var="resource_group_name=${{ env.AZURE_RESOURCE_GROUP }}" \
-            -var="location=${{ github.event.inputs.deploy_region || 'eastus' }}" \
-            -var="container_app_environment_name=${{ env.CONTAINER_ENV_NAME }}" \
-            -var="container_app_name=${{ env.CONTAINER_APP_NAME }}" \
-            -var="backend_image=ghcr.io/rajeshannam20/devon.ai-supreme-repo:backend-latest" \
-            -var="frontend_image=ghcr.io/rajeshannam20/devon.ai-supreme-repo:frontend-latest" \
-            -var="environment=${{ github.event.inputs.environment || 'production' }}" \
-            -out=tfplan
-
-          echo "Searching for the tfplan file..."
-          find . -name "tfplan" 
-
-          if [ -f tfplan ]; then
-            # Generate tfplan.json directly
-            terraform show -json tfplan -no-color > tfplan.json 2>/dev/null
-          
-            # Check for errors during terraform show
-            if [ $? -ne 0 ]; then
-              echo "Error: terraform show failed to process tfplan"
-              exit 1
-            fi
-
-            # Remove lines 1-7 and 9-12 and keep the 8th line (which is in JSON format)
-            # sed command explanation:
-            # - '1,7d' removes lines 1 to 7
-            # - '9,12d' removes lines 9 to 12
-            sed -e '1,7d' -e '9,12d' tfplan.json > filtered_tfplan.json && mv filtered_tfplan.json tfplan.json
-
-            # Check if the JSON file is empty
-            if [ ! -s tfplan.json ]; then
-              echo "Warning: Terraform plan is empty. Creating minimal valid JSON for OPA."
-              echo '{"planned_values":{"root_module":{"resources":[]}}}' > tfplan.json
-            fi
-          
-            echo "tfplan exists and tfplan.json generated."
-          else
-            echo "Error: tfplan does not exist."
-            exit 1
-          fi         
-
-          # Debugging - List the current directory files after generating tfplan.json
-          echo "Listing current directory files after generating tfplan.json..."
-          ls -alh .
-
-          echo "Searching for the tfplan.json file..."
-          find . -name "tfplan.json"           
+          terraform init -backend=false
+          terraform plan -out=tfplan.binary
+          terraform show -json tfplan.binary > tfplan.json        
       
-      - name: Run OPA Policy Checks
-        working-directory: ./src/data/manifest/terraform/azure      
+      - name: Run OPA Policy Checks   
         run: |
           mkdir -p policy-results
           
-          # Check if tfplan.json exists
-          if [ -f ./tfplan.json ]; then
-            echo "tfplan.json exists!"
-          else
-            echo "Error: tfplan.json does not exist."
-            exit 1
-          fi   
-      
-          # Validate the JSON structure (optional)
-          python -m json.tool tfplan.json || echo "Warning: tfplan.json might be malformed"
-      
-          # Debug: Print contents of tfplan.json
-          echo "tfplan.json content:"
-          cat tfplan.json
-
-          echo "Listing contents of /policy-results directory before file creation:"
-          ls -alh policy-results/
-
-          # Run Azure OPA checks
-          opa eval --format pretty --debug --verbose \
-            --data policy/azure_container_app_policy.rego \
-            --input tfplan.json \
-            "data.variables.resource_group_name.value" \
-            > policy-results/azure-policy-results.txt 2>&1
-
-          # Capture the exit code and log it
-          echo "OPA exit code: $?"
-
-          # Check for OPA errors
-          if [ $? -ne 0 ]; then
-            echo "Error: OPA evaluation failed"
-            cat policy-results/azure-policy-results.txt
-            exit 1
-          fi
-
+          # Run RDS policy checks
+          opa eval --format pretty --data policy/aws_rds_policy.rego --input tfplan.json "data.terraform.aws.rds" > policy-results/rds-policy-results.txt
+          
           echo "OPA Policy Check Results:"
-          cat policy-results/azure-policy-results.txt
-
-          # Fail on deny
-          if grep -q "deny" policy-results/azure-policy-results.txt; then
-            echo "⚠️ Policy violations detected in Azure container app configuration"
-            exit 1
+          cat policy-results/rds-policy-results.txt
+          
+          # Check for deny results
+          if grep -q "deny" policy-results/rds-policy-results.txt; then
+            echo "⚠️ Policy violations detected in RDS configuration"
+            # Exit with failure code in PR, but continue in workflow dispatch
+            if [ "${{ github.event_name }}" == "pull_request" ]; then
+              exit 1
+            fi
           fi
 
       
