@@ -1,0 +1,29 @@
+{
+  "terraform": {},
+  "module": {
+    "rds": {
+      "source": "./rds"
+    },
+    "eks": {
+      "source": "./eks"
+    },
+    "vpc": {
+      "source": "./vpc"
+    },
+    "kubernetes": {
+      "source": "./kubernetes"
+    },
+    "security": {
+      "source": "./security"
+    },
+    "service_mesh": {
+      "source": "./service-mesh"
+    },
+    "variables": {
+      "source": "./variables"
+    },
+    "outputs": {
+      "source": "./outputs"
+    }
+  }
+}
