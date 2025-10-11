@@ -238,6 +238,10 @@ jobs:
               exit 1
             fi
 
+            # Use tail to remove initial lines and retain only relevant content from tfplan.json
+            echo "Filtering tfplan.json content..."
+            tail -n +15 tfplan.json > filtered_tfplan.json && mv filtered_tfplan.json tfplan.json
+
             # Check if the JSON file is empty
             if [ ! -s tfplan.json ]; then
               echo "Warning: Terraform plan is empty. Creating minimal valid JSON for OPA."
