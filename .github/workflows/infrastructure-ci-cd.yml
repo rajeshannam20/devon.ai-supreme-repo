@@ -141,8 +141,8 @@ jobs:
           ls -alh
           echo "Checking if tfsec.sarif exists..."
           if [ -f tfsec.sarif ]; then echo "tfsec.sarif exists"; else echo "tfsec.sarif does not exist"; fi
-          echo "Checking if checkov.sarif exists..."
-          if [ -f checkov.sarif ]; then echo "checkov.sarif exists"; else echo "checkov.sarif does not exist"; fi
+          echo "Checking if results.sarif exists..."
+          if [ -f results.sarif ]; then echo "results.sarif exists"; else echo "results.sarif does not exist"; fi
 
 
       - name: Upload tfsec results
@@ -230,7 +230,7 @@ jobs:
 
           # Check if tfplan.binary exists before proceeding
           if [ -f tfplan.binary ]; then
-            terraform show -json tfplan.binary > ./tfplan.json
+            terraform show -json tfplan.binary | tee ./tfplan.json > /dev/null
             echo "tfplan.binary  exists!"
           else
             echo "Error: tfplan.binary does not exist."
