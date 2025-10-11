@@ -1,0 +1,5 @@
+{
+  "language": "typescript",
+  "app": "npx ts-node --transpile-only index.ts",
+  "stack": "DevonnStack"
+}
