@@ -184,6 +184,9 @@ jobs:
           echo "Checking project structure..."
           ls -l 
       
+          # Set debug log level for more details
+          export CDKTF_LOG_LEVEL=debug
+
           # Run cdktf get to fetch dependencies
           echo "Running cdktf get..."
           cdktf get
