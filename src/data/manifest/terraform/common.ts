@@ -89,5 +89,13 @@ provider "aws" {
 provider "aws" {
   alias  = "dr_region"
   region = var.dr_region
+  default_tags {
+    tags = {
+      Project     = "DevonnAI"
+      Environment = var.environment
+      ManagedBy   = "Terraform"
+      Owner       = "DevOps"
+    }
+  }
 }
 `;

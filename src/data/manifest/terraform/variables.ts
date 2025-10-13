@@ -113,6 +113,24 @@ variable "snapshot_identifier" {
   default     = ""  
 }
 
+variable "db_replica_instance_class" {
+  description = "RDS instance class for read replicas"
+  type        = string
+  default     = "db.t3.micro"
+}
+
+variable "enable_cross_region_replica" {
+  description = "Enable cross-region RDS read replica"
+  type        = bool
+  default     = false
+}
+
+variable "db_dr_instance_class" {
+  description = "RDS instance class for cross-region disaster recovery replicas"
+  type        = string
+  default     = "db.t3.micro"
+}
+
 `;
 
 

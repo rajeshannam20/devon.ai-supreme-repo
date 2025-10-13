@@ -47,7 +47,7 @@ module "rds" {
   
   # Snapshots for production
   skip_final_snapshot = var.environment != "production"
-  final_snapshot_identifier_prefix = var.environment == "production" ? "devonn-postgres-final-\${var.environment}" : devonn-postgres-final-production
+  final_snapshot_identifier_prefix = var.environment == "production" ? "devonn-postgres-final-\${var.environment}" : "devonn-postgres-final-production"
   
   # Automated backups
   copy_tags_to_snapshot = true

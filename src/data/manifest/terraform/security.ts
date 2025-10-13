@@ -201,51 +201,32 @@ resource "aws_iam_role_policy_attachment" "config_policy_attachment" {
 # --- NEW SECURITY ENHANCEMENTS ---
 
 # 1. AWS GuardDuty for threat detection (production only)
-resource "aws_guardduty_detector_feature" "devonn_guardduty" {
-  count    = var.environment == "production" ? 1 : 0
-  enable   = true
+# AWS GuardDuty Detector (enables GuardDuty)
+resource "aws_guardduty_detector" "devonn_guardduty" {
+  count                    = var.environment == "production" ? 1 : 0
+  enable                   = true
   finding_publishing_frequency = "ONE_HOUR"
+}
 
-  datasources {
-    s3_logs {
-      enable = true
-    }
-    kubernetes {
-      audit_logs {
-        enable = true
-      }
-    }
-    malware_protection {
-      scan_ec2_instance_with_findings {
-        ebs_volumes {
-          enable = true
-        }
-      }
-    }
-  }
+resource "aws_guardduty_detector_feature" "s3_data_events" {
+  count       = var.environment == "production" ? 1 : 0
+  detector_id = aws_guardduty_detector.devonn_guardduty[0].id
+  name        = "S3_DATA_EVENTS"
+  status      = "ENABLED"
+}
 
-  # Additional options for non-production environment can be added here if needed
-  # For example, you might want to disable certain datasources in non-production:
-  dynamic "datasources" {
-    for_each = var.environment == "production" ? [1] : []
-    content {
-      s3_logs {
-        enable = true
-      }
-      kubernetes {
-        audit_logs {
-          enable = true
-        }
-      }
-      malware_protection {
-        scan_ec2_instance_with_findings {
-          ebs_volumes {
-            enable = true
-          }
-        }
-      }
-    }
-  }
+resource "aws_guardduty_detector_feature" "eks_audit_logs" {
+  count       = var.environment == "production" ? 1 : 0
+  detector_id = aws_guardduty_detector.devonn_guardduty[0].id
+  name        = "EKS_AUDIT_LOGS"
+  status      = "ENABLED"
+}
+
+resource "aws_guardduty_detector_feature" "ebs_malware_protection" {
+  count       = var.environment == "production" ? 1 : 0
+  detector_id = aws_guardduty_detector.devonn_guardduty[0].id
+  name        = "EBS_MALWARE_PROTECTION"
+  status      = "ENABLED"
 }
 
 # 2. AWS Security Hub to manage security posture
@@ -590,5 +571,7 @@ resource "aws_default_tags" "default" {
     Application = "devonn-\${var.environment}"
     Owner       = "devops-team"
   }
-}`;
+};
+  
+`;
 
