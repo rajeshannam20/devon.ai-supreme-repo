@@ -558,7 +558,7 @@ resource "aws_cloudwatch_metric_alarm" "cpu_high_alarm" {
 }
 
 # 12. Resource Tagging Strategy for Cost Allocation
-resource "aws_default_tags" {
+resource "aws_default_tags" "default" {
   tags = {
     Project     = "devonn-ai"
     Environment = var.environment

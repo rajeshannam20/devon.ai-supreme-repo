@@ -282,7 +282,7 @@ resource "aws_cloudwatch_dashboard" "rds_dashboard" {
 }
 
 # RDS CloudWatch Alarms
-resource "aws_cloudwatch_metric_alarm" "rds_cpu_alarm" {
+resource "aws_cloudwatch_metric_alarm" "rds_cpu_alarm_high" {
   count               = var.environment == "production" ? 1 : 0
   alarm_name          = "devonn-rds-high-cpu-\${var.environment}"
   comparison_operator = "GreaterThanThreshold"
@@ -301,7 +301,7 @@ resource "aws_cloudwatch_metric_alarm" "rds_cpu_alarm" {
   }
 }
 
-resource "aws_cloudwatch_metric_alarm" "rds_memory_alarm" {
+resource "aws_cloudwatch_metric_alarm" "rds_memory_alarm_low" {
   count               = var.environment == "production" ? 1 : 0
   alarm_name          = "devonn-rds-low-memory-\${var.environment}"
   comparison_operator = "LessThanThreshold"
