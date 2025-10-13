@@ -172,7 +172,7 @@ jobs:
 
       - name: Generate Terraform files from manifests
         run: |
-          node ./scripts/generate-tf-files.js
+          npx ts-node ./scripts/generate-tf-files.ts
 
       - name: List generated files
         working-directory: ./src/data/manifest/terraform
