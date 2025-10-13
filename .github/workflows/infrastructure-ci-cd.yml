@@ -7,6 +7,7 @@ on:
     paths:
       - 'terraform/**'
       - '.github/workflows/infrastructure-ci-cd.yml'
+      - 'scripts/generate-tf-files.js'
       - 'policy/**'
       - 'tests/infrastructure/**'
   pull_request:
@@ -14,6 +15,7 @@ on:
     paths:
       - 'terraform/**'
       - 'policy/**'
+      - 'scripts/generate-tf-files.js'
       - 'tests/infrastructure/**'
   workflow_dispatch:
     inputs:
@@ -168,8 +170,17 @@ jobs:
             exit 1  
           fi
 
+      - name: Generate Terraform files from manifests
+        run: |
+          node ./scripts/generate-tf-files.js
+
+      - name: List generated files
+        working-directory: ./src/data/manifest/terraform
+        run: |
+          ls -lh .          
+
       - name: Generate Terraform Plan for Policy Evaluation
-        working-directory: ./src/data/manifest/terraform/azure
+        working-directory: ./src/data/manifest/terraform
         run: |
           terraform init -reconfigure
           terraform plan -out=tfplan.binary
