@@ -170,6 +170,12 @@ jobs:
             exit 1  
           fi
 
+      - name: Install dependencies
+        run: |
+          npm install --save-dev @types/node
+          npm ci
+
+
       - name: Generate Terraform files from manifests
         run: |
           npx ts-node scripts/generate-tf-files.ts
