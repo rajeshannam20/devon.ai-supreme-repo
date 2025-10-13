@@ -171,7 +171,7 @@ jobs:
       - name: Generate Terraform Plan for Policy Evaluation
         working-directory: ./src/data/manifest/terraform/azure
         run: |
-          terraform init -backend=false
+          terraform init -reconfigure
           terraform plan -out=tfplan.binary
           terraform show -json tfplan.binary > tfplan.json
       
