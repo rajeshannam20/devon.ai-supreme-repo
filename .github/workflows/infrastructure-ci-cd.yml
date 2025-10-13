@@ -172,7 +172,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm install --save-dev @types/node
+          npm install --save-dev @types/node --legacy-peer-deps
           npm ci
 
 
