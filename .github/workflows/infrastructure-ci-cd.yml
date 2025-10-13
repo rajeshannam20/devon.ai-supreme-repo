@@ -168,47 +168,18 @@ jobs:
             exit 1  
           fi
 
-      - name: Synthesize Terraform configuration from TypeScript
-        working-directory: ./src/data/manifest/terraform
-        run: |
-
-          # Install TypeScript, ts-node, and cdktf-cli
-          npm install typescript ts-node cdktf-cli --legacy-peer-deps
-
-          # Check if required files are present
-          echo "Checking project structure..."
-          ls -l 
-
-          rm -rf .gen
-      
-          # Set debug log level for more details
-          export CDKTF_LOG_LEVEL=debug
-
-          # Run cdktf get to fetch dependencies
-          echo "Running cdktf get..."
-          cdktf get
-      
-          # Run cdktf synth to synthesize the configuration
-          echo "Running cdktf synth..."
-          npx cdktf synth
-          
-          # Capture exit code
-          echo "CDKTF synth completed with exit code $?."
-
       - name: Generate Terraform Plan for Policy Evaluation
-        working-directory: ./src/data/manifest/terraform
         run: |
           terraform init -backend=false
           terraform plan -out=tfplan.binary
-          terraform show -json tfplan.binary > tfplan.json        
+          terraform show -json tfplan.binary > tfplan.json
       
-      - name: Run OPA Policy Checks   
-        working-directory: ./
+      - name: Run OPA Policy Checks
         run: |
           mkdir -p policy-results
           
           # Run RDS policy checks
-          opa eval --format pretty --data ./policy/aws_rds_policy.rego --input ./src/data/manifest/terraform/tfplan.json "data.terraform.aws.rds" > policy-results/rds-policy-results.txt
+          opa eval --format pretty --data policy/aws_rds_policy.rego --input tfplan.json "data.terraform.aws.rds" > policy-results/rds-policy-results.txt
           
           echo "OPA Policy Check Results:"
           cat policy-results/rds-policy-results.txt
