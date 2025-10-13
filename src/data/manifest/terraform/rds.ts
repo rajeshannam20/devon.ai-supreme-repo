@@ -17,7 +17,6 @@ module "rds" {
   max_allocated_storage = var.db_max_allocated_storage
   storage_encrypted = true
 
-  name     = "devonndb"
   username = "admin"
   password = var.db_password
   port     = 5432

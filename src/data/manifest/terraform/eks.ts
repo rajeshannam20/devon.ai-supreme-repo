@@ -1,15 +1,15 @@
-
-// EKS cluster configuration for Terraform
-
 export const eksConfigYaml = `# --- EKS Cluster Configuration ---
+
 
 # 2. EKS Cluster Configuration
 module "eks" {
   source          = "terraform-aws-modules/eks/aws"
+  version         = "21.3.2"  
+
   cluster_name    = "devonn-eks-\${var.environment}"
-  cluster_version = "1.29"
-  subnets         = module.vpc.private_subnets
+
   vpc_id          = module.vpc.vpc_id
+  subnet_ids      = module.vpc.private_subnets
 
   node_groups = {
     dev_nodes = {
@@ -23,27 +23,27 @@ module "eks" {
 
   # Enable IAM Roles for Service Accounts (IRSA)
   enable_irsa = true
-  
+
   # CloudWatch Logs for the EKS control plane
   cluster_enabled_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
-  
+
   # Security groups
-  cluster_security_group_additional_rules = {
-    egress_all = {
-      description      = "Cluster all egress"
-      protocol         = "-1"
-      from_port        = 0
-      to_port          = 0
-      type             = "egress"
-      cidr_blocks      = ["0.0.0.0/0"]
+  cluster_security_group_additional_rules = [
+    {
+      description  = "Cluster all egress"
+      protocol     = "-1"
+      from_port    = 0
+      to_port      = 0
+      type        = "egress"
+      cidr_blocks  = ["0.0.0.0/0"]
     }
-  }
-  
+  ]
+
   # Encryption for EKS secrets
   cluster_encryption_config = [
     {
       provider_key_arn = aws_kms_key.eks.arn
-      resources        = ["secrets"]
+      resources       = ["secrets"]
     }
   ]
 }
@@ -64,4 +64,5 @@ resource "aws_iam_openid_connect_provider" "eks" {
 
 # 5. Connect to your EKS cluster after provisioning
 # Run: aws eks update-kubeconfig --name devonn-eks-\${var.environment} --region \${var.aws_region}
-# This will update your kubeconfig file with the new cluster information`;
+# This will update your kubeconfig file with the new cluster information
+`;
