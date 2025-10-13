@@ -29,10 +29,10 @@ ${variablesConfigYaml}
 
 ${outputsConfigYaml}`;
 
-// Import Azure Terraform files as raw text
-import mainTf from './azure/main.tf?raw';
-import variablesTf from './azure/variables.tf?raw';
-import outputsTf from './azure/outputs.tf?raw';
+// // Import Azure Terraform files as raw text
+// import mainTf from './azure/main.tf?raw';
+// import variablesTf from './azure/variables.tf?raw';
+// import outputsTf from './azure/outputs.tf?raw';
 
 
 try {
@@ -43,8 +43,8 @@ try {
 }
 
 // Export Azure Container Apps Terraform configuration
-export const azureContainerAppsTerraform = {
-  mainTf,
-  variablesTf,
-  outputsTf
-};
+// export const azureContainerAppsTerraform = {
+//   mainTf,
+//   variablesTf,
+//   outputsTf
+// };
