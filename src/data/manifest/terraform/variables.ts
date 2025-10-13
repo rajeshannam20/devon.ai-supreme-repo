@@ -9,6 +9,12 @@ variable "aws_region" {
   default     = "us-west-2"
 }
 
+variable "dr_region" {
+  description = "Disaster recovery region"
+  type        = string
+  default     = "us-east-1"
+}
+
 variable "environment" {
   description = "Environment name (dev, staging, production)"
   type        = string
@@ -91,4 +97,22 @@ variable "db_password" {
   description = "Password for the RDS database"
   type        = string
   sensitive   = true
-}`;
+}
+
+# Declare use_snapshot variable
+variable "use_snapshot" {
+  description = "Flag to indicate whether to use a snapshot."
+  type        = bool
+  default     = false  
+}
+
+# Declare snapshot_identifier variable
+variable "snapshot_identifier" {
+  description = "The snapshot identifier to use if use_snapshot is true."
+  type        = string
+  default     = ""  
+}
+
+`;
+
+

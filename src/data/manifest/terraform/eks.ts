@@ -6,12 +6,12 @@ module "eks" {
   source          = "terraform-aws-modules/eks/aws"
   version         = "21.3.2"  
 
-  cluster_name    = "devonn-eks-\${var.environment}"
+  name    = "devonn-eks-\${var.environment}"
 
   vpc_id          = module.vpc.vpc_id
   subnet_ids      = module.vpc.private_subnets
 
-  node_groups = {
+  eks_managed_node_groups = {
     dev_nodes = {
       desired_capacity = var.node_desired_capacity
       max_capacity     = var.node_max_capacity
@@ -25,27 +25,25 @@ module "eks" {
   enable_irsa = true
 
   # CloudWatch Logs for the EKS control plane
-  cluster_enabled_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+  enabled_log_types  = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
 
   # Security groups
-  cluster_security_group_additional_rules = [
-    {
-      description  = "Cluster all egress"
-      protocol     = "-1"
-      from_port    = 0
-      to_port      = 0
-      type        = "egress"
-      cidr_blocks  = ["0.0.0.0/0"]
-    }
-  ]
+  security_group_additional_rules = {
+  egress_all = {
+    description  = "Cluster all egress"
+    protocol     = "-1"
+    from_port    = 0
+    to_port      = 0
+    type        = "egress"
+    cidr_blocks  = ["0.0.0.0/0"]
+  }
+}
 
   # Encryption for EKS secrets
-  cluster_encryption_config = [
-    {
+  encryption_config = {
       provider_key_arn = aws_kms_key.eks.arn
       resources       = ["secrets"]
-    }
-  ]
+}
 }
 
 # KMS key for EKS secrets encryption

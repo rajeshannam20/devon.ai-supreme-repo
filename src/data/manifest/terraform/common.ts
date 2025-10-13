@@ -84,4 +84,10 @@ provider "aws" {
       Owner       = "DevOps"
     }
   }
-}`;
+}
+  
+provider "aws" {
+  alias  = "dr_region"
+  region = var.dr_region
+}
+`;

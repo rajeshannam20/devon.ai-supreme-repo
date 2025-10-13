@@ -201,11 +201,11 @@ resource "aws_iam_role_policy_attachment" "config_policy_attachment" {
 # --- NEW SECURITY ENHANCEMENTS ---
 
 # 1. AWS GuardDuty for threat detection (production only)
-resource "aws_guardduty_detector" "devonn_guardduty" {
+resource "aws_guardduty_detector_feature" "devonn_guardduty" {
   count    = var.environment == "production" ? 1 : 0
   enable   = true
   finding_publishing_frequency = "ONE_HOUR"
-  
+
   datasources {
     s3_logs {
       enable = true
@@ -219,6 +219,29 @@ resource "aws_guardduty_detector" "devonn_guardduty" {
       scan_ec2_instance_with_findings {
         ebs_volumes {
           enable = true
+        }
+      }
+    }
+  }
+
+  # Additional options for non-production environment can be added here if needed
+  # For example, you might want to disable certain datasources in non-production:
+  dynamic "datasources" {
+    for_each = var.environment == "production" ? [1] : []
+    content {
+      s3_logs {
+        enable = true
+      }
+      kubernetes {
+        audit_logs {
+          enable = true
+        }
+      }
+      malware_protection {
+        scan_ec2_instance_with_findings {
+          ebs_volumes {
+            enable = true
+          }
         }
       }
     }

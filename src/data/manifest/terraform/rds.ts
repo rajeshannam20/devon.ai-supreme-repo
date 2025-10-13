@@ -47,19 +47,19 @@ module "rds" {
   
   # Snapshots for production
   skip_final_snapshot = var.environment != "production"
-  final_snapshot_identifier = var.environment == "production" ? "devonn-postgres-final-\${var.environment}" : null
+  final_snapshot_identifier_prefix = var.environment == "production" ? "devonn-postgres-final-\${var.environment}" : devonn-postgres-final-production
   
   # Automated backups
   copy_tags_to_snapshot = true
   
   # Parameter group for PostgreSQL optimizations
-  parameter_group_name = var.environment == "production" ? aws_db_parameter_group.postgres_production[0].name : null
+  parameter_group_name = var.environment == "production" ? aws_db_parameter_group.postgres_production[0].name : "devonn-postgres-param-production"
 
   # Enhanced disaster recovery for production
   enabled_cloudwatch_logs_exports = var.environment == "production" ? ["postgresql", "upgrade"] : []
   
   # Cross-region snapshot replication for disaster recovery
-  snapshot_identifier = var.use_snapshot ? var.snapshot_identifier : null
+  snapshot_identifier = var.use_snapshot ? var.snapshot_identifier : "devonn-postgres-final-production"
   
   # Reserved instances configuration through tagging
   tags = {
@@ -155,7 +155,7 @@ resource "aws_db_instance" "postgres_cross_region_replica" {
   
   publicly_accessible  = false
   skip_final_snapshot  = false
-  final_snapshot_identifier = "devonn-postgres-dr-final-\${var.environment}"
+  final_snapshot_identifier_prefix = "devonn-postgres-dr-final-\${var.environment}"
   
   # Performance settings
   monitoring_interval = 60
