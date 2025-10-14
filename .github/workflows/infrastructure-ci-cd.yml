@@ -269,6 +269,12 @@ jobs:
         working-directory: ./src/data/manifest/terraform    
         id: init
         run: terraform init -reconfigure
+
+      - name: Upload Terraform Lock File
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-lock
+          path: ./src/data/manifest/terraform/.terraform.lock.hcl          
         
       - name: Terraform Plan
         working-directory: ./src/data/manifest/terraform     
@@ -285,7 +291,7 @@ jobs:
       - name: List Terraform directory after plan
         working-directory: ./src/data/manifest/terraform
         run: |
-          ls -lh .   
+          ls -alh .   
 
       - name: Upload Terraform Plan
         uses: actions/upload-artifact@v4
@@ -293,13 +299,7 @@ jobs:
           name: terraform-plan
           path: |
             ./src/data/manifest/terraform/tfplan
-            ./src/data/manifest/terraform/tfplan.json
-
-      - name: Upload Terraform Lock File
-        uses: actions/upload-artifact@v4
-        with:
-          name: terraform-lock
-          path: ./src/data/manifest/terraform/.terraform.lock.hcl            
+            ./src/data/manifest/terraform/tfplan.json          
           
       - name: Comment Plan on PR
         if: github.event_name == 'pull_request'
