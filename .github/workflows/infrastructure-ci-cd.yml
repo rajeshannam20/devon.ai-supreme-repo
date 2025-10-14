@@ -396,6 +396,7 @@ jobs:
       # Use selected deployment strategy
       - name: Canary Deployment
         if: github.event.inputs.deployment_strategy == 'canary' || github.event.inputs.deployment_strategy == null
+        working-directory: ./src/data/manifest/terraform
         run: |
           echo "Implementing canary deployment strategy..."
           # Apply changes to a subset of resources first (canary pattern)
