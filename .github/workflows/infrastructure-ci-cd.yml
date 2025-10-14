@@ -269,10 +269,9 @@ jobs:
         working-directory: ./src/data/manifest/terraform
         run: ls -alh
 
-      - name: Copy lock file to workspace root
-        run: cp .terraform.lock.hcl $GITHUB_WORKSPACE/src/data/manifest/terraform/.terraform.lock.hcl
-        working-directory: ./src/data/manifest/terraform
-      
+      - name: Debug lock file presence
+        run: ls -alh src/data/manifest/terraform/.terraform.lock.hcl
+
       - name: Upload Terraform Lock File
         uses: actions/upload-artifact@v4
         with:
