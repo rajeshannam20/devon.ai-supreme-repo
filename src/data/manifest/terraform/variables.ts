@@ -143,6 +143,22 @@ variable "db_dr_instance_class" {
   default     = "db.t3.micro"
 }
 
+variable "family" {
+  description = "The engine family for the DB parameter group (e.g., postgres14, mysql8.0)"
+  type        = string
+  default     = "postgres14"
+}
+
+variable "create" {
+  type    = bool
+  default = true 
+}
+
+variable "kubernetes_version" {
+  type    = string
+  default = null 
+}
+
 `;
 
 
