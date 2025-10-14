@@ -12,6 +12,7 @@ module "rds" {
   engine     = "postgres"
   engine_version = "14.9"
   instance_class = var.db_instance_class
+  family = var.family
 
   allocated_storage = var.db_allocated_storage
   max_allocated_storage = var.db_max_allocated_storage
@@ -53,7 +54,7 @@ module "rds" {
   copy_tags_to_snapshot = true
   
   # Parameter group for PostgreSQL optimizations
-  parameter_group_name = var.environment == "production" ? db_parameter_group.postgres_production[0].name : "devonn-postgres-param-production"
+  parameter_group_name = var.environment == "production" ? aws_db_parameter_group.postgres_production[0].name : "devonn-postgres-param-production"
 
   # Enhanced disaster recovery for production
   enabled_cloudwatch_logs_exports = var.environment == "production" ? ["postgresql", "upgrade"] : []
@@ -72,7 +73,7 @@ module "rds" {
 }
 
 # Production-optimized parameter group (only created for production environment)
-resource "db_parameter_group" "postgres_production" {
+resource "aws_db_parameter_group" "postgres_production" {
   count = var.environment == "production" ? 1 : 1
   
   name   = "devonn-postgres-params-\${var.environment}"
