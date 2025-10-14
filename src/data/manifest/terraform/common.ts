@@ -76,6 +76,8 @@ export const commonConfigYaml = `# --- Common Terraform Configuration ---
 # Define the AWS provider and region
 provider "aws" {
   region = var.aws_region
+  access_key = var.aws_access_key
+  secret_key = var.aws_secret_key
   default_tags {
     tags = {
       Project     = "DevonnAI"
@@ -89,6 +91,8 @@ provider "aws" {
 provider "aws" {
   alias  = "dr_region"
   region = var.dr_region
+  access_key = var.aws_access_key
+  secret_key = var.aws_secret_key
   default_tags {
     tags = {
       Project     = "DevonnAI"
