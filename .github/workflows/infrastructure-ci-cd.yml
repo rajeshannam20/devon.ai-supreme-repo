@@ -375,6 +375,8 @@ jobs:
         run: terraform init
         
       - name: List available artifacts
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         run: gh run view ${{ github.run_id }}
 
       - name: Download Terraform Plan
