@@ -187,8 +187,19 @@ jobs:
         run: |
           terraform init -reconfigure
           terraform plan -out=tfplan.binary
-          terraform show -json tfplan.binary > tfplan.json
+          if [ $? -ne 0 ]; then
+            echo "Terraform plan failed"
+            exit 1
+          fi
+          terraform show -json tfplan > tfplan.json
       
+      - name: Find Terraform Plan File
+        run: |
+          echo "Searching for the tfplan file..."
+          find . -name "tfplan" 
+          echo "Listing all files in ./src/data/manifest/terraform..."
+          ls -l ./src/data/manifest/terraform
+
       - name: Run OPA Policy Checks
         run: |
           mkdir -p policy-results
