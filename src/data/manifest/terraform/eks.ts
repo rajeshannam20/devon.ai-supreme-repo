@@ -7,6 +7,7 @@ module "eks" {
   version         = "21.3.2"  
 
   name    = "devonn-eks-\${var.environment}"
+  kubernetes_version = var.kubernetes_version
 
   vpc_id          = module.vpc.vpc_id
   subnet_ids      = module.vpc.private_subnets

@@ -156,7 +156,7 @@ variable "create" {
 
 variable "kubernetes_version" {
   type    = string
-  default = null 
+  default = 1.33 
 }
 
 `;
