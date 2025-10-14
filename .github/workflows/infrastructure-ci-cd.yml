@@ -260,15 +260,14 @@ jobs:
         run: |
           npx ts-node scripts/generate-tf-files.ts
 
-      - name: List Terraform directory before plan
-        working-directory: ./src/data/manifest/terraform
-        run: |
-          ls -lh .          
-
       - name: Terraform Init
         working-directory: ./src/data/manifest/terraform    
         id: init
         run: terraform init -reconfigure
+
+      - name: List directory before upload
+        working-directory: ./src/data/manifest/terraform
+        run: ls -alh
 
       - name: Upload Terraform Lock File
         uses: actions/upload-artifact@v4
