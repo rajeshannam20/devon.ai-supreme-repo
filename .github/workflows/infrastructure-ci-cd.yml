@@ -416,7 +416,6 @@ jobs:
         working-directory: ./src/data/manifest/terraform
         run: |
           echo "Implementing canary deployment strategy..."
-          # Apply changes to a subset of resources first (canary pattern)
           terraform apply -auto-approve ./tfplan
           
           echo "Waiting 2 minutes to verify canary deployment..."
