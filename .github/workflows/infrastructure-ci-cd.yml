@@ -200,13 +200,15 @@ jobs:
           find . -name "tfplan" 
           echo "Listing all files in ./src/data/manifest/terraform..."
           ls -l ./src/data/manifest/terraform
+          echo "Listing all files in ./src/data/manifest/terraform..."
+          cat tfplan.json
 
       - name: Run OPA Policy Checks
         run: |
           mkdir -p policy-results
           
           # Run RDS policy checks
-          opa eval --format pretty --data policy/aws_rds_policy.rego --input tfplan.json "data.terraform.aws.rds" > policy-results/rds-policy-results.txt
+          opa eval --format pretty --data policy/aws_rds_policy.rego --input ./src/data/manifest/terraform/tfplan.json "data.terraform.aws.rds" > policy-results/rds-policy-results.txt
           
           echo "OPA Policy Check Results:"
           cat policy-results/rds-policy-results.txt
