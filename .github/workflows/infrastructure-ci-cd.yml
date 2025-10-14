@@ -384,6 +384,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: terraform-plan
+          path: ./src/data/manifest/terraform
         
       - name: Create deployment status
         id: deployment
