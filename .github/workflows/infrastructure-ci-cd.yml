@@ -375,10 +375,12 @@ jobs:
         run: terraform init
         
       - name: Authenticate GitHub CLI
-        run: gh auth login --with-token < ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "$GITHUB_TOKEN" | gh auth login --with-token
       
       - name: List available artifacts
-        run: gh run view ${{ github.run_id }}    
+        run: gh run view ${{ github.run_id }}
 
       - name: Download Terraform Plan
         uses: actions/download-artifact@v4
