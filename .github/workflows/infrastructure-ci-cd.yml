@@ -252,18 +252,26 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
           
+      - name: Install dependencies
+        run: |
+          npm install --save-dev @types/node --legacy-peer-deps
+
+      - name: Generate Terraform files from manifests
+        run: |
+          npx ts-node scripts/generate-tf-files.ts
+
       - name: List Terraform files
         working-directory: ./src/data/manifest/terraform
         run: |
           ls -lh .          
 
       - name: Terraform Init
-        working-directory: ./src/data/manifest/terraform/azure      
+        working-directory: ./src/data/manifest/terraform    
         id: init
         run: terraform init -reconfigure
         
       - name: Terraform Plan
-        working-directory: ./src/data/manifest/terraform/azure      
+        working-directory: ./src/data/manifest/terraform     
         id: plan
         run: |
           terraform plan -var-file=environments/${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'production' || 'development') }}.tfvars -out=tfplan
