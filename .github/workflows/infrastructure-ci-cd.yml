@@ -274,7 +274,7 @@ jobs:
         working-directory: ./src/data/manifest/terraform     
         id: plan
         run: |
-          terraform plan -var-file=environments/${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'production' || 'development') }}.tfvars -out=tfplan
+          terraform plan -out=tfplan
           terraform show -json tfplan > tfplan.json
         
       - name: Upload Terraform Plan
