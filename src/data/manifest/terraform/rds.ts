@@ -76,7 +76,7 @@ resource "aws_db_parameter_group" "postgres_production" {
   count = var.environment == "production" ? 1 : 1
   
   name   = "devonn-postgres-params-\${var.environment}"
-  family = "postgres14"
+  family = var.family
   
   parameter {
     name  = "max_connections"
