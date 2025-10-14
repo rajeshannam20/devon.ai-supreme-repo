@@ -32,37 +32,36 @@ resource "aws_appmesh_route" "api_route" {
           virtual_node = aws_appmesh_virtual_node.api_node.name
           weight       = 90
         }
-
         weighted_target {
           virtual_node = "api-canary-node"
           weight       = 10
         }
+      }
 
-        retry {
-          http_retry_events = ["server-error", "gateway-error"]
-          max_retries       = 3
+      retry_policy {
+        http_retry_events = ["server-error", "gateway-error"]
+        max_retries       = 3
 
-          per_retry_timeout {
-            unit  = "ms"
-            value = 1000
-          }
+        per_retry_timeout {
+          unit  = "ms"
+          value = 1000
         }
+      }
 
-        timeout {
-          idle {
-            unit  = "ms"
-            value = 30000
-          }
-
-          per_request {
-            unit  = "ms"
-            value = 5000
-          }
+      timeout {
+        idle {
+          unit  = "ms"
+          value = 30000
+        }
+        per_request {
+          unit  = "ms"
+          value = 5000
         }
       }
     }
   }
 }
+
 
 `
 

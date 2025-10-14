@@ -562,16 +562,20 @@ resource "aws_cloudwatch_metric_alarm" "cpu_high_alarm" {
 }
 
 # 12. Resource Tagging Strategy for Cost Allocation
-resource "aws_default_tags" "default" {
-  tags = {
+provider "aws" {
+  alias  = "security_region"
+  region = var.aws_region
+  default_tags {
+    tags = {
     Project     = "devonn-ai"
     Environment = var.environment
     ManagedBy   = "terraform"
     CostCenter  = "engineering"
     Application = "devonn-\${var.environment}"
     Owner       = "devops-team"
+    }
   }
-};
+}
   
 `;
 
