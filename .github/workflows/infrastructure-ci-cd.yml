@@ -201,7 +201,7 @@ jobs:
           echo "Listing all files in ./src/data/manifest/terraform..."
           ls -l ./src/data/manifest/terraform
           echo "Listing all files in ./src/data/manifest/terraform..."
-          cat tfplan.json
+          cat ./src/data/manifest/terraform/tfplan.json
 
       - name: Run OPA Policy Checks
         run: |
