@@ -375,7 +375,7 @@ jobs:
         run: terraform init
         
       - name: List available artifacts
-        run: gh run-artifacts ${{ github.run_id }}
+        run: gh run view ${{ github.run_id }}
 
       - name: Download Terraform Plan
         uses: actions/download-artifact@v4
