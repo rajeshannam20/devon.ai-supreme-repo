@@ -276,7 +276,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: terraform-lock
-          path: "src/data/manifest/terraform/.terraform.lock.hcl"  
+          path: "/home/runner/work/devon.ai-supreme-repo/devon.ai-supreme-repo/src/data/manifest/terraform/.terraform.lock.hcl"  
         
       - name: Terraform Plan
         working-directory: ./src/data/manifest/terraform     
