@@ -260,7 +260,7 @@ jobs:
         run: |
           npx ts-node scripts/generate-tf-files.ts
 
-      - name: List Terraform files
+      - name: List Terraform directory before plan
         working-directory: ./src/data/manifest/terraform
         run: |
           ls -lh .          
@@ -282,6 +282,11 @@ jobs:
           terraform plan -out=tfplan
           terraform show -json tfplan > tfplan.json
         
+      - name: List Terraform directory after plan
+        working-directory: ./src/data/manifest/terraform
+        run: |
+          ls -lh .   
+
       - name: Upload Terraform Plan
         uses: actions/upload-artifact@v4
         with:
