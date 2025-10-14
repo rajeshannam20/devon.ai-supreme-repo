@@ -289,6 +289,12 @@ jobs:
           path: |
             ./src/data/manifest/terraform/tfplan
             ./src/data/manifest/terraform/tfplan.json
+
+      - name: Upload Terraform Lock File
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-lock
+          path: ./src/data/manifest/terraform/.terraform.lock.hcl            
           
       - name: Comment Plan on PR
         if: github.event_name == 'pull_request'
@@ -371,14 +377,15 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
           
+      - name: Download Terraform Lock File
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-lock
+          path: ./src/data/manifest/terraform
+
       - name: Terraform Init
         working-directory: ./src/data/manifest/terraform
         run: terraform init -upgrade
-             
-      - name: List available artifacts
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh run view ${{ github.run_id }}
 
       - name: Download Terraform Plan
         uses: actions/download-artifact@v4
