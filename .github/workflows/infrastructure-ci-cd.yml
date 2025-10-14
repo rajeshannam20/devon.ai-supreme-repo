@@ -391,15 +391,15 @@ jobs:
           name: terraform-lock
           path: ./src/data/manifest/terraform
 
-      - name: Terraform Init
-        working-directory: ./src/data/manifest/terraform
-        run: terraform init -upgrade
-
       - name: Download Terraform Plan
         uses: actions/download-artifact@v4
         with:
           name: terraform-plan
           path: ./src/data/manifest/terraform
+
+      - name: Terraform Init
+        working-directory: ./src/data/manifest/terraform
+        run: terraform init -upgrade          
         
       - name: Create deployment status
         id: deployment
