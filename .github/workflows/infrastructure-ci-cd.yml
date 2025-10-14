@@ -287,8 +287,8 @@ jobs:
         with:
           name: terraform-plan
           path: |
-            tfplan
-            tfplan.json
+            ./src/data/manifest/terraform/tfplan
+            ./src/data/manifest/terraform/tfplan.json
           
       - name: Comment Plan on PR
         if: github.event_name == 'pull_request'
