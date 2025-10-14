@@ -399,7 +399,7 @@ jobs:
         run: |
           echo "Implementing canary deployment strategy..."
           # Apply changes to a subset of resources first (canary pattern)
-          terraform apply -var-file=environments/${{ github.event.inputs.environment || 'production' }}.tfvars -target=module.vpc -target=module.eks -auto-approve
+          terraform apply -auto-approve ./tfplan
           
           echo "Waiting 2 minutes to verify canary deployment..."
           sleep 120
