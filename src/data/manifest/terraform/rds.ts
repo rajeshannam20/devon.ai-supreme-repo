@@ -111,7 +111,7 @@ resource "aws_db_parameter_group" "postgres_production" {
   
   parameter {
     name  = "wal_buffers"
-    value = "16MB"
+    value = "16777216"
   }
   
   parameter {

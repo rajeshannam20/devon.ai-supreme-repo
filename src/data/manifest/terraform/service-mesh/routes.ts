@@ -16,6 +16,21 @@ resource "aws_appmesh_virtual_router" "api_router" {
   }
 }
 
+resource "aws_appmesh_virtual_node" "api_canary_node" {
+  name      = "api-canary-node"
+  alias     = "api-canary-node"
+  mesh_name = aws_appmesh_mesh.devonn_mesh.name
+
+  spec {
+    listener {
+      port_mapping {
+        port     = 8000
+        protocol = "http"
+      }
+    }
+  }
+}
+
 resource "aws_appmesh_route" "api_route" {
   name                = "api-route"
   mesh_name           = aws_appmesh_mesh.devonn_mesh.name

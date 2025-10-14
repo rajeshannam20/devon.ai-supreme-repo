@@ -195,7 +195,7 @@ EOF
 resource "aws_iam_role_policy_attachment" "config_policy_attachment" {
   count      = var.environment == "production" ? 1 : 1
   role       = aws_iam_role.config_role[0].name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSConfigRole"
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSConfigRoleForOrganizations"
 }
 
 # --- NEW SECURITY ENHANCEMENTS ---
