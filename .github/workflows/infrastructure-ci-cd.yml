@@ -277,6 +277,7 @@ jobs:
         with:
           name: terraform-lock
           path: src/data/manifest/terraform/.terraform.lock.hcl
+          include-hidden-files: true
         
       - name: Terraform Plan
         working-directory: ./src/data/manifest/terraform     
