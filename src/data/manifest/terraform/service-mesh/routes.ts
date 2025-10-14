@@ -18,7 +18,6 @@ resource "aws_appmesh_virtual_router" "api_router" {
 
 resource "aws_appmesh_virtual_node" "api_canary_node" {
   name      = "api-canary-node"
-  alias     = "api-canary-node"
   mesh_name = aws_appmesh_mesh.devonn_mesh.name
 
   spec {
