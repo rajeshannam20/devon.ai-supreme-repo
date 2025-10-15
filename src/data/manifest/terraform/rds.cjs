@@ -391,7 +391,7 @@ resource "aws_iam_role" "backup_role" {
 }
 
 resource "aws_iam_role_policy_attachment" "backup_role_policy" {
-  count      = var.environment == "prod" ? 1 : 0
+  count      = var.environment == "prod" && var.create_backup_role ? 1 : 0
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForBackup"
   role       = aws_iam_role.backup_role[0].name
 }`;

@@ -144,7 +144,7 @@ EOF
 
 # IAM policy for VPC Flow Logs
 resource "aws_iam_role_policy" "vpc_flow_log_policy" {
-  count = var.environment == "prod" && !var.create_vpc_flow_log_role ? 1 : 0
+  count = var.environment == "prod" && var.create_vpc_flow_log_role ? 1 : 0
   name  = "devonn-vpc-flow-log-policy-\${var.environment}"
   role  = aws_iam_role.vpc_flow_log_role[0].id
   
