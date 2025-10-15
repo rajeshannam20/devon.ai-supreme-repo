@@ -412,6 +412,33 @@ jobs:
       - name: Debug Terraform Files
         run: ls -alh ./src/data/manifest/terraform
 
+      - name: Import existing resources if any
+        run: |
+          # Check and import RDS DB Parameter Group
+          if aws rds describe-db-parameter-groups --db-parameter-group-name devonn-postgres-params-prod >/dev/null 2>&1; then
+            terraform import aws_db_parameter_group.postgres_production devonn-postgres-params-prod
+          fi
+          
+          # Check and import Backup Vault
+          if aws backup get-backup-vault --backup-vault-name devonn-rds-backup-vault-prod >/dev/null 2>&1; then
+            terraform import aws_backup_vault.rds_backup_vault devonn-rds-backup-vault-prod
+          fi
+          
+          # Check and import Backup Role
+          if aws iam get-role --role-name devonn-backup-role-prod >/dev/null 2>&1; then
+            terraform import aws_iam_role.backup_role devonn-backup-role-prod
+          fi
+          
+          # Check and import CloudTrail
+          if aws cloudtrail get-trail-status --name devonn-cloudtrail-prod >/dev/null 2>&1; then
+            terraform import aws_cloudtrail.devonn_cloudtrail devonn-cloudtrail-prod
+          fi
+          
+          # Check and import CloudWatch Log Group
+          if aws logs describe-log-groups --log-group-name-prefix /aws/vpc-flow-logs/devonn-vpc-prod | grep /aws/vpc-flow-logs/devonn-vpc-prod >/dev/null 2>&1; then
+            terraform import aws_cloudwatch_log_group.flow_log_group "/aws/vpc-flow-logs/devonn-vpc-prod"
+          fi
+
       - name: Terraform Init
         working-directory: ./src/data/manifest/terraform
         run: terraform init -upgrade  
