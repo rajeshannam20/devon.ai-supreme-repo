@@ -3,7 +3,7 @@ import React from 'react';
 import Container from '@/components/Container';
 import SectionHeading from '@/components/SectionHeading';
 import ManifestCode from './manifest/ManifestCode';
-import { yamlCode, deploymentFiles } from '@/data/manifest'; // Updated import path
+import { yamlCode, deploymentFiles } from '@/data/manifest/index.cjs'; // Updated import path
 
 const ManifestSection: React.FC = () => {
   return (

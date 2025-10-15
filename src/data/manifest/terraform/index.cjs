@@ -1,14 +1,14 @@
 
 // Main export file for Terraform configuration
-import { commonConfigYaml } from './common';
-import { vpcConfigYaml } from './vpc';
-import { eksConfigYaml } from './eks'; 
-import { rdsConfigYaml } from './rds';
-import { kubernetesConfigYaml } from './kubernetes';
-import { variablesConfigYaml } from './variables';
-import { outputsConfigYaml } from './outputs';
-import { securityConfigYaml } from './security';
-import { serviceMeshYaml } from './service-mesh';
+import { commonConfigYaml } from './common.cjs';
+import { vpcConfigYaml } from './vpc.cjs';
+import { eksConfigYaml } from './eks.cjs'; 
+import { rdsConfigYaml } from './rds.cjs';
+import { kubernetesConfigYaml } from './kubernetes.cjs';
+import { variablesConfigYaml } from './variables.cjs';
+import { outputsConfigYaml } from './outputs.cjs';
+import { securityConfigYaml } from './security.cjs';
+import { serviceMeshYaml } from './service-mesh/index.cjs';
 
 // Combine all Terraform configuration sections
 export const terraformManifestYaml = `${commonConfigYaml}

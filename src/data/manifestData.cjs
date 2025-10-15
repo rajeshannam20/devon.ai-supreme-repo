@@ -7,4 +7,4 @@ export {
   deploymentManifestYaml,
   terraformManifestYaml,
   deploymentFilesText
-} from './manifest';
+} from './manifest/index.cjs';
