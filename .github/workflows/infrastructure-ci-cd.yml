@@ -412,6 +412,10 @@ jobs:
       - name: Debug Terraform Files
         run: ls -alh ./src/data/manifest/terraform
 
+      - name: Terraform Init
+        working-directory: ./src/data/manifest/terraform
+        run: terraform init -upgrade  
+
       - name: Import existing resources if any
         working-directory: ./src/data/manifest/terraform      
         run: |
@@ -438,15 +442,7 @@ jobs:
           # Check and import CloudWatch Log Group
           if aws logs describe-log-groups --log-group-name-prefix /aws/vpc-flow-logs/devonn-vpc-prod | grep /aws/vpc-flow-logs/devonn-vpc-prod >/dev/null 2>&1; then
             terraform import aws_cloudwatch_log_group.flow_log_group "/aws/vpc-flow-logs/devonn-vpc-prod"
-          fi
-
-      - name: Terraform Init
-        working-directory: ./src/data/manifest/terraform
-        run: terraform init -upgrade  
-
-      - name: Verify Terraform Providers
-        working-directory: ./src/data/manifest/terraform
-        run: terraform providers                
+          fi            
         
       - name: Create deployment status
         id: deployment
