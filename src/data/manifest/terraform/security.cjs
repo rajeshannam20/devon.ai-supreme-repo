@@ -203,46 +203,46 @@ resource "aws_iam_role_policy_attachment" "config_policy_attachment" {
 # 1. AWS GuardDuty for threat detection (production only)
 # AWS GuardDuty Detector (enables GuardDuty)
 resource "aws_guardduty_detector" "devonn_guardduty" {
-  count                    = var.environment == "production" ? 1 : 1
-  enable                   = true
+  count                    = var.environment == "production" ? 1 : 0
+  enable                   = false
   finding_publishing_frequency = "ONE_HOUR"
 }
 
 resource "aws_guardduty_detector_feature" "s3_data_events" {
-  count       = var.environment == "production" ? 1 : 1
+  count       = var.environment == "production" ? 1 : 0
   detector_id = aws_guardduty_detector.devonn_guardduty[0].id
   name        = "S3_DATA_EVENTS"
-  status      = "ENABLED"
+  status      = "DISABLED"
 }
 
 resource "aws_guardduty_detector_feature" "eks_audit_logs" {
-  count       = var.environment == "production" ? 1 : 1
+  count       = var.environment == "production" ? 1 : 0
   detector_id = aws_guardduty_detector.devonn_guardduty[0].id
   name        = "EKS_AUDIT_LOGS"
-  status      = "ENABLED"
+  status      = "DISABLED"
 }
 
 resource "aws_guardduty_detector_feature" "ebs_malware_protection" {
-  count       = var.environment == "production" ? 1 : 1
+  count       = var.environment == "production" ? 1 : 0
   detector_id = aws_guardduty_detector.devonn_guardduty[0].id
   name        = "EBS_MALWARE_PROTECTION"
-  status      = "ENABLED"
+  status      = "DISABLED"
 }
 
 # 2. AWS Security Hub to manage security posture
 resource "aws_securityhub_account" "devonn_securityhub" {
-  count = var.environment == "production" ? 1 : 1
+  count = var.environment == "production" ? 1 : 0
 }
 
 # Enable Security Hub standards
 resource "aws_securityhub_standards_subscription" "cis_aws_foundations" {
-  count          = var.environment == "production" ? 1 : 1
+  count          = var.environment == "production" ? 1 : 0
   standards_arn  = "arn:aws:securityhub:\${var.aws_region}::standards/cis-aws-foundations-benchmark/v/1.2.0"
   depends_on     = [aws_securityhub_account.devonn_securityhub]
 }
 
 resource "aws_securityhub_standards_subscription" "aws_foundational" {
-  count          = var.environment == "production" ? 1 : 1
+  count          = var.environment == "production" ? 1 : 0
   standards_arn  = "arn:aws:securityhub:\${var.aws_region}::standards/aws-foundational-security-best-practices/v/1.0.0"
   depends_on     = [aws_securityhub_account.devonn_securityhub]
 }
