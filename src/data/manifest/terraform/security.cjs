@@ -111,15 +111,14 @@ resource "aws_cloudwatch_log_group" "flow_log_group" {
   retention_in_days = 30
 }
 
-# Data source to check existing VPC Flow Log Role
-data "aws_iam_role" "existing_vpc_flow_log_role" {
-  count = var.environment == "prod" ? 1 : 0
-  name  = "devonn-vpc-flow-log-role-prod"
+variable "create_vpc_flow_log_role" {
+  type    = bool
+  default = true 
 }
 
 # IAM role for VPC Flow Logs
 resource "aws_iam_role" "vpc_flow_log_role" {
-  count = var.environment == "prod" && length(data.aws_iam_role.existing_vpc_flow_log_role) == 0 ? 1 : 0
+  count = var.environment == "prod" && !var.create_vpc_flow_log_role ? 1 : 0
   name  = "devonn-vpc-flow-log-role-\${var.environment}"
   
   assume_role_policy = <<EOF
@@ -145,7 +144,7 @@ EOF
 
 # IAM policy for VPC Flow Logs
 resource "aws_iam_role_policy" "vpc_flow_log_policy" {
-  count = var.environment == "prod" && length(data.aws_iam_role.existing_vpc_flow_log_role) == 0 ? 1 : 0
+  count = var.environment == "prod" && !var.create_vpc_flow_log_role ? 1 : 0
   name  = "devonn-vpc-flow-log-policy-\${var.environment}"
   role  = aws_iam_role.vpc_flow_log_role[0].id
   
@@ -229,21 +228,21 @@ resource "aws_guardduty_detector" "devonn_guardduty" {
 }
 
 resource "aws_guardduty_detector_feature" "s3_data_events" {
-  count       = var.environment == "prod" ? 1 : 0
+    count      = var.environment == "prod" && length(aws_guardduty_detector.devonn_guardduty) > 0 ? 1 : 0
   detector_id = aws_guardduty_detector.devonn_guardduty[0].id
   name        = "S3_DATA_EVENTS"
   status      = "DISABLED"
 }
 
 resource "aws_guardduty_detector_feature" "eks_audit_logs" {
-  count       = var.environment == "prod" ? 1 : 0
+  count      = var.environment == "prod" && length(aws_guardduty_detector.devonn_guardduty) > 0 ? 1 : 0
   detector_id = aws_guardduty_detector.devonn_guardduty[0].id
   name        = "EKS_AUDIT_LOGS"
   status      = "DISABLED"
 }
 
 resource "aws_guardduty_detector_feature" "ebs_malware_protection" {
-  count       = var.environment == "prod" ? 1 : 0
+  count      = var.environment == "prod" && length(aws_guardduty_detector.devonn_guardduty) > 0 ? 1 : 0
   detector_id = aws_guardduty_detector.devonn_guardduty[0].id
   name        = "EBS_MALWARE_PROTECTION"
   status      = "DISABLED"

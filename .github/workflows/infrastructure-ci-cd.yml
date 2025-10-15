@@ -283,8 +283,43 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: terraform-config
-          path: ./src/data/manifest/terraform/*.tf          
-        
+          path: ./src/data/manifest/terraform/*.tf      
+
+      - name: Generate dynamic tfvars override based on existing IAM roles
+        shell: bash
+        env:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          echo "# Dynamically generated tfvars" > ./src/data/manifest/terraform/tfvars_override.tfvars
+      
+          # Check for backup role existence
+          if aws iam get-role --role-name devonn-backup-role-prod --region $AWS_REGION >/dev/null 2>&1; then
+            echo 'create_backup_role = false' >> ./src/data/manifest/terraform/tfvars_override.tfvars
+          else
+            echo 'create_backup_role = true' >> ./src/data/manifest/terraform/tfvars_override.tfvars
+          fi
+      
+          # Repeat similar checks for other roles (replace as needed)
+          if aws iam get-role --role-name devonn-vpc-flow-log-role-prod --region $AWS_REGION >/dev/null 2>&1; then
+            echo 'create_vpc_flow_log_role = false' >> ./src/data/manifest/terraform/tfvars_override.tfvars
+          else
+            echo 'create_vpc_flow_log_role = true' >> ./src/data/manifest/terraform/tfvars_override.tfvars
+          fi
+      
+          if aws iam get-role --role-name devonn-xray-role-prod --region $AWS_REGION >/dev/null 2>&1; then
+            echo 'create_xray_role = false' >> ./src/data/manifest/terraform/tfvars_override.tfvars
+          else
+            echo 'create_xray_role = true' >> ./src/data/manifest/terraform/tfvars_override.tfvars
+          fi              
+
+      - name: Upload tfvars override
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfvars-override
+          path: ./src/data/manifest/terraform/tfvars_override.tfvars       
+
       - name: Terraform Plan
         working-directory: ./src/data/manifest/terraform     
         env:
@@ -294,7 +329,7 @@ jobs:
           TF_VAR_db_password: ${{ secrets.RDS_DB_PASSWORD }}
         id: plan
         run: |
-          terraform plan -out=tfplan
+          terraform plan -var-file=tfvars_override.tfvars -out=tfplan
           terraform show -json tfplan > tfplan.json
         
       - name: List Terraform directory after plan
@@ -445,19 +480,25 @@ jobs:
           TF_VAR_db_password: ${{ secrets.RDS_DB_PASSWORD }}
         run: terraform plan -out=./tfplan
 
+      - name: Download tfvars override
+        uses: actions/download-artifact@v4
+        with:
+          name: tfvars-override
+          path: ./src/data/manifest/terraform        
+
       # Use selected deployment strategy
       - name: Canary Deployment
         if: github.event.inputs.deployment_strategy == 'canary' || github.event.inputs.deployment_strategy == null
         working-directory: ./src/data/manifest/terraform
         run: |
           echo "Implementing canary deployment strategy..."
-          terraform apply -auto-approve ./tfplan
+          terraform apply -var-file=tfvars_override.tfvars -auto-approve ./tfplan
           
           echo "Waiting 2 minutes to verify canary deployment..."
           sleep 120
           
           echo "Proceeding with full deployment..."
-          terraform apply -auto-approve ./tfplan
+          terraform apply -var-file=tfvars_override.tfvars -auto-approve ./tfplan
       
       - name: Blue-Green Deployment
         if: github.event.inputs.deployment_strategy == 'blue-green'

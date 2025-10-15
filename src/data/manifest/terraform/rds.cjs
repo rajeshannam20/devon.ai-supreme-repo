@@ -362,14 +362,13 @@ resource "aws_backup_selection" "rds_backup_selection" {
   ]
 }
 
-# Data source to check existing Backup Role
-data "aws_iam_role" "existing_backup_role" {
-  count = var.environment == "prod" ? 1 : 0
-  name  = "devonn-backup-role-prod"
+variable "create_backup_role" {
+  type    = bool
+  default = true 
 }
 
 resource "aws_iam_role" "backup_role" {
-  count = var.environment == "prod" && length(data.aws_iam_role.existing_backup_role) == 0 ? 1 : 0
+  count = var.environment == "prod" && !var.create_backup_role ? 1 : 0
   name  = "devonn-backup-role-\${var.environment}"
 
   assume_role_policy = jsonencode({
