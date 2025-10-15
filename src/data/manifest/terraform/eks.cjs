@@ -1,7 +1,7 @@
 export const eksConfigYaml = `# --- EKS Cluster Configuration ---
 
 locals {
-  eks_kubernetes_version = var.kubernetes_version != null ? var.kubernetes_version : "1.33"
+  kubernetes_version = var.kubernetes_version != null ? var.kubernetes_version : "1.33"
 }
 
 # 2. EKS Cluster Configuration
