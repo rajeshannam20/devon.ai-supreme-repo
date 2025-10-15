@@ -32,7 +32,7 @@ resource "aws_iam_role" "xray_role" {
 }
 
 resource "aws_iam_role_policy_attachment" "xray_role_policy" {
-  count      = var.environment == "prod" && length(data.aws_iam_role.existing_xray_role) == 0 ? 1 : 0
+  count      = var.environment == "prod" ? 1 : 0
   policy_arn = "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess"
   role       = aws_iam_role.xray_role[0].name
 }
