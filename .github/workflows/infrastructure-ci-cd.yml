@@ -417,7 +417,12 @@ jobs:
         run: terraform init -upgrade  
 
       - name: Import existing resources if any
-        working-directory: ./src/data/manifest/terraform      
+        working-directory: ./src/data/manifest/terraform   
+        env:
+          TF_VAR_aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          TF_VAR_aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          TF_VAR_aws_region: ${{ secrets.AWS_REGION }}
+          TF_VAR_db_password: ${{ secrets.RDS_DB_PASSWORD }}           
         run: |
           # Check and import RDS DB Parameter Group
           if aws rds describe-db-parameter-groups --db-parameter-group-name devonn-postgres-params-prod >/dev/null 2>&1; then
