@@ -2,7 +2,14 @@
 // Observability and monitoring configuration
 
 export const observabilityYaml = `# X-Ray integration for observability
+
+data "aws_iam_role" "existing_xray_role" {
+  count = var.environment == "prod" ? 1 : 0
+  name  = "devonn-xray-role-prod"
+}
+
 resource "aws_iam_role" "xray_role" {
+  count = var.environment == "prod" && length(data.aws_iam_role.existing_xray_role) == 0 ? 1 : 0
   name = "devonn-xray-role-\${var.environment}"
   
   assume_role_policy = jsonencode({
@@ -19,8 +26,9 @@ resource "aws_iam_role" "xray_role" {
   })
 
   lifecycle {
-    ignore_changes = [name, assume_role_policy]
-  }  
+    ignore_changes    = [name, assume_role_policy]
+    prevent_destroy   = true
+  }
 }
 
 resource "aws_iam_role_policy_attachment" "xray_role_policy" {

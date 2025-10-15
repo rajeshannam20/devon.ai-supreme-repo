@@ -17,4 +17,8 @@ resource "aws_appmesh_mesh" "devonn_mesh" {
     GitRepo     = "devonn-infra"
     GitBranch   = "main"
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }`;

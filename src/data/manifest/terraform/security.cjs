@@ -111,9 +111,15 @@ resource "aws_cloudwatch_log_group" "flow_log_group" {
   retention_in_days = 30
 }
 
+# Data source to check existing VPC Flow Log Role
+data "aws_iam_role" "existing_vpc_flow_log_role" {
+  count = var.environment == "prod" ? 1 : 0
+  name  = "devonn-vpc-flow-log-role-prod"
+}
+
 # IAM role for VPC Flow Logs
 resource "aws_iam_role" "vpc_flow_log_role" {
-  count = var.environment == "prod" ? 1 : 0
+  count = var.environment == "prod" && length(data.aws_iam_role.existing_vpc_flow_log_role) == 0 ? 1 : 0
   name  = "devonn-vpc-flow-log-role-\${var.environment}"
   
   assume_role_policy = <<EOF
@@ -132,13 +138,14 @@ resource "aws_iam_role" "vpc_flow_log_role" {
 EOF
 
   lifecycle {
-    ignore_changes = [name, assume_role_policy]
+    ignore_changes    = [name, assume_role_policy]
+    prevent_destroy   = true
   }
 }
 
 # IAM policy for VPC Flow Logs
 resource "aws_iam_role_policy" "vpc_flow_log_policy" {
-  count = var.environment == "prod" ? 1 : 0
+  count = var.environment == "prod" && length(data.aws_iam_role.existing_vpc_flow_log_role) == 0 ? 1 : 0
   name  = "devonn-vpc-flow-log-policy-\${var.environment}"
   role  = aws_iam_role.vpc_flow_log_role[0].id
   
@@ -160,6 +167,10 @@ resource "aws_iam_role_policy" "vpc_flow_log_policy" {
   ]
 }
 EOF
+
+  lifecycle {
+    ignore_changes = [name, policy]
+  }
 }
 
 # AWS Config for compliance monitoring (production only)
@@ -195,7 +206,8 @@ resource "aws_iam_role" "config_role" {
 EOF
 
   lifecycle {
-    ignore_changes = [name, assume_role_policy]
+    ignore_changes    = [name, assume_role_policy]
+    prevent_destroy   = true
   }
 }
 
@@ -218,21 +230,21 @@ resource "aws_guardduty_detector" "devonn_guardduty" {
 
 resource "aws_guardduty_detector_feature" "s3_data_events" {
   count       = var.environment == "prod" ? 1 : 0
-  detector_id = length(aws_guardduty_detector.devonn_guardduty) > 0 ? aws_guardduty_detector.devonn_guardduty[0].id : ""
+  detector_id = aws_guardduty_detector.devonn_guardduty[0].id
   name        = "S3_DATA_EVENTS"
   status      = "DISABLED"
 }
 
 resource "aws_guardduty_detector_feature" "eks_audit_logs" {
   count       = var.environment == "prod" ? 1 : 0
-  detector_id = length(aws_guardduty_detector.devonn_guardduty) > 0 ? aws_guardduty_detector.devonn_guardduty[0].id : ""
+  detector_id = aws_guardduty_detector.devonn_guardduty[0].id
   name        = "EKS_AUDIT_LOGS"
   status      = "DISABLED"
 }
 
 resource "aws_guardduty_detector_feature" "ebs_malware_protection" {
   count       = var.environment == "prod" ? 1 : 0
-  detector_id = length(aws_guardduty_detector.devonn_guardduty) > 0 ? aws_guardduty_detector.devonn_guardduty[0].id : ""
+  detector_id = aws_guardduty_detector.devonn_guardduty[0].id
   name        = "EBS_MALWARE_PROTECTION"
   status      = "DISABLED"
 }
@@ -244,13 +256,13 @@ resource "aws_securityhub_account" "devonn_securityhub" {
 
 # Enable Security Hub standards
 resource "aws_securityhub_standards_subscription" "cis_aws_foundations" {
-  count          = var.environment == "prod" ? 1 : 0
+  count          = var.enable_securityhub && var.environment == "prod" ? 1 : 0
   standards_arn  = "arn:aws:securityhub:\${var.aws_region}::standards/cis-aws-foundations-benchmark/v/1.2.0"
   depends_on     = [aws_securityhub_account.devonn_securityhub]
 }
 
 resource "aws_securityhub_standards_subscription" "aws_foundational" {
-  count          = var.environment == "prod" ? 1 : 0
+  count          = var.enable_securityhub && var.environment == "prod" ? 1 : 0
   standards_arn  = "arn:aws:securityhub:\${var.aws_region}::standards/aws-foundational-security-best-practices/v/1.0.0"
   depends_on     = [aws_securityhub_account.devonn_securityhub]
 }
