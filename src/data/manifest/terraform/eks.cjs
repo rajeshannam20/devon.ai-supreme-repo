@@ -1,5 +1,8 @@
 export const eksConfigYaml = `# --- EKS Cluster Configuration ---
 
+locals {
+  eks_kubernetes_version = var.kubernetes_version != null ? var.kubernetes_version : "1.33"
+}
 
 # 2. EKS Cluster Configuration
 module "eks" {
@@ -7,7 +10,7 @@ module "eks" {
   version         = "21.3.2"  
 
   name    = "devonn-eks-\${var.environment}"
-  kubernetes_version = var.kubernetes_version
+  kubernetes_version = local.kubernetes_version
 
   vpc_id          = module.vpc.vpc_id
   subnet_ids      = module.vpc.private_subnets
