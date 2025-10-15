@@ -204,7 +204,7 @@ resource "aws_iam_role_policy_attachment" "config_policy_attachment" {
 # AWS GuardDuty Detector (enables GuardDuty)
 resource "aws_guardduty_detector" "devonn_guardduty" {
   count                    = var.enable_guardduty && var.environment == "prod" ? 1 : 0
-  enable                   = true
+  enable                   = var.enable_guardduty
   finding_publishing_frequency = "ONE_HOUR"
 }
 
