@@ -3,17 +3,10 @@
 
 export const vpcConfigYaml = `# --- VPC Configuration ---
 
-variable "create_vpc" {
-  description = "Whether to create the VPC (false if it already exists)"
-  type        = bool
-  default     = true
-}
-
 # 1. VPC Configuration
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "5.1.0"
-  count = var.create_vpc ? 1 : 0
 
   name = "devonn-vpc-\${var.environment}"
   cidr = var.vpc_cidr
