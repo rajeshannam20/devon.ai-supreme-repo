@@ -423,10 +423,19 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
-          aws --version
           ENVIRONMENT=${{ github.event.inputs.environment || 'production' }}
           VPC_ID=$(aws ec2 describe-vpcs --filters "Name=tag:Name,Values=devonn-vpc-${ENVIRONMENT}" --query 'Vpcs[0].VpcId' --output text)
           echo "VPC_ID=$VPC_ID" >> $GITHUB_ENV
+
+      - name: Determine create_vpc variable
+        id: set_create_vpc
+        run: |
+          if [[ "${{ env.VPC_ID }}" == "None" || -z "${{ env.VPC_ID }}" ]]; then
+            echo "create_vpc=true" >> create_vpc.tfvars
+          else
+            echo "create_vpc=false" >> create_vpc.tfvars
+          fi
+
 
       - name: Import existing resources if any
         working-directory: ./src/data/manifest/terraform   
@@ -434,27 +443,28 @@ jobs:
           TF_VAR_aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
           TF_VAR_aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           TF_VAR_aws_region: ${{ secrets.AWS_REGION }}
-          TF_VAR_db_password: ${{ secrets.RDS_DB_PASSWORD }}           
+          TF_VAR_db_password: ${{ secrets.RDS_DB_PASSWORD }} 
+          VPC_ID: ${{ env.VPC_ID }}          
         run: |
           ENVIRONMENT=${{ github.event.inputs.environment || 'production' }}
-    
-          # Import all IAM roles with proper names        
+      
+          # Import IAM Roles
           terraform import aws_iam_role.backup_role devonn-backup-role-${ENVIRONMENT} || true
           terraform import aws_iam_role.vpc_flow_log_role devonn-vpc-flow-log-role-${ENVIRONMENT} || true
           terraform import aws_iam_role.config_role devonn-config-role-${ENVIRONMENT} || true
           terraform import aws_iam_role.rds_monitoring_role devonn-rds-monitoring-role-${ENVIRONMENT} || true
           terraform import aws_iam_role.xray_role devonn-xray-role-${ENVIRONMENT} || true
-    
+      
           # Import RDS Backup Vault
           terraform import aws_backup_vault.rds_backup_vault devonn-rds-backup-vault-${ENVIRONMENT} || true
-    
+      
           # Import RDS DB Parameter Group
           terraform import aws_db_parameter_group.postgres_production devonn-postgres-params-${ENVIRONMENT} || true
-    
+      
           # Import CloudTrail
           terraform import aws_cloudtrail.devonn_cloudtrail devonn-cloudtrail-${ENVIRONMENT} || true
-    
-          # Import CloudWatch Log Groups (repeat for all known log groups)
+      
+          # Import CloudWatch Log Groups
           LOG_GROUPS=(
             "/aws/vpc-flow-logs/devonn-vpc-${ENVIRONMENT}"
             "/aws/eks/devonn-eks-${ENVIRONMENT}/cluster"
@@ -465,13 +475,13 @@ jobs:
             fi
           done
           
-          # Import App Mesh Mesh
+          # Import App Mesh
           terraform import aws_appmesh_mesh.devonn_mesh devonn-mesh-${ENVIRONMENT} || true
-    
+      
           # Import KMS alias
           terraform import aws_kms_alias.cluster alias/eks/devonn-eks-${ENVIRONMENT} || true
-    
-          # Import VPC dynamically using retrieved VPC ID
+      
+          # Import existing VPC
           if [ -n "$VPC_ID" ] && [ "$VPC_ID" != "None" ]; then
             terraform import aws_vpc.this $VPC_ID || true
           else
@@ -493,13 +503,13 @@ jobs:
         working-directory: ./src/data/manifest/terraform
         run: |
           echo "Implementing canary deployment strategy..."
-          terraform apply -auto-approve ./tfplan
+          terraform apply -var-file=create_vpc.tfvars -auto-approve ./tfplan
           
           echo "Waiting 2 minutes to verify canary deployment..."
           sleep 120
           
           echo "Proceeding with full deployment..."
-          terraform apply -auto-approve ./tfplan
+          terraform apply -var-file=create_vpc.tfvars -auto-approve ./tfplan
       
       - name: Blue-Green Deployment
         if: github.event.inputs.deployment_strategy == 'blue-green'
