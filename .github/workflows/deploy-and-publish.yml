@@ -53,7 +53,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           environment: canary
           description: '🧪 Deploying Canary version'
-          transient_environment: true
+          transient-environment: true
 
       - name: Bump Chrome Extension Version
         run: |
