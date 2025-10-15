@@ -34,8 +34,11 @@ jobs:
         run: npm install --legacy-peer-deps
 
       - name: Run Snyk Security Test
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         run: |
           npm install -g snyk --legacy-peer-deps
+          snyk auth $SNYK_TOKEN
           snyk test
 
       - name: Build Vite React Project
