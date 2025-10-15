@@ -1,6 +1,3 @@
-
-#!/usr/bin/env node
-
 /**
  * Version bumping script for Chrome Extension
  * 

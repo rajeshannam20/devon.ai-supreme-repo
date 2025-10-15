@@ -428,26 +428,45 @@ jobs:
           if aws rds describe-db-parameter-groups --db-parameter-group-name devonn-postgres-params-prod >/dev/null 2>&1; then
             terraform import aws_db_parameter_group.postgres_production devonn-postgres-params-prod || true
           fi
-      
+          
           # Import Backup Vault
           if aws backup get-backup-vault --backup-vault-name devonn-rds-backup-vault-prod >/dev/null 2>&1; then
             terraform import aws_backup_vault.rds_backup_vault devonn-rds-backup-vault-prod || true
           fi
-      
-          # Import Backup Role
-          if aws iam get-role --role-name devonn-backup-role-prod >/dev/null 2>&1; then
-            terraform import aws_iam_role.backup_role devonn-backup-role-prod || true
-          fi
-      
+          
+          # Import all IAM roles with proper names
+          for role in devonn-backup-role-prod devonn-vpc-flow-log-role-prod devonn-config-role-prod devonn-rds-monitoring-role-prod devonn-xray-role-prod; do
+            if aws iam get-role --role-name $role >/dev/null 2>&1; then
+              terraform import aws_iam_role.${role//-/_} $role || true
+            fi
+          done
+          
           # Import CloudTrail
           if aws cloudtrail get-trail-status --name devonn-cloudtrail-prod >/dev/null 2>&1; then
             terraform import aws_cloudtrail.devonn_cloudtrail devonn-cloudtrail-prod || true
           fi
-      
-          # Import CloudWatch Log Group
-          if aws logs describe-log-groups --log-group-name-prefix /aws/vpc-flow-logs/devonn-vpc-prod | grep /aws/vpc-flow-logs/devonn-vpc-prod >/dev/null 2>&1; then
-            terraform import aws_cloudwatch_log_group.flow_log_group "/aws/vpc-flow-logs/devonn-vpc-prod" || true
-          fi        
+          
+          # Import CloudWatch Log Groups (repeat for all known log groups)
+          LOG_GROUPS=(
+            "/aws/vpc-flow-logs/devonn-vpc-prod"
+            "/aws/eks/devonn-eks-prod/cluster"
+          )
+          for log_group in "${LOG_GROUPS[@]}"; do
+            if aws logs describe-log-groups --log-group-name-prefix "$log_group" | grep "$log_group" >/dev/null 2>&1; then
+              terraform import aws_cloudwatch_log_group.${log_group//\//_} "$log_group" || true
+            fi
+          done
+          
+          # Import App Mesh Mesh
+          if aws appmesh describe-mesh --mesh-name devonn-mesh-prod >/dev/null 2>&1; then
+            terraform import aws_appmesh_mesh.devonn_mesh devonn-mesh-prod || true
+          fi
+          
+          # Import KMS Alias
+          if aws kms list-aliases | grep alias/eks/devonn-eks-prod >/dev/null 2>&1; then
+            terraform import module.eks.module.kms.aws_kms_alias.this["cluster"] alias/eks/devonn-eks-prod || true
+          fi
+       
         
       - name: Create deployment status
         id: deployment

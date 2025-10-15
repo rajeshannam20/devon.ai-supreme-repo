@@ -57,7 +57,7 @@ jobs:
 
       - name: Bump Chrome Extension Version
         run: |
-          node ./scripts/bump-version.js
+          node ./scripts/bump-version.cjs
           echo "Manifest version bumped."
 
       - name: Package Chrome Extension
