@@ -416,93 +416,16 @@ jobs:
         working-directory: ./src/data/manifest/terraform
         run: terraform init -upgrade  
 
-      - name: Terraform Destroy to clean existing resources
-        working-directory: ./src/data/manifest/terraform      
-        env:
-          TF_VAR_aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          TF_VAR_aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          TF_VAR_aws_region: ${{ secrets.AWS_REGION }}
-          TF_VAR_db_password: ${{ secrets.RDS_DB_PASSWORD }}        
-        run: |
-          echo "Running terraform destroy to cleanup existing conflicting resources..."
-          terraform destroy -auto-approve || echo "Destroy failed or no resources to destroy, continuing..."        
-
-      - name: Check Terraform state for existing IAM roles
-        working-directory: ./src/data/manifest/terraform
-        run: |
-          echo "Checking if 'devonn-rds-monitoring-role-prod' exists in terraform state..."
-          grep -C 5 "devonn-rds-monitoring-role-prod" terraform.tfstate || echo "Resource not found in state"
-          echo "Listing all IAM role resources managed:"
-          terraform state list | grep aws_iam_role || echo "No IAM roles found in state"
-          echo "Showing state details for rds_monitoring_role if exists:"
-          terraform state show aws_iam_role.rds_monitoring_role || echo "Resource aws_iam_role.rds_monitoring_role not found in state"
-
-      - name: Retrieve existing VPC ID(s)
-        id: get_vpc
-        env:
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        run: |
-          ENVIRONMENT=${{ github.event.inputs.environment || 'production' }}
-          VPC_ID=$(aws ec2 describe-vpcs --filters "Name=tag:Name,Values=devonn-vpc-${ENVIRONMENT}" --query 'Vpcs[0].VpcId' --output text)
-          echo "VPC_ID=$VPC_ID" >> $GITHUB_ENV
-          echo "VPC_ID is $VPC_ID"
-
-
-      - name: Import existing resources if any
-        working-directory: ./src/data/manifest/terraform   
-        env:
-          TF_VAR_aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          TF_VAR_aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          TF_VAR_aws_region: ${{ secrets.AWS_REGION }}
-          TF_VAR_db_password: ${{ secrets.RDS_DB_PASSWORD }}        
-        run: |
-          if [ "${{ github.event.inputs.environment }}" == "production" ] || [ -z "${{ github.event.inputs.environment }}" ]; then
-            ENVIRONMENT="prod"
-          else
-            ENVIRONMENT="${{ github.event.inputs.environment }}"
-          fi
-      
-          # Import IAM Roles
-          terraform import aws_iam_role.backup_role devonn-backup-role-prod || true
-          terraform import aws_iam_role.vpc_flow_log_role devonn-vpc-flow-log-role-prod || true
-          terraform import aws_iam_role.config_role devonn-config-role-prod || true
-          terraform import aws_iam_role.rds_monitoring_role devonn-rds-monitoring-role-prod || true
-          terraform import aws_iam_role.xray_role devonn-xray-role-prod || true
-
-          # Import RDS Backup Vault
-          terraform import aws_backup_vault.rds_backup_vault devonn-rds-backup-vault-prod || true
-      
-          # Import RDS DB Parameter Group
-          terraform import aws_db_parameter_group.postgres_production devonn-postgres-params-prod || true
-      
-          # Import CloudTrail
-          terraform import aws_cloudtrail.devonn_cloudtrail devonn-cloudtrail-prod || true
-      
-          # Import CloudWatch Log Groups
-          LOG_GROUPS=(
-            "/aws/vpc-flow-logs/devonn-vpc-prod"
-            "/aws/eks/devonn-eks-prod/cluster"
-          )
-          for log_group in "${LOG_GROUPS[@]}"; do
-            if aws logs describe-log-groups --log-group-name-prefix "$log_group" | grep "$log_group" >/dev/null 2>&1; then
-              terraform import aws_cloudwatch_log_group.${log_group//\//_} "$log_group" || true
-            fi
-          done
-          
-          # Import App Mesh
-          terraform import aws_appmesh_mesh.devonn_mesh devonn-mesh-prod || true
-      
-          # Import KMS alias
-          terraform import aws_kms_alias.cluster alias/eks/devonn-eks-prod || true
-
-          # Import existing VPC
-          if [ -n "$VPC_ID" ] && [ "$VPC_ID" != "None" ]; then
-            terraform import aws_vpc.this $VPC_ID || true
-          else
-            echo "No existing VPC found to import."
-          fi
+      # - name: Terraform Destroy to clean existing resources
+      #   working-directory: ./src/data/manifest/terraform      
+      #   env:
+      #     TF_VAR_aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     TF_VAR_aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     TF_VAR_aws_region: ${{ secrets.AWS_REGION }}
+      #     TF_VAR_db_password: ${{ secrets.RDS_DB_PASSWORD }}        
+      #   run: |
+      #     echo "Running terraform destroy to cleanup existing conflicting resources..."
+      #     terraform destroy -auto-approve || echo "Destroy failed or no resources to destroy, continuing..."        
         
       - name: Create deployment status
         id: deployment
@@ -513,6 +436,10 @@ jobs:
           env: ${{ github.event.inputs.environment || 'production' }}
           ref: ${{ github.ref }}
       
+      - name: Terraform Plan (fresh)
+        working-directory: ./src/data/manifest/terraform
+        run: terraform plan -out=./tfplan
+
       # Use selected deployment strategy
       - name: Canary Deployment
         if: github.event.inputs.deployment_strategy == 'canary' || github.event.inputs.deployment_strategy == null
