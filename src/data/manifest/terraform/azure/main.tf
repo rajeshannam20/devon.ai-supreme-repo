@@ -91,7 +91,7 @@ resource "azurerm_container_app" "backend" {
 
       env {
         name  = "LOG_LEVEL"
-        value = var.environment == "production" ? "INFO" : "DEBUG"
+        value = var.environment == "prod" ? "INFO" : "DEBUG"
       }
     }
 

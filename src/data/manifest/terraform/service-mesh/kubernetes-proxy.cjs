@@ -3,7 +3,7 @@
 
 export const kubernetesProxyYaml = `# Envoy proxy configuration for EKS
 resource "kubernetes_deployment" "envoy_proxy" {
-  count = var.environment == "production" ? 1 : 0
+  count = var.environment == "prod" ? 1 : 0
   
   metadata {
     name      = "envoy-proxy"

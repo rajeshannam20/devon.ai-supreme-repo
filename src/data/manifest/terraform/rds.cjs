@@ -27,7 +27,7 @@ module "rds" {
   publicly_accessible    = false
   
   # Backup configuration - enhanced for production
-  backup_retention_period = var.environment == "production" ? 30 : 7
+  backup_retention_period = var.environment == "prod" ? 30 : 7
   backup_window           = "03:00-06:00"
   maintenance_window      = "Mon:00:00-Mon:03:00"
   
@@ -36,7 +36,7 @@ module "rds" {
   performance_insights_retention_period = 7
   
   # Enhanced monitoring for production
-  monitoring_interval = var.environment == "production" ? 30 : 60
+  monitoring_interval = var.environment == "prod" ? 30 : 60
   monitoring_role_name = "devonn-rds-monitoring-role-\${var.environment}"
   create_monitoring_role = true
   
@@ -48,24 +48,24 @@ module "rds" {
   
   # Snapshots for production
   skip_final_snapshot = var.environment != "production"
-  final_snapshot_identifier_prefix = var.environment == "production" ? "devonn-postgres-final-\${var.environment}" : "devonn-postgres-final-production"
+  final_snapshot_identifier_prefix = var.environment == "prod" ? "devonn-postgres-final-\${var.environment}" : "devonn-postgres-final-production"
   
   # Automated backups
   copy_tags_to_snapshot = true
   
   # Parameter group for PostgreSQL optimizations
-  parameter_group_name = var.environment == "production" ? aws_db_parameter_group.postgres_production[0].name : "devonn-postgres-param-production"
+  parameter_group_name = var.environment == "prod" ? aws_db_parameter_group.postgres_production[0].name : "devonn-postgres-param-production"
 
   # Enhanced disaster recovery for production
-  enabled_cloudwatch_logs_exports = var.environment == "production" ? ["postgresql", "upgrade"] : []
+  enabled_cloudwatch_logs_exports = var.environment == "prod" ? ["postgresql", "upgrade"] : []
   
   # Cross-region snapshot replication for disaster recovery
   snapshot_identifier = var.use_snapshot ? var.snapshot_identifier : "devonn-postgres-final-production"
   
   # Reserved instances configuration through tagging
   tags = {
-    ReservedInstance = var.environment == "production" ? "eligible" : "not-eligible"
-    BackupStrategy = var.environment == "production" ? "cross-region" : "standard"
+    ReservedInstance = var.environment == "prod" ? "eligible" : "not-eligible"
+    BackupStrategy = var.environment == "prod" ? "cross-region" : "standard"
     Environment = var.environment
     CostCenter = "database-\${var.environment}"
     Project = "devonn"
@@ -74,7 +74,7 @@ module "rds" {
 
 # Production-optimized parameter group (only created for production environment)
 resource "aws_db_parameter_group" "postgres_production" {
-  count = var.environment == "production" ? 1 : 0
+  count = var.environment == "prod" ? 1 : 0
   
   name   = "devonn-postgres-params-\${var.environment}"
   family = var.family
@@ -122,7 +122,7 @@ resource "aws_db_parameter_group" "postgres_production" {
 
 # Read replica for production environment to improve read performance and act as failover standby
 resource "aws_db_instance" "postgres_read_replica" {
-  count = var.environment == "production" ? 1 : 0
+  count = var.environment == "prod" ? 1 : 0
   
   identifier           = "devonn-postgres-replica-\${var.environment}"
   replicate_source_db  = module.rds.db_instance_id
@@ -175,7 +175,7 @@ resource "aws_db_instance" "postgres_cross_region_replica" {
 
 # DB Event Subscription to get notified about important RDS events
 resource "aws_db_event_subscription" "default" {
-  count     = var.environment == "production" ? 1 : 1
+  count     = var.environment == "prod" ? 1 : 1
   name      = "devonn-rds-event-subscription"
   sns_topic = aws_sns_topic.db_events[0].arn
   
@@ -201,13 +201,13 @@ resource "aws_db_event_subscription" "default" {
 
 # SNS Topic for RDS Events
 resource "aws_sns_topic" "db_events" {
-  count = var.environment == "production" ? 1 : 1
+  count = var.environment == "prod" ? 1 : 1
   name  = "devonn-rds-events-\${var.environment}"
 }
 
 # CloudWatch Dashboard for RDS Monitoring
 resource "aws_cloudwatch_dashboard" "rds_dashboard" {
-  count          = var.environment == "production" ? 1 : 1
+  count          = var.environment == "prod" ? 1 : 1
   dashboard_name = "devonn-rds-dashboard-\${var.environment}"
   
   dashboard_body = jsonencode({
@@ -283,7 +283,7 @@ resource "aws_cloudwatch_dashboard" "rds_dashboard" {
 
 # RDS CloudWatch Alarms
 resource "aws_cloudwatch_metric_alarm" "rds_cpu_alarm_high" {
-  count               = var.environment == "production" ? 1 : 1
+  count               = var.environment == "prod" ? 1 : 1
   alarm_name          = "devonn-rds-high-cpu-\${var.environment}"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 3
@@ -302,7 +302,7 @@ resource "aws_cloudwatch_metric_alarm" "rds_cpu_alarm_high" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "rds_memory_alarm_low" {
-  count               = var.environment == "production" ? 1 : 1
+  count               = var.environment == "prod" ? 1 : 1
   alarm_name          = "devonn-rds-low-memory-\${var.environment}"
   comparison_operator = "LessThanThreshold"
   evaluation_periods  = 3
@@ -322,7 +322,7 @@ resource "aws_cloudwatch_metric_alarm" "rds_memory_alarm_low" {
 
 # AWS Backup Plan for RDS instances
 resource "aws_backup_plan" "rds_backup_plan" {
-  count = var.environment == "production" ? 1 : 0
+  count = var.environment == "prod" ? 1 : 0
   name  = "devonn-rds-backup-plan-\${var.environment}"
 
   rule {
@@ -347,12 +347,12 @@ resource "aws_backup_plan" "rds_backup_plan" {
 }
 
 resource "aws_backup_vault" "rds_backup_vault" {
-  count = var.environment == "production" ? 1 : 0
+  count = var.environment == "prod" ? 1 : 0
   name  = "devonn-rds-backup-vault-\${var.environment}"
 }
 
 resource "aws_backup_selection" "rds_backup_selection" {
-  count        = var.environment == "production" ? 1 : 1
+  count        = var.environment == "prod" ? 1 : 1
   name         = "devonn-rds-backup-selection"
   plan_id      = aws_backup_plan.rds_backup_plan[0].id
   iam_role_arn = aws_iam_role.backup_role[0].arn
@@ -363,7 +363,7 @@ resource "aws_backup_selection" "rds_backup_selection" {
 }
 
 resource "aws_iam_role" "backup_role" {
-  count = var.environment == "production" ? 1 : 0
+  count = var.environment == "prod" ? 1 : 0
   name  = "devonn-backup-role-\${var.environment}"
 
   assume_role_policy = jsonencode({
@@ -381,7 +381,7 @@ resource "aws_iam_role" "backup_role" {
 }
 
 resource "aws_iam_role_policy_attachment" "backup_role_policy" {
-  count      = var.environment == "production" ? 1 : 0
+  count      = var.environment == "prod" ? 1 : 0
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForBackup"
   role       = aws_iam_role.backup_role[0].name
 }`;

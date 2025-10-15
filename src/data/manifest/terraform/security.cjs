@@ -5,7 +5,7 @@ export const securityConfigYaml = `# --- Security Configuration ---
 
 # AWS CloudTrail for AWS API auditing
 resource "aws_cloudtrail" "devonn_cloudtrail" {
-  count                         = var.environment == "production" ? 1 : 1
+  count                         = var.environment == "prod" ? 1 : 1
   name                          = "devonn-cloudtrail-\${var.environment}"
   s3_bucket_name                = aws_s3_bucket.cloudtrail_bucket[0].id
   include_global_service_events = true
@@ -25,19 +25,19 @@ resource "aws_cloudtrail" "devonn_cloudtrail" {
 
 # S3 bucket for CloudTrail logs
 resource "aws_s3_bucket" "cloudtrail_bucket" {
-  count  = var.environment == "production" ? 1 : 1
+  count  = var.environment == "prod" ? 1 : 1
   bucket = "devonn-cloudtrail-\${var.environment}-\${random_id.bucket_suffix[0].hex}"
 }
 
 # CloudTrail bucket random suffix
 resource "random_id" "bucket_suffix" {
-  count       = var.environment == "production" ? 1 : 1
+  count       = var.environment == "prod" ? 1 : 1
   byte_length = 8
 }
 
 # S3 bucket policy for CloudTrail
 resource "aws_s3_bucket_policy" "cloudtrail_bucket_policy" {
-  count  = var.environment == "production" ? 1 : 1
+  count  = var.environment == "prod" ? 1 : 1
   bucket = aws_s3_bucket.cloudtrail_bucket[0].id
   
   policy = <<POLICY
@@ -74,7 +74,7 @@ POLICY
 
 # Security best practices for S3 buckets
 resource "aws_s3_bucket_public_access_block" "cloudtrail_bucket_access" {
-  count                   = var.environment == "production" ? 1 : 1
+  count                   = var.environment == "prod" ? 1 : 1
   bucket                  = aws_s3_bucket.cloudtrail_bucket[0].id
   block_public_acls       = true
   block_public_policy     = true
@@ -84,7 +84,7 @@ resource "aws_s3_bucket_public_access_block" "cloudtrail_bucket_access" {
 
 # Enable S3 bucket server-side encryption
 resource "aws_s3_bucket_server_side_encryption_configuration" "cloudtrail_bucket_encryption" {
-  count  = var.environment == "production" ? 1 : 1
+  count  = var.environment == "prod" ? 1 : 1
   bucket = aws_s3_bucket.cloudtrail_bucket[0].id
 
   rule {
@@ -96,7 +96,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "cloudtrail_bucket
 
 # VPC Flow Logs for network monitoring
 resource "aws_flow_log" "vpc_flow_logs" {
-  count                = var.environment == "production" ? 1 : 0
+  count                = var.environment == "prod" ? 1 : 0
   log_destination      = aws_cloudwatch_log_group.flow_log_group[0].arn
   log_destination_type = "cloud-watch-logs"
   traffic_type         = "ALL"
@@ -106,14 +106,14 @@ resource "aws_flow_log" "vpc_flow_logs" {
 
 # Log group for VPC Flow Logs
 resource "aws_cloudwatch_log_group" "flow_log_group" {
-  count             = var.environment == "production" ? 1 : 0
+  count             = var.environment == "prod" ? 1 : 0
   name              = "/aws/vpc-flow-logs/devonn-vpc-\${var.environment}"
   retention_in_days = 30
 }
 
 # IAM role for VPC Flow Logs
 resource "aws_iam_role" "vpc_flow_log_role" {
-  count = var.environment == "production" ? 1 : 0
+  count = var.environment == "prod" ? 1 : 0
   name  = "devonn-vpc-flow-log-role-\${var.environment}"
   
   assume_role_policy = <<EOF
@@ -134,7 +134,7 @@ EOF
 
 # IAM policy for VPC Flow Logs
 resource "aws_iam_role_policy" "vpc_flow_log_policy" {
-  count = var.environment == "production" ? 1 : 0
+  count = var.environment == "prod" ? 1 : 0
   name  = "devonn-vpc-flow-log-policy-\${var.environment}"
   role  = aws_iam_role.vpc_flow_log_role[0].id
   
@@ -160,7 +160,7 @@ EOF
 
 # AWS Config for compliance monitoring (production only)
 resource "aws_config_configuration_recorder" "devonn_config" {
-  count    = var.environment == "production" ? 1 : 0
+  count    = var.environment == "prod" ? 1 : 0
   name     = "devonn-config-recorder-\${var.environment}"
   role_arn = aws_iam_role.config_role[0].arn
   
@@ -172,7 +172,7 @@ resource "aws_config_configuration_recorder" "devonn_config" {
 
 # IAM role for AWS Config
 resource "aws_iam_role" "config_role" {
-  count = var.environment == "production" ? 1 : 0
+  count = var.environment == "prod" ? 1 : 0
   name  = "devonn-config-role-\${var.environment}"
   
   assume_role_policy = <<EOF
@@ -193,7 +193,7 @@ EOF
 
 # Attach AWS managed policy for Config
 resource "aws_iam_role_policy_attachment" "config_policy_attachment" {
-  count      = var.environment == "production" ? 1 : 0
+  count      = var.environment == "prod" ? 1 : 0
   role       = aws_iam_role.config_role[0].name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSConfigRoleForOrganizations"
 }
@@ -203,27 +203,27 @@ resource "aws_iam_role_policy_attachment" "config_policy_attachment" {
 # 1. AWS GuardDuty for threat detection (production only)
 # AWS GuardDuty Detector (enables GuardDuty)
 resource "aws_guardduty_detector" "devonn_guardduty" {
-  count                    = var.enable_guardduty && var.environment == "production" ? 1 : 0
+  count                    = var.enable_guardduty && var.environment == "prod" ? 1 : 0
   enable                   = true
   finding_publishing_frequency = "ONE_HOUR"
 }
 
 resource "aws_guardduty_detector_feature" "s3_data_events" {
-  count       = var.environment == "production" ? 1 : 0
+  count       = var.environment == "prod" ? 1 : 0
   detector_id = aws_guardduty_detector.devonn_guardduty[0].id
   name        = "S3_DATA_EVENTS"
   status      = "DISABLED"
 }
 
 resource "aws_guardduty_detector_feature" "eks_audit_logs" {
-  count       = var.environment == "production" ? 1 : 0
+  count       = var.environment == "prod" ? 1 : 0
   detector_id = aws_guardduty_detector.devonn_guardduty[0].id
   name        = "EKS_AUDIT_LOGS"
   status      = "DISABLED"
 }
 
 resource "aws_guardduty_detector_feature" "ebs_malware_protection" {
-  count       = var.environment == "production" ? 1 : 0
+  count       = var.environment == "prod" ? 1 : 0
   detector_id = aws_guardduty_detector.devonn_guardduty[0].id
   name        = "EBS_MALWARE_PROTECTION"
   status      = "DISABLED"
@@ -231,25 +231,25 @@ resource "aws_guardduty_detector_feature" "ebs_malware_protection" {
 
 # 2. AWS Security Hub to manage security posture
 resource "aws_securityhub_account" "devonn_securityhub" {
-  count = var.enable_securityhub && var.environment == "production" ? 1 : 0
+  count = var.enable_securityhub && var.environment == "prod" ? 1 : 0
 }
 
 # Enable Security Hub standards
 resource "aws_securityhub_standards_subscription" "cis_aws_foundations" {
-  count          = var.environment == "production" ? 1 : 0
+  count          = var.environment == "prod" ? 1 : 0
   standards_arn  = "arn:aws:securityhub:\${var.aws_region}::standards/cis-aws-foundations-benchmark/v/1.2.0"
   depends_on     = [aws_securityhub_account.devonn_securityhub]
 }
 
 resource "aws_securityhub_standards_subscription" "aws_foundational" {
-  count          = var.environment == "production" ? 1 : 0
+  count          = var.environment == "prod" ? 1 : 0
   standards_arn  = "arn:aws:securityhub:\${var.aws_region}::standards/aws-foundational-security-best-practices/v/1.0.0"
   depends_on     = [aws_securityhub_account.devonn_securityhub]
 }
 
 # 3. Network ACLs for additional network security
 resource "aws_network_acl" "private_nacl" {
-  count      = var.environment == "production" ? 1 : 1
+  count      = var.environment == "prod" ? 1 : 1
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
   
@@ -290,7 +290,7 @@ resource "aws_network_acl" "private_nacl" {
 }
 
 resource "aws_network_acl" "public_nacl" {
-  count      = var.environment == "production" ? 1 : 1
+  count      = var.environment == "prod" ? 1 : 1
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.public_subnets
   
@@ -342,7 +342,7 @@ resource "aws_network_acl" "public_nacl" {
 
 # 4. Enhanced monitoring with custom CloudWatch dashboards and SNS
 resource "aws_cloudwatch_dashboard" "devonn_dashboard" {
-  count          = var.environment == "production" ? 1 : 1
+  count          = var.environment == "prod" ? 1 : 1
   dashboard_name = "devonn-\${var.environment}-monitoring"
   
   dashboard_body = <<EOF
@@ -426,13 +426,13 @@ EOF
 
 # 5. Create SNS Topic for Alerts
 resource "aws_sns_topic" "alerts_topic" {
-  count  = var.environment == "production" ? 1 : 1
+  count  = var.environment == "prod" ? 1 : 1
   name   = "devonn-alerts-\${var.environment}"
 }
 
 # 6. Add CloudWatch Alarms with SNS Integration
 resource "aws_cloudwatch_metric_alarm" "rds_cpu_alarm" {
-  count               = var.environment == "production" ? 1 : 1
+  count               = var.environment == "prod" ? 1 : 1
   alarm_name          = "devonn-rds-cpu-high-\${var.environment}"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 2
@@ -451,7 +451,7 @@ resource "aws_cloudwatch_metric_alarm" "rds_cpu_alarm" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "rds_storage_alarm" {
-  count               = var.environment == "production" ? 1 : 1
+  count               = var.environment == "prod" ? 1 : 1
   alarm_name          = "devonn-rds-storage-low-\${var.environment}"
   comparison_operator = "LessThanThreshold"
   evaluation_periods  = 1
@@ -470,7 +470,7 @@ resource "aws_cloudwatch_metric_alarm" "rds_storage_alarm" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "eks_node_failure_alarm" {
-  count               = var.environment == "production" ? 1 : 1
+  count               = var.environment == "prod" ? 1 : 1
   alarm_name          = "devonn-eks-node-failure-\${var.environment}"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 1
@@ -490,7 +490,7 @@ resource "aws_cloudwatch_metric_alarm" "eks_node_failure_alarm" {
 
 # 7. Cross-region replication for RDS instance
 resource "aws_db_instance_automated_backups_replication" "rds_backup_replication" {
-  count                      = var.environment == "production" ? 1 : 1
+  count                      = var.environment == "prod" ? 1 : 1
   source_db_instance_arn     = module.rds.db_instance_arn
   retention_period           = 7
   kms_key_id                 = aws_kms_key.rds_backup_key[0].arn
@@ -498,7 +498,7 @@ resource "aws_db_instance_automated_backups_replication" "rds_backup_replication
 
 # 8. KMS Key for RDS backup encryption
 resource "aws_kms_key" "rds_backup_key" {
-  count                   = var.environment == "production" ? 1 : 1
+  count                   = var.environment == "prod" ? 1 : 1
   description             = "KMS key for RDS backup encryption"
   deletion_window_in_days = 30
   enable_key_rotation     = true
@@ -506,7 +506,7 @@ resource "aws_kms_key" "rds_backup_key" {
 
 # 9. Implement auto-scaling for EKS node groups with cost optimization
 resource "aws_autoscaling_policy" "scale_down_policy" {
-  count                  = var.environment == "production" ? 1 : 1
+  count                  = var.environment == "prod" ? 1 : 1
   name                   = "devonn-eks-scale-down-\${var.environment}"
   autoscaling_group_name = module.eks.eks_managed_node_groups["dev_nodes"].node_group_autoscaling_group_names[0]
   adjustment_type        = "ChangeInCapacity"
@@ -515,7 +515,7 @@ resource "aws_autoscaling_policy" "scale_down_policy" {
 }
 
 resource "aws_autoscaling_policy" "scale_up_policy" {
-  count                  = var.environment == "production" ? 1 : 1
+  count                  = var.environment == "prod" ? 1 : 1
   name                   = "devonn-eks-scale-up-\${var.environment}"
   autoscaling_group_name = module.eks.eks_managed_node_groups["dev_nodes"].node_group_autoscaling_group_names[0]
   adjustment_type        = "ChangeInCapacity"
@@ -525,7 +525,7 @@ resource "aws_autoscaling_policy" "scale_up_policy" {
 
 # 10. CloudWatch Alarm for Scale Down
 resource "aws_cloudwatch_metric_alarm" "cpu_low_alarm" {
-  count               = var.environment == "production" ? 1 : 1
+  count               = var.environment == "prod" ? 1 : 1
   alarm_name          = "devonn-eks-cpu-low-\${var.environment}"
   comparison_operator = "LessThanThreshold"
   evaluation_periods  = 3
@@ -544,7 +544,7 @@ resource "aws_cloudwatch_metric_alarm" "cpu_low_alarm" {
 
 # 11. CloudWatch Alarm for Scale Up
 resource "aws_cloudwatch_metric_alarm" "cpu_high_alarm" {
-  count               = var.environment == "production" ? 1 : 1
+  count               = var.environment == "prod" ? 1 : 1
   alarm_name          = "devonn-eks-cpu-high-\${var.environment}"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 2
