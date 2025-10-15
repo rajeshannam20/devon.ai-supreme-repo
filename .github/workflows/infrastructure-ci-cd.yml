@@ -413,6 +413,7 @@ jobs:
         run: ls -alh ./src/data/manifest/terraform
 
       - name: Import existing resources if any
+        working-directory: ./src/data/manifest/terraform      
         run: |
           # Check and import RDS DB Parameter Group
           if aws rds describe-db-parameter-groups --db-parameter-group-name devonn-postgres-params-prod >/dev/null 2>&1; then
