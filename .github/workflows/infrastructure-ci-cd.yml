@@ -426,6 +426,7 @@ jobs:
           ENVIRONMENT=${{ github.event.inputs.environment || 'production' }}
           VPC_ID=$(aws ec2 describe-vpcs --filters "Name=tag:Name,Values=devonn-vpc-${ENVIRONMENT}" --query 'Vpcs[0].VpcId' --output text)
           echo "VPC_ID=$VPC_ID" >> $GITHUB_ENV
+          echo "VPC_ID is $VPC_ID"
 
 
       - name: Import existing resources if any
@@ -443,25 +444,25 @@ jobs:
           fi
       
           # Import IAM Roles
-          terraform import aws_iam_role.backup_role devonn-backup-role-${ENVIRONMENT} || true
-          terraform import aws_iam_role.vpc_flow_log_role devonn-vpc-flow-log-role-${ENVIRONMENT} || true
-          terraform import aws_iam_role.config_role devonn-config-role-${ENVIRONMENT} || true
-          terraform import aws_iam_role.rds_monitoring_role devonn-rds-monitoring-role-${ENVIRONMENT} || true
-          terraform import aws_iam_role.xray_role devonn-xray-role-${ENVIRONMENT} || true
-      
+          terraform import aws_iam_role.backup_role devonn-backup-role-prod || true
+          terraform import aws_iam_role.vpc_flow_log_role devonn-vpc-flow-log-role-prod || true
+          terraform import aws_iam_role.config_role devonn-config-role-prod || true
+          terraform import aws_iam_role.rds_monitoring_role devonn-rds-monitoring-role-prod || true
+          terraform import aws_iam_role.xray_role devonn-xray-role-prod || true
+
           # Import RDS Backup Vault
-          terraform import aws_backup_vault.rds_backup_vault devonn-rds-backup-vault-${ENVIRONMENT} || true
+          terraform import aws_backup_vault.rds_backup_vault devonn-rds-backup-vault-prod || true
       
           # Import RDS DB Parameter Group
-          terraform import aws_db_parameter_group.postgres_production devonn-postgres-params-${ENVIRONMENT} || true
+          terraform import aws_db_parameter_group.postgres_production devonn-postgres-params-prod || true
       
           # Import CloudTrail
-          terraform import aws_cloudtrail.devonn_cloudtrail devonn-cloudtrail-${ENVIRONMENT} || true
+          terraform import aws_cloudtrail.devonn_cloudtrail devonn-cloudtrail-prod || true
       
           # Import CloudWatch Log Groups
           LOG_GROUPS=(
-            "/aws/vpc-flow-logs/devonn-vpc-${ENVIRONMENT}"
-            "/aws/eks/devonn-eks-${ENVIRONMENT}/cluster"
+            "/aws/vpc-flow-logs/devonn-vpc-prod"
+            "/aws/eks/devonn-eks-prod/cluster"
           )
           for log_group in "${LOG_GROUPS[@]}"; do
             if aws logs describe-log-groups --log-group-name-prefix "$log_group" | grep "$log_group" >/dev/null 2>&1; then
@@ -470,11 +471,11 @@ jobs:
           done
           
           # Import App Mesh
-          terraform import aws_appmesh_mesh.devonn_mesh devonn-mesh-${ENVIRONMENT} || true
+          terraform import aws_appmesh_mesh.devonn_mesh devonn-mesh-prod || true
       
           # Import KMS alias
-          terraform import aws_kms_alias.cluster alias/eks/devonn-eks-${ENVIRONMENT} || true
-      
+          terraform import aws_kms_alias.cluster alias/eks/devonn-eks-prod || true
+
           # Import existing VPC
           if [ -n "$VPC_ID" ] && [ "$VPC_ID" != "None" ]; then
             terraform import aws_vpc.this $VPC_ID || true
