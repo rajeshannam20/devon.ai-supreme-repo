@@ -52,13 +52,13 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           environment: canary
-          description: '🧪 Deploying Canary version'
+          description: 'Deploying Canary version'
           transient-environment: true
 
       - name: Bump Chrome Extension Version
         run: |
           node ./scripts/bump-version.js
-          echo "✅ Manifest version bumped."
+          echo "Manifest version bumped."
 
       - name: Package Chrome Extension
         run: |
@@ -73,29 +73,29 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           environment: production
-          description: '🚀 Deploying to production after Canary success'
+          description: 'Deploying to production after Canary success'
           transient_environment: false
           production_environment: true
 
       - name: Send Preview Link to Slack (if available)
         if: env.VERCEL_PREVIEW_URL != ''
         run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"text":"🧪 *Preview Environment Ready*: ${{ env.VERCEL_PREVIEW_URL }}"}' $SLACK_WEBHOOK_URL
+          curl -X POST -H 'Content-type: application/json' --data '{"text":"*Preview Environment Ready*: ${{ env.VERCEL_PREVIEW_URL }}"}' $SLACK_WEBHOOK_URL
 
       - name: Slack Notification - Success
         if: success()
         run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"text":"✅ *Deployment + Chrome Extension Publish Successful!*"}' $SLACK_WEBHOOK_URL
+          curl -X POST -H 'Content-type: application/json' --data '{"text":"*Deployment + Chrome Extension Publish Successful!*"}' $SLACK_WEBHOOK_URL
 
       - name: Slack Notification - Failure
         if: failure()
         run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"text":"❌ *Deployment Failed! Rollback is auto-triggered!*"}' $SLACK_WEBHOOK_URL
+          curl -X POST -H 'Content-type: application/json' --data '{"text":"*Deployment Failed! Rollback is auto-triggered!*"}' $SLACK_WEBHOOK_URL
 
       - name: Create GitHub Issue on Failure
         if: failure()
         uses: dacbd/create-issue-action@v1
         with:
-          title: "🚨 Deployment Failure Detected"
+          title: "Deployment Failure Detected"
           body: "Auto-created because the deployment failed. Check logs for troubleshooting."
           token: ${{ secrets.GITHUB_TOKEN }}
