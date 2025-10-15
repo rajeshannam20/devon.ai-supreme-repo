@@ -203,8 +203,8 @@ resource "aws_iam_role_policy_attachment" "config_policy_attachment" {
 # 1. AWS GuardDuty for threat detection (production only)
 # AWS GuardDuty Detector (enables GuardDuty)
 resource "aws_guardduty_detector" "devonn_guardduty" {
-  count                    = var.environment == "production" ? 1 : 0
-  enable                   = false
+  count                    = var.enable_guardduty && var.environment == "production" ? 1 : 0
+  enable                   = true
   finding_publishing_frequency = "ONE_HOUR"
 }
 
@@ -231,7 +231,7 @@ resource "aws_guardduty_detector_feature" "ebs_malware_protection" {
 
 # 2. AWS Security Hub to manage security posture
 resource "aws_securityhub_account" "devonn_securityhub" {
-  count = var.environment == "production" ? 1 : 0
+  count = var.enable_securityhub && var.environment == "production" ? 1 : 0
 }
 
 # Enable Security Hub standards

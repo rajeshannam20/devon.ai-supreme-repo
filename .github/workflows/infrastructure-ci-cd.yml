@@ -424,32 +424,26 @@ jobs:
           TF_VAR_aws_region: ${{ secrets.AWS_REGION }}
           TF_VAR_db_password: ${{ secrets.RDS_DB_PASSWORD }}           
         run: |
+          # Import all IAM roles with proper names        
+          terraform import aws_iam_role.backup_role devonn-backup-role-\${var.environment} || true
+          terraform import aws_iam_role.vpc_flow_log_role devonn-vpc-flow-log-role-\${var.environment} || true
+          terraform import aws_iam_role.config_role devonn-config-role-\${var.environment} || true
+          terraform import aws_iam_role.rds_monitoring_role devonn-rds-monitoring-role-\${var.environment} || true
+          terraform import aws_iam_role.xray_role devonn-xray-role-\${var.environment} || true
+
+          # Import RDS Backup Vault
+          terraform import aws_backup_vault.rds_backup_vault devonn-rds-backup-vault-\${var.environment} || true
+
           # Import RDS DB Parameter Group
-          if aws rds describe-db-parameter-groups --db-parameter-group-name devonn-postgres-params-prod >/dev/null 2>&1; then
-            terraform import aws_db_parameter_group.postgres_production devonn-postgres-params-prod || true
-          fi
-          
-          # Import Backup Vault
-          if aws backup get-backup-vault --backup-vault-name devonn-rds-backup-vault-prod >/dev/null 2>&1; then
-            terraform import aws_backup_vault.rds_backup_vault devonn-rds-backup-vault-prod || true
-          fi
-          
-          # Import all IAM roles with proper names
-          for role in devonn-backup-role-prod devonn-vpc-flow-log-role-prod devonn-config-role-prod devonn-rds-monitoring-role-prod devonn-xray-role-prod; do
-            if aws iam get-role --role-name $role >/dev/null 2>&1; then
-              terraform import aws_iam_role.${role//-/_} $role || true
-            fi
-          done
+          terraform import aws_db_parameter_group.postgres_production devonn-postgres-params-\${var.environment} || true
           
           # Import CloudTrail
-          if aws cloudtrail get-trail-status --name devonn-cloudtrail-prod >/dev/null 2>&1; then
-            terraform import aws_cloudtrail.devonn_cloudtrail devonn-cloudtrail-prod || true
-          fi
-          
+          terraform import aws_cloudtrail.devonn_cloudtrail devonn-cloudtrail-\${var.environment} || true
+
           # Import CloudWatch Log Groups (repeat for all known log groups)
           LOG_GROUPS=(
-            "/aws/vpc-flow-logs/devonn-vpc-prod"
-            "/aws/eks/devonn-eks-prod/cluster"
+            "/aws/vpc-flow-logs/devonn-vpc-\${var.environment}"
+            "/aws/eks/devonn-eks-\${var.environment}/cluster"
           )
           for log_group in "${LOG_GROUPS[@]}"; do
             if aws logs describe-log-groups --log-group-name-prefix "$log_group" | grep "$log_group" >/dev/null 2>&1; then
@@ -458,14 +452,8 @@ jobs:
           done
           
           # Import App Mesh Mesh
-          if aws appmesh describe-mesh --mesh-name devonn-mesh-prod >/dev/null 2>&1; then
-            terraform import aws_appmesh_mesh.devonn_mesh devonn-mesh-prod || true
-          fi
+          terraform import aws_appmesh_mesh.devonn_mesh devonn-mesh-\${var.environment} || true
           
-          # Import KMS Alias
-          if aws kms list-aliases | grep alias/eks/devonn-eks-prod >/dev/null 2>&1; then
-            terraform import module.eks.module.kms.aws_kms_alias.this["cluster"] alias/eks/devonn-eks-prod || true
-          fi
        
         
       - name: Create deployment status

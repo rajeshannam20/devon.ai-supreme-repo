@@ -159,6 +159,16 @@ variable "kubernetes_version" {
   default = null
 }
 
+variable "enable_guardduty" {
+  type    = bool
+  default = false
+}
+
+variable "enable_securityhub" {
+  type    = bool
+  default = false
+}
+
 `;
 
 
