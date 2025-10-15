@@ -416,6 +416,16 @@ jobs:
         working-directory: ./src/data/manifest/terraform
         run: terraform init -upgrade  
 
+      - name: Check Terraform state for existing IAM roles
+        working-directory: ./src/data/manifest/terraform
+        run: |
+          echo "Checking if 'devonn-rds-monitoring-role-prod' exists in terraform state..."
+          grep -C 5 "devonn-rds-monitoring-role-prod" terraform.tfstate || echo "Resource not found in state"
+          echo "Listing all IAM role resources managed:"
+          terraform state list | grep aws_iam_role || echo "No IAM roles found in state"
+          echo "Showing state details for rds_monitoring_role if exists:"
+          terraform state show aws_iam_role.rds_monitoring_role || echo "Resource aws_iam_role.rds_monitoring_role not found in state"
+
       - name: Retrieve existing VPC ID(s)
         id: get_vpc
         env:
