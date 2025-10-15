@@ -210,21 +210,21 @@ resource "aws_guardduty_detector" "devonn_guardduty" {
 
 resource "aws_guardduty_detector_feature" "s3_data_events" {
   count       = var.environment == "prod" ? 1 : 0
-  detector_id = aws_guardduty_detector.devonn_guardduty[0].id
+  detector_id = length(aws_guardduty_detector.devonn_guardduty) > 0 ? aws_guardduty_detector.devonn_guardduty[0].id : ""
   name        = "S3_DATA_EVENTS"
   status      = "DISABLED"
 }
 
 resource "aws_guardduty_detector_feature" "eks_audit_logs" {
   count       = var.environment == "prod" ? 1 : 0
-  detector_id = aws_guardduty_detector.devonn_guardduty[0].id
+  detector_id = length(aws_guardduty_detector.devonn_guardduty) > 0 ? aws_guardduty_detector.devonn_guardduty[0].id : ""
   name        = "EKS_AUDIT_LOGS"
   status      = "DISABLED"
 }
 
 resource "aws_guardduty_detector_feature" "ebs_malware_protection" {
   count       = var.environment == "prod" ? 1 : 0
-  detector_id = aws_guardduty_detector.devonn_guardduty[0].id
+  detector_id = length(aws_guardduty_detector.devonn_guardduty) > 0 ? aws_guardduty_detector.devonn_guardduty[0].id : ""
   name        = "EBS_MALWARE_PROTECTION"
   status      = "DISABLED"
 }
