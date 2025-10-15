@@ -66,7 +66,7 @@ jobs:
 
       - name: Upload and Publish Chrome Extension
         run: |
-          node ./scripts/upload-to-chrome-webstore.js
+          node ./scripts/upload-to-chrome-webstore.cjs
 
       - name: Production Deployment Mark
         uses: chrnorm/deployment-action@v2
