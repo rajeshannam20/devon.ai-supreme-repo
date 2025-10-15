@@ -412,6 +412,12 @@ jobs:
       - name: Debug Terraform Files
         run: ls -alh ./src/data/manifest/terraform
 
+      - name: Terraform Destroy to clean existing resources
+        working-directory: ./src/data/manifest/terraform
+        run: |
+          echo "Running terraform destroy to cleanup existing conflicting resources..."
+          terraform destroy -auto-approve || echo "Destroy failed or no resources to destroy, continuing..."
+
       - name: Terraform Init
         working-directory: ./src/data/manifest/terraform
         run: terraform init -upgrade  
