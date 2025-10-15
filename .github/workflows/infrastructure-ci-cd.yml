@@ -424,30 +424,30 @@ jobs:
           TF_VAR_aws_region: ${{ secrets.AWS_REGION }}
           TF_VAR_db_password: ${{ secrets.RDS_DB_PASSWORD }}           
         run: |
-          # Check and import RDS DB Parameter Group
+          # Import RDS DB Parameter Group
           if aws rds describe-db-parameter-groups --db-parameter-group-name devonn-postgres-params-prod >/dev/null 2>&1; then
-            terraform import aws_db_parameter_group.postgres_production devonn-postgres-params-prod
+            terraform import aws_db_parameter_group.postgres_production devonn-postgres-params-prod || true
           fi
-          
-          # Check and import Backup Vault
+      
+          # Import Backup Vault
           if aws backup get-backup-vault --backup-vault-name devonn-rds-backup-vault-prod >/dev/null 2>&1; then
-            terraform import aws_backup_vault.rds_backup_vault devonn-rds-backup-vault-prod
+            terraform import aws_backup_vault.rds_backup_vault devonn-rds-backup-vault-prod || true
           fi
-          
-          # Check and import Backup Role
+      
+          # Import Backup Role
           if aws iam get-role --role-name devonn-backup-role-prod >/dev/null 2>&1; then
-            terraform import aws_iam_role.backup_role devonn-backup-role-prod
+            terraform import aws_iam_role.backup_role devonn-backup-role-prod || true
           fi
-          
-          # Check and import CloudTrail
+      
+          # Import CloudTrail
           if aws cloudtrail get-trail-status --name devonn-cloudtrail-prod >/dev/null 2>&1; then
-            terraform import aws_cloudtrail.devonn_cloudtrail devonn-cloudtrail-prod
+            terraform import aws_cloudtrail.devonn_cloudtrail devonn-cloudtrail-prod || true
           fi
-          
-          # Check and import CloudWatch Log Group
+      
+          # Import CloudWatch Log Group
           if aws logs describe-log-groups --log-group-name-prefix /aws/vpc-flow-logs/devonn-vpc-prod | grep /aws/vpc-flow-logs/devonn-vpc-prod >/dev/null 2>&1; then
-            terraform import aws_cloudwatch_log_group.flow_log_group "/aws/vpc-flow-logs/devonn-vpc-prod"
-          fi            
+            terraform import aws_cloudwatch_log_group.flow_log_group "/aws/vpc-flow-logs/devonn-vpc-prod" || true
+          fi        
         
       - name: Create deployment status
         id: deployment
