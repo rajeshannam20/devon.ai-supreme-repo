@@ -96,7 +96,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "cloudtrail_bucket
 
 # VPC Flow Logs for network monitoring
 resource "aws_flow_log" "vpc_flow_logs" {
-  count                = var.environment == "production" ? 1 : 1
+  count                = var.environment == "production" ? 1 : 0
   log_destination      = aws_cloudwatch_log_group.flow_log_group[0].arn
   log_destination_type = "cloud-watch-logs"
   traffic_type         = "ALL"
@@ -106,14 +106,14 @@ resource "aws_flow_log" "vpc_flow_logs" {
 
 # Log group for VPC Flow Logs
 resource "aws_cloudwatch_log_group" "flow_log_group" {
-  count             = var.environment == "production" ? 1 : 1
+  count             = var.environment == "production" ? 1 : 0
   name              = "/aws/vpc-flow-logs/devonn-vpc-\${var.environment}"
   retention_in_days = 30
 }
 
 # IAM role for VPC Flow Logs
 resource "aws_iam_role" "vpc_flow_log_role" {
-  count = var.environment == "production" ? 1 : 1
+  count = var.environment == "production" ? 1 : 0
   name  = "devonn-vpc-flow-log-role-\${var.environment}"
   
   assume_role_policy = <<EOF
@@ -134,7 +134,7 @@ EOF
 
 # IAM policy for VPC Flow Logs
 resource "aws_iam_role_policy" "vpc_flow_log_policy" {
-  count = var.environment == "production" ? 1 : 1
+  count = var.environment == "production" ? 1 : 0
   name  = "devonn-vpc-flow-log-policy-\${var.environment}"
   role  = aws_iam_role.vpc_flow_log_role[0].id
   
@@ -160,7 +160,7 @@ EOF
 
 # AWS Config for compliance monitoring (production only)
 resource "aws_config_configuration_recorder" "devonn_config" {
-  count    = var.environment == "production" ? 1 : 1
+  count    = var.environment == "production" ? 1 : 0
   name     = "devonn-config-recorder-\${var.environment}"
   role_arn = aws_iam_role.config_role[0].arn
   
@@ -172,7 +172,7 @@ resource "aws_config_configuration_recorder" "devonn_config" {
 
 # IAM role for AWS Config
 resource "aws_iam_role" "config_role" {
-  count = var.environment == "production" ? 1 : 1
+  count = var.environment == "production" ? 1 : 0
   name  = "devonn-config-role-\${var.environment}"
   
   assume_role_policy = <<EOF
@@ -193,7 +193,7 @@ EOF
 
 # Attach AWS managed policy for Config
 resource "aws_iam_role_policy_attachment" "config_policy_attachment" {
-  count      = var.environment == "production" ? 1 : 1
+  count      = var.environment == "production" ? 1 : 0
   role       = aws_iam_role.config_role[0].name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSConfigRoleForOrganizations"
 }

@@ -74,7 +74,7 @@ module "rds" {
 
 # Production-optimized parameter group (only created for production environment)
 resource "aws_db_parameter_group" "postgres_production" {
-  count = var.environment == "production" ? 1 : 1
+  count = var.environment == "production" ? 1 : 0
   
   name   = "devonn-postgres-params-\${var.environment}"
   family = var.family
@@ -122,7 +122,7 @@ resource "aws_db_parameter_group" "postgres_production" {
 
 # Read replica for production environment to improve read performance and act as failover standby
 resource "aws_db_instance" "postgres_read_replica" {
-  count = var.environment == "production" ? 1 : 1
+  count = var.environment == "production" ? 1 : 0
   
   identifier           = "devonn-postgres-replica-\${var.environment}"
   replicate_source_db  = module.rds.db_instance_id
@@ -322,7 +322,7 @@ resource "aws_cloudwatch_metric_alarm" "rds_memory_alarm_low" {
 
 # AWS Backup Plan for RDS instances
 resource "aws_backup_plan" "rds_backup_plan" {
-  count = var.environment == "production" ? 1 : 1
+  count = var.environment == "production" ? 1 : 0
   name  = "devonn-rds-backup-plan-\${var.environment}"
 
   rule {
@@ -347,7 +347,7 @@ resource "aws_backup_plan" "rds_backup_plan" {
 }
 
 resource "aws_backup_vault" "rds_backup_vault" {
-  count = var.environment == "production" ? 1 : 1
+  count = var.environment == "production" ? 1 : 0
   name  = "devonn-rds-backup-vault-\${var.environment}"
 }
 
@@ -363,7 +363,7 @@ resource "aws_backup_selection" "rds_backup_selection" {
 }
 
 resource "aws_iam_role" "backup_role" {
-  count = var.environment == "production" ? 1 : 1
+  count = var.environment == "production" ? 1 : 0
   name  = "devonn-backup-role-\${var.environment}"
 
   assume_role_policy = jsonencode({
@@ -381,7 +381,7 @@ resource "aws_iam_role" "backup_role" {
 }
 
 resource "aws_iam_role_policy_attachment" "backup_role_policy" {
-  count      = var.environment == "production" ? 1 : 1
+  count      = var.environment == "production" ? 1 : 0
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForBackup"
   role       = aws_iam_role.backup_role[0].name
 }`;

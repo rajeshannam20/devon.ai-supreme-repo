@@ -416,6 +416,18 @@ jobs:
         working-directory: ./src/data/manifest/terraform
         run: terraform init -upgrade  
 
+      - name: Retrieve existing VPC ID(s)
+        id: get_vpc
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          aws --version
+          ENVIRONMENT=${{ github.event.inputs.environment || 'production' }}
+          VPC_ID=$(aws ec2 describe-vpcs --filters "Name=tag:Name,Values=devonn-vpc-${ENVIRONMENT}" --query 'Vpcs[0].VpcId' --output text)
+          echo "VPC_ID=$VPC_ID" >> $GITHUB_ENV
+
       - name: Import existing resources if any
         working-directory: ./src/data/manifest/terraform   
         env:
@@ -425,26 +437,27 @@ jobs:
           TF_VAR_db_password: ${{ secrets.RDS_DB_PASSWORD }}           
         run: |
           ENVIRONMENT=${{ github.event.inputs.environment || 'production' }}
+    
           # Import all IAM roles with proper names        
-          terraform import aws_iam_role.backup_role devonn-backup-role-\${ENVIRONMENT} || true
-          terraform import aws_iam_role.vpc_flow_log_role devonn-vpc-flow-log-role-\${ENVIRONMENT} || true
-          terraform import aws_iam_role.config_role devonn-config-role-\${ENVIRONMENT} || true
-          terraform import aws_iam_role.rds_monitoring_role devonn-rds-monitoring-role-\${ENVIRONMENT} || true
-          terraform import aws_iam_role.xray_role devonn-xray-role-\${ENVIRONMENT} || true
-
+          terraform import aws_iam_role.backup_role devonn-backup-role-${ENVIRONMENT} || true
+          terraform import aws_iam_role.vpc_flow_log_role devonn-vpc-flow-log-role-${ENVIRONMENT} || true
+          terraform import aws_iam_role.config_role devonn-config-role-${ENVIRONMENT} || true
+          terraform import aws_iam_role.rds_monitoring_role devonn-rds-monitoring-role-${ENVIRONMENT} || true
+          terraform import aws_iam_role.xray_role devonn-xray-role-${ENVIRONMENT} || true
+    
           # Import RDS Backup Vault
-          terraform import aws_backup_vault.rds_backup_vault devonn-rds-backup-vault-\${ENVIRONMENT} || true
-
+          terraform import aws_backup_vault.rds_backup_vault devonn-rds-backup-vault-${ENVIRONMENT} || true
+    
           # Import RDS DB Parameter Group
-          terraform import aws_db_parameter_group.postgres_production devonn-postgres-params-\${ENVIRONMENT} || true
-
+          terraform import aws_db_parameter_group.postgres_production devonn-postgres-params-${ENVIRONMENT} || true
+    
           # Import CloudTrail
-          terraform import aws_cloudtrail.devonn_cloudtrail devonn-cloudtrail-\${ENVIRONMENT} || true
-
+          terraform import aws_cloudtrail.devonn_cloudtrail devonn-cloudtrail-${ENVIRONMENT} || true
+    
           # Import CloudWatch Log Groups (repeat for all known log groups)
           LOG_GROUPS=(
-            "/aws/vpc-flow-logs/devonn-vpc-\${ENVIRONMENT}"
-            "/aws/eks/devonn-eks-\${ENVIRONMENT}/cluster"
+            "/aws/vpc-flow-logs/devonn-vpc-${ENVIRONMENT}"
+            "/aws/eks/devonn-eks-${ENVIRONMENT}/cluster"
           )
           for log_group in "${LOG_GROUPS[@]}"; do
             if aws logs describe-log-groups --log-group-name-prefix "$log_group" | grep "$log_group" >/dev/null 2>&1; then
@@ -453,7 +466,17 @@ jobs:
           done
           
           # Import App Mesh Mesh
-          terraform import aws_appmesh_mesh.devonn_mesh devonn-mesh-\${ENVIRONMENT} || true
+          terraform import aws_appmesh_mesh.devonn_mesh devonn-mesh-${ENVIRONMENT} || true
+    
+          # Import KMS alias
+          terraform import aws_kms_alias.cluster alias/eks/devonn-eks-${ENVIRONMENT} || true
+    
+          # Import VPC dynamically using retrieved VPC ID
+          if [ -n "$VPC_ID" ] && [ "$VPC_ID" != "None" ]; then
+            terraform import aws_vpc.this $VPC_ID || true
+          else
+            echo "No existing VPC found to import."
+          fi
         
       - name: Create deployment status
         id: deployment
