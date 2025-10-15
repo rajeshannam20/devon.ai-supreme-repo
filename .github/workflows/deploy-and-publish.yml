@@ -60,13 +60,21 @@ jobs:
           node ./scripts/bump-version.cjs
           echo "Manifest version bumped."
 
-      - name: Package Chrome Extension
+      - name: Package extension
         run: |
-          zip -r extension.zip dist/*
+          cd dist
+          zip -r ../devonn-ai-${{ env.ENVIRONMENT }}.zip *
 
       - name: Upload and Publish Chrome Extension
         run: |
           node ./scripts/upload-to-chrome-webstore.cjs
+        env:
+          CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+          CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+          ZIP_PATH: devonn-ai-${{ env.ENVIRONMENT }}.zip
+          PUBLISH_EXTENSION: ${{ env.ENVIRONMENT == 'production' }}  
 
       - name: Production Deployment Mark
         uses: chrnorm/deployment-action@v2
