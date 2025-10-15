@@ -31,11 +31,11 @@ jobs:
           node-version: '18'
 
       - name: Install Project Dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       - name: Run Snyk Security Test
         run: |
-          npm install -g snyk
+          npm install -g snyk --legacy-peer-deps
           snyk test
 
       - name: Build Vite React Project
