@@ -229,10 +229,22 @@ jobs:
           LOCK_ID="devonn/terraform.tfstate"
           TABLE_NAME="terraform-locks"
           echo "Checking for Terraform state lock in DynamoDB..."
-          LOCK_EXISTS=$(aws dynamodb get-item --table-name "$TABLE_NAME" --key "{\"LockID\": {\"S\": \"$LOCK_ID\"}}" --region "$AWS_REGION" --query 'Item.LockID.S' --output text 2>/dev/null)
+          LOCK_EXISTS=$(aws dynamodb get-item --table-name "$TABLE_NAME" --key "{\"LockID\": {\"S\": \"$LOCK_ID\"}}" --region "$AWS_REGION" --query 'Item.LockID.S' --output text 2>&1)
+          EXIT_CODE=$?
+          echo "GetItem output: $LOCK_EXISTS"
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "Error running get-item. Check permissions, region, and table existence."
+            exit $EXIT_CODE
+          fi
           if [ "$LOCK_EXISTS" = "$LOCK_ID" ]; then
             echo "Lock found, attempting to release..."
-            aws dynamodb delete-item --table-name "$TABLE_NAME" --key "{\"LockID\": {\"S\": \"$LOCK_ID\"}}" --region "$AWS_REGION" || true
+            DELETE_OUTPUT=$(aws dynamodb delete-item --table-name "$TABLE_NAME" --key "{\"LockID\": {\"S\": \"$LOCK_ID\"}}" --region "$AWS_REGION" 2>&1)
+            DELETE_EXIT=$?
+            echo "DeleteItem output: $DELETE_OUTPUT"
+            if [ $DELETE_EXIT -ne 0 ]; then
+              echo "Error releasing lock. Check permissions."
+              exit $DELETE_EXIT
+            fi
             echo "Lock released."
           else
             echo "No lock found, continuing workflow."
