@@ -147,7 +147,7 @@ resource "aws_db_instance" "postgres_read_replica" {
 
 # Cross-region replica for disaster recovery
 resource "aws_db_instance" "postgres_cross_region_replica" {
-  count = var.environment == "production" && var.enable_cross_region_replica ? 1 : 1
+  count = var.environment == "production" && var.enable_cross_region_replica ? 1 : 0
   
   provider             = aws.dr_region
   identifier           = "devonn-postgres-dr-\${var.environment}"
@@ -175,7 +175,7 @@ resource "aws_db_instance" "postgres_cross_region_replica" {
 
 # DB Event Subscription to get notified about important RDS events
 resource "aws_db_event_subscription" "default" {
-  count     = var.environment == "prod" ? 1 : 1
+  count     = var.environment == "prod" ? 1 : 0
   name      = "devonn-rds-event-subscription"
   sns_topic = aws_sns_topic.db_events[0].arn
   
@@ -201,13 +201,13 @@ resource "aws_db_event_subscription" "default" {
 
 # SNS Topic for RDS Events
 resource "aws_sns_topic" "db_events" {
-  count = var.environment == "prod" ? 1 : 1
+  count = var.environment == "prod" ? 1 : 0
   name  = "devonn-rds-events-\${var.environment}"
 }
 
 # CloudWatch Dashboard for RDS Monitoring
 resource "aws_cloudwatch_dashboard" "rds_dashboard" {
-  count          = var.environment == "prod" ? 1 : 1
+  count          = var.environment == "prod" ? 1 : 0
   dashboard_name = "devonn-rds-dashboard-\${var.environment}"
   
   dashboard_body = jsonencode({
@@ -283,7 +283,7 @@ resource "aws_cloudwatch_dashboard" "rds_dashboard" {
 
 # RDS CloudWatch Alarms
 resource "aws_cloudwatch_metric_alarm" "rds_cpu_alarm_high" {
-  count               = var.environment == "prod" ? 1 : 1
+  count               = var.environment == "prod" ? 1 : 0
   alarm_name          = "devonn-rds-high-cpu-\${var.environment}"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 3
@@ -302,7 +302,7 @@ resource "aws_cloudwatch_metric_alarm" "rds_cpu_alarm_high" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "rds_memory_alarm_low" {
-  count               = var.environment == "prod" ? 1 : 1
+  count               = var.environment == "prod" ? 1 : 0
   alarm_name          = "devonn-rds-low-memory-\${var.environment}"
   comparison_operator = "LessThanThreshold"
   evaluation_periods  = 3
@@ -357,7 +357,7 @@ resource "aws_backup_vault" "rds_backup_vault" {
 }
 
 resource "aws_backup_selection" "rds_backup_selection" {
-  count        = var.environment == "prod" ? 1 : 1
+  count        = var.environment == "prod" ? 1 : 0
   name         = "devonn-rds-backup-selection"
   plan_id      = aws_backup_plan.rds_backup_plan[0].id
   iam_role_arn = var.create_backup_role ? aws_iam_role.backup_role[0].arn : ""

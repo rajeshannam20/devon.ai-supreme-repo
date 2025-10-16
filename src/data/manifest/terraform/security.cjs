@@ -273,7 +273,7 @@ resource "aws_securityhub_standards_subscription" "aws_foundational" {
 
 # 3. Network ACLs for additional network security
 resource "aws_network_acl" "private_nacl" {
-  count      = var.environment == "prod" ? 1 : 1
+  count      = var.environment == "prod" ? 1 : 0
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
   
@@ -314,7 +314,7 @@ resource "aws_network_acl" "private_nacl" {
 }
 
 resource "aws_network_acl" "public_nacl" {
-  count      = var.environment == "prod" ? 1 : 1
+  count      = var.environment == "prod" ? 1 : 0
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.public_subnets
   
@@ -366,7 +366,7 @@ resource "aws_network_acl" "public_nacl" {
 
 # 4. Enhanced monitoring with custom CloudWatch dashboards and SNS
 resource "aws_cloudwatch_dashboard" "devonn_dashboard" {
-  count          = var.environment == "prod" ? 1 : 1
+  count          = var.environment == "prod" ? 1 : 0
   dashboard_name = "devonn-\${var.environment}-monitoring"
   
   dashboard_body = <<EOF
@@ -450,13 +450,13 @@ EOF
 
 # 5. Create SNS Topic for Alerts
 resource "aws_sns_topic" "alerts_topic" {
-  count  = var.environment == "prod" ? 1 : 1
+  count  = var.environment == "prod" ? 1 : 0
   name   = "devonn-alerts-\${var.environment}"
 }
 
 # 6. Add CloudWatch Alarms with SNS Integration
 resource "aws_cloudwatch_metric_alarm" "rds_cpu_alarm" {
-  count               = var.environment == "prod" ? 1 : 1
+  count               = var.environment == "prod" ? 1 : 0
   alarm_name          = "devonn-rds-cpu-high-\${var.environment}"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 2
@@ -475,7 +475,7 @@ resource "aws_cloudwatch_metric_alarm" "rds_cpu_alarm" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "rds_storage_alarm" {
-  count               = var.environment == "prod" ? 1 : 1
+  count               = var.environment == "prod" ? 1 : 0
   alarm_name          = "devonn-rds-storage-low-\${var.environment}"
   comparison_operator = "LessThanThreshold"
   evaluation_periods  = 1
@@ -494,7 +494,7 @@ resource "aws_cloudwatch_metric_alarm" "rds_storage_alarm" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "eks_node_failure_alarm" {
-  count               = var.environment == "prod" ? 1 : 1
+  count               = var.environment == "prod" ? 1 : 0
   alarm_name          = "devonn-eks-node-failure-\${var.environment}"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 1
@@ -514,7 +514,7 @@ resource "aws_cloudwatch_metric_alarm" "eks_node_failure_alarm" {
 
 # 7. Cross-region replication for RDS instance
 resource "aws_db_instance_automated_backups_replication" "rds_backup_replication" {
-  count                      = var.environment == "prod" ? 1 : 1
+  count                      = var.environment == "prod" ? 1 : 0
   source_db_instance_arn     = module.rds.db_instance_arn
   retention_period           = 7
   kms_key_id                 = aws_kms_key.rds_backup_key[0].arn
@@ -522,7 +522,7 @@ resource "aws_db_instance_automated_backups_replication" "rds_backup_replication
 
 # 8. KMS Key for RDS backup encryption
 resource "aws_kms_key" "rds_backup_key" {
-  count                   = var.environment == "prod" ? 1 : 1
+  count                   = var.environment == "prod" ? 1 : 0
   description             = "KMS key for RDS backup encryption"
   deletion_window_in_days = 30
   enable_key_rotation     = true
@@ -530,7 +530,7 @@ resource "aws_kms_key" "rds_backup_key" {
 
 # 9. Implement auto-scaling for EKS node groups with cost optimization
 resource "aws_autoscaling_policy" "scale_down_policy" {
-  count                  = var.environment == "prod" ? 1 : 1
+  count                  = var.environment == "prod" ? 1 : 0
   name                   = "devonn-eks-scale-down-\${var.environment}"
   autoscaling_group_name = module.eks.eks_managed_node_groups["dev_nodes"].node_group_autoscaling_group_names[0]
   adjustment_type        = "ChangeInCapacity"
@@ -539,7 +539,7 @@ resource "aws_autoscaling_policy" "scale_down_policy" {
 }
 
 resource "aws_autoscaling_policy" "scale_up_policy" {
-  count                  = var.environment == "prod" ? 1 : 1
+  count                  = var.environment == "prod" ? 1 : 0
   name                   = "devonn-eks-scale-up-\${var.environment}"
   autoscaling_group_name = module.eks.eks_managed_node_groups["dev_nodes"].node_group_autoscaling_group_names[0]
   adjustment_type        = "ChangeInCapacity"
@@ -549,7 +549,7 @@ resource "aws_autoscaling_policy" "scale_up_policy" {
 
 # 10. CloudWatch Alarm for Scale Down
 resource "aws_cloudwatch_metric_alarm" "cpu_low_alarm" {
-  count               = var.environment == "prod" ? 1 : 1
+  count               = var.environment == "prod" ? 1 : 0
   alarm_name          = "devonn-eks-cpu-low-\${var.environment}"
   comparison_operator = "LessThanThreshold"
   evaluation_periods  = 3
@@ -568,7 +568,7 @@ resource "aws_cloudwatch_metric_alarm" "cpu_low_alarm" {
 
 # 11. CloudWatch Alarm for Scale Up
 resource "aws_cloudwatch_metric_alarm" "cpu_high_alarm" {
-  count               = var.environment == "prod" ? 1 : 1
+  count               = var.environment == "prod" ? 1 : 0
   alarm_name          = "devonn-eks-cpu-high-\${var.environment}"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 2
