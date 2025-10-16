@@ -78,7 +78,7 @@ variable "node_min_capacity" {
 variable "node_instance_types" {
   description = "EC2 instance types for worker nodes"
   type        = list(string)
-  default     = ["t3.medium"]
+  default     = ["t2.micro"]
 }
 
 variable "node_disk_size" {

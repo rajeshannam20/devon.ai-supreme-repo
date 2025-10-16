@@ -27,6 +27,11 @@ resource "aws_appmesh_virtual_node" "api_canary_node" {
         protocol = "http"
       }
     }
+    service_discovery {
+      dns {
+        hostname = "api-canary-node.local"
+      }
+    }
   }
 }
 
