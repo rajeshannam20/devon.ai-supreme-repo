@@ -357,7 +357,7 @@ resource "aws_backup_vault" "rds_backup_vault" {
 }
 
 resource "aws_backup_selection" "rds_backup_selection" {
-  count = var.environment == "prod" && var.create_backup_vault ? 1 : 0
+  count        = var.environment == "prod" ? 1 : 1
   name         = "devonn-rds-backup-selection"
   plan_id      = aws_backup_plan.rds_backup_plan[0].id
   iam_role_arn = aws_iam_role.backup_role[0].arn

@@ -106,7 +106,7 @@ resource "aws_flow_log" "vpc_flow_logs" {
   log_destination_type = "cloud-watch-logs"
   traffic_type         = "ALL"
   vpc_id               = module.vpc.vpc_id
-  iam_role_arn         = aws_iam_role.vpc_flow_log_role[0].arn
+  iam_role_arn         = var.create_vpc_flow_log_role ? aws_iam_role.vpc_flow_log_role[0].arn : ""
 }
 
 # Log group for VPC Flow Logs
