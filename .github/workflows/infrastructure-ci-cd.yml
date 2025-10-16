@@ -178,6 +178,36 @@ jobs:
         run: |
           ls -lh .          
 
+      - name: Generate dynamic tfvars override based on existing IAM roles
+        shell: bash
+        env:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          echo "# Dynamically generated tfvars for security scan" > ./src/data/manifest/terraform/tfvars_override.tfvars
+      
+          # Backup role
+          if aws iam get-role --role-name devonn-backup-role-prod --region $AWS_REGION >/dev/null 2>&1; then
+            echo 'create_backup_role = false' >> ./src/data/manifest/terraform/tfvars_override.tfvars
+          else
+            echo 'create_backup_role = true' >> ./src/data/manifest/terraform/tfvars_override.tfvars
+          fi
+      
+          # VPC Flow Log role
+          if aws iam get-role --role-name devonn-vpc-flow-log-role-prod --region $AWS_REGION >/dev/null 2>&1; then
+            echo 'create_vpc_flow_log_role = false' >> ./src/data/manifest/terraform/tfvars_override.tfvars
+          else
+            echo 'create_vpc_flow_log_role = true' >> ./src/data/manifest/terraform/tfvars_override.tfvars
+          fi
+      
+          # X-Ray role
+          if aws iam get-role --role-name devonn-xray-role-prod --region $AWS_REGION >/dev/null 2>&1; then
+            echo 'create_xray_role = false' >> ./src/data/manifest/terraform/tfvars_override.tfvars
+          else
+            echo 'create_xray_role = true' >> ./src/data/manifest/terraform/tfvars_override.tfvars
+          fi
+
       - name: Generate Terraform Plan for Policy Evaluation
         working-directory: ./src/data/manifest/terraform
         env:
@@ -187,7 +217,7 @@ jobs:
           TF_VAR_db_password: ${{ secrets.RDS_DB_PASSWORD }}
         run: |
           terraform init -reconfigure
-          terraform plan -out=tfplan
+          terraform plan -var-file=tfvars_override.tfvars -out=tfplan
           if [ $? -ne 0 ]; then
             echo "Terraform plan failed"
             exit 1
