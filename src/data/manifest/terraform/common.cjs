@@ -63,15 +63,15 @@ export const commonConfigYaml = `# --- Common Terraform Configuration ---
 # --------------------------------------------
 
 # Recommended: Use S3 backend for team collaboration
-# terraform {
-#   backend "s3" {
-#     bucket = "devonn-terraform-state"
-#     key    = "terraform.tfstate"
-#     region = "us-west-2"
-#     dynamodb_table = "terraform-locks"
-#     encrypt = true
-#   }
-# }
+terraform {
+  backend "s3" {
+    bucket = "devonn-terraform-state"
+    key    = "terraform.tfstate"
+    region = "us-west-2"
+    dynamodb_table = "terraform-locks"
+    encrypt = true
+  }
+}
 
 # Define the AWS provider and region
 provider "aws" {
