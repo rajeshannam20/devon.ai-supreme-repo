@@ -224,11 +224,11 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
         run: |
           LOCK_ID="devonn/terraform.tfstate"
           TABLE_NAME="terraform-locks"
-          echo "Checking for Terraform state lock in DynamoDB..."
+          AWS_REGION="us-west-2"
+          echo "Checking for Terraform state lock in DynamoDB (region: $AWS_REGION)..."
           LOCK_EXISTS=$(aws dynamodb get-item --table-name "$TABLE_NAME" --key "{\"LockID\": {\"S\": \"$LOCK_ID\"}}" --region "$AWS_REGION" --query 'Item.LockID.S' --output text 2>&1)
           EXIT_CODE=$?
           echo "GetItem output: $LOCK_EXISTS"
