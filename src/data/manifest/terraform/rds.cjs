@@ -101,7 +101,7 @@ resource "aws_db_parameter_group" "postgres_production" {
   
   parameter {
     name  = "maintenance_work_mem"
-    value = "64MB"
+    value = "65536"
   }
   
   parameter {
@@ -327,7 +327,7 @@ resource "aws_backup_plan" "rds_backup_plan" {
 
   rule {
     rule_name           = "daily-backups"
-    target_vault_name   = aws_backup_vault.rds_backup_vault[0].name
+    target_vault_name   = var.create_backup_vault ? aws_backup_vault.rds_backup_vault[0].name : "devonn-rds-backup-vault-prod"
     schedule            = "cron(0 3 * * ? *)"
     
     lifecycle {
@@ -337,7 +337,7 @@ resource "aws_backup_plan" "rds_backup_plan" {
   
   rule {
     rule_name           = "weekly-backups"
-    target_vault_name   = aws_backup_vault.rds_backup_vault[0].name
+    target_vault_name   = var.create_backup_vault ? aws_backup_vault.rds_backup_vault[0].name : "devonn-rds-backup-vault-prod"
     schedule            = "cron(0 5 ? * SAT *)"
     
     lifecycle {
@@ -346,13 +346,18 @@ resource "aws_backup_plan" "rds_backup_plan" {
   }
 }
 
+variable "create_backup_vault" {
+  type    = bool
+  default = true
+}
+
 resource "aws_backup_vault" "rds_backup_vault" {
-  count = var.environment == "prod" ? 1 : 0
+  count = var.environment == "prod" && var.create_backup_vault ? 1 : 0
   name  = "devonn-rds-backup-vault-\${var.environment}"
 }
 
 resource "aws_backup_selection" "rds_backup_selection" {
-  count        = var.environment == "prod" ? 1 : 1
+  count = var.environment == "prod" && var.create_backup_vault ? 1 : 0
   name         = "devonn-rds-backup-selection"
   plan_id      = aws_backup_plan.rds_backup_plan[0].id
   iam_role_arn = aws_iam_role.backup_role[0].arn

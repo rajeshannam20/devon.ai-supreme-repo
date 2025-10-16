@@ -208,6 +208,18 @@ jobs:
             echo 'create_xray_role = true' >> ./src/data/manifest/terraform/tfvars_override.tfvars
           fi
 
+          if aws backup get-backup-vault --backup-vault-name devonn-rds-backup-vault-prod --region $AWS_REGION >/dev/null 2>&1; then
+            echo 'create_backup_vault = false' >> ./src/data/manifest/terraform/tfvars_override.tfvars
+          else
+            echo 'create_backup_vault = true' >> ./src/data/manifest/terraform/tfvars_override.tfvars
+          fi          
+
+          if aws cloudtrail describe-trails --trail-name-list devonn-cloudtrail-prod --region $AWS_REGION | grep devonn-cloudtrail-prod >/dev/null 2>&1; then
+            echo 'create_cloudtrail = false' >> ./src/data/manifest/terraform/tfvars_override.tfvars
+          else
+            echo 'create_cloudtrail = true' >> ./src/data/manifest/terraform/tfvars_override.tfvars
+          fi          
+
       - name: Generate Terraform Plan for Policy Evaluation
         working-directory: ./src/data/manifest/terraform
         env:
@@ -342,7 +354,19 @@ jobs:
             echo 'create_xray_role = false' >> ./src/data/manifest/terraform/tfvars_override.tfvars
           else
             echo 'create_xray_role = true' >> ./src/data/manifest/terraform/tfvars_override.tfvars
-          fi              
+          fi   
+
+          if aws backup get-backup-vault --backup-vault-name devonn-rds-backup-vault-prod --region $AWS_REGION >/dev/null 2>&1; then
+            echo 'create_backup_vault = false' >> ./src/data/manifest/terraform/tfvars_override.tfvars
+          else
+            echo 'create_backup_vault = true' >> ./src/data/manifest/terraform/tfvars_override.tfvars
+          fi
+
+          if aws cloudtrail describe-trails --trail-name-list devonn-cloudtrail-prod --region $AWS_REGION | grep devonn-cloudtrail-prod >/dev/null 2>&1; then
+            echo 'create_cloudtrail = false' >> ./src/data/manifest/terraform/tfvars_override.tfvars
+          else
+            echo 'create_cloudtrail = true' >> ./src/data/manifest/terraform/tfvars_override.tfvars
+          fi          
 
       - name: Upload tfvars override
         uses: actions/upload-artifact@v4

@@ -3,9 +3,14 @@
 
 export const securityConfigYaml = `# --- Security Configuration ---
 
+variable "create_cloudtrail" {
+  type    = bool
+  default = true
+}
+
 # AWS CloudTrail for AWS API auditing
 resource "aws_cloudtrail" "devonn_cloudtrail" {
-  count                         = var.environment == "prod" ? 1 : 1
+  count                      = var.environment == "prod" && var.create_cloudtrail ? 1 : 0
   name                          = "devonn-cloudtrail-\${var.environment}"
   s3_bucket_name                = aws_s3_bucket.cloudtrail_bucket[0].id
   include_global_service_events = true
@@ -25,19 +30,19 @@ resource "aws_cloudtrail" "devonn_cloudtrail" {
 
 # S3 bucket for CloudTrail logs
 resource "aws_s3_bucket" "cloudtrail_bucket" {
-  count  = var.environment == "prod" ? 1 : 1
+  count                      = var.environment == "prod" && var.create_cloudtrail ? 1 : 0
   bucket = "devonn-cloudtrail-\${var.environment}-\${random_id.bucket_suffix[0].hex}"
 }
 
 # CloudTrail bucket random suffix
 resource "random_id" "bucket_suffix" {
-  count       = var.environment == "prod" ? 1 : 1
+  count                      = var.environment == "prod" && var.create_cloudtrail ? 1 : 0
   byte_length = 8
 }
 
 # S3 bucket policy for CloudTrail
 resource "aws_s3_bucket_policy" "cloudtrail_bucket_policy" {
-  count  = var.environment == "prod" ? 1 : 1
+  count                      = var.environment == "prod" && var.create_cloudtrail ? 1 : 0
   bucket = aws_s3_bucket.cloudtrail_bucket[0].id
   
   policy = <<POLICY
@@ -74,7 +79,7 @@ POLICY
 
 # Security best practices for S3 buckets
 resource "aws_s3_bucket_public_access_block" "cloudtrail_bucket_access" {
-  count                   = var.environment == "prod" ? 1 : 1
+  count                      = var.environment == "prod" && var.create_cloudtrail ? 1 : 0
   bucket                  = aws_s3_bucket.cloudtrail_bucket[0].id
   block_public_acls       = true
   block_public_policy     = true
@@ -84,7 +89,7 @@ resource "aws_s3_bucket_public_access_block" "cloudtrail_bucket_access" {
 
 # Enable S3 bucket server-side encryption
 resource "aws_s3_bucket_server_side_encryption_configuration" "cloudtrail_bucket_encryption" {
-  count  = var.environment == "prod" ? 1 : 1
+  count  = var.environment == "prod" && var.create_cloudtrail ? 1 : 0
   bucket = aws_s3_bucket.cloudtrail_bucket[0].id
 
   rule {
