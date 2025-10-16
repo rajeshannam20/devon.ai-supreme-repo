@@ -368,7 +368,7 @@ variable "create_backup_role" {
 }
 
 resource "aws_iam_role" "backup_role" {
-  count = var.environment == "prod" && !var.create_backup_role ? 1 : 0
+  count = var.environment == "prod" && var.create_backup_role ? 1 : 0
   name  = "devonn-backup-role-\${var.environment}"
 
   assume_role_policy = jsonencode({

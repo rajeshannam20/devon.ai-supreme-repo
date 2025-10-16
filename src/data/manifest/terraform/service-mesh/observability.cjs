@@ -9,7 +9,7 @@ variable "create_xray_role" {
 }
 
 resource "aws_iam_role" "xray_role" {
-  count = var.environment == "prod" && !var.create_xray_role ? 1 : 0
+  count = var.environment == "prod" && var.create_xray_role ? 1 : 0
   name = "devonn-xray-role-\${var.environment}"
   
   assume_role_policy = jsonencode({
