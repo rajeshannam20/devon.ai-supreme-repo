@@ -389,10 +389,10 @@ resource "aws_iam_role" "backup_role" {
     ]
   })
 
-  lifecycle {
-    ignore_changes    = [name, assume_role_policy]
-    prevent_destroy   = true
-  }
+  // lifecycle {
+  //   ignore_changes    = [name, assume_role_policy]
+  //   prevent_destroy   = true
+  // }
 }
 
 resource "aws_iam_role_policy_attachment" "backup_role_policy" {

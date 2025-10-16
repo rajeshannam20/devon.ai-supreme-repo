@@ -141,10 +141,10 @@ resource "aws_iam_role" "vpc_flow_log_role" {
 }
 EOF
 
-  lifecycle {
-    ignore_changes    = [name, assume_role_policy]
-    prevent_destroy   = true
-  }
+  // lifecycle {
+  //   ignore_changes    = [name, assume_role_policy]
+  //   prevent_destroy   = true
+  // }
 }
 
 # IAM policy for VPC Flow Logs
@@ -209,10 +209,10 @@ resource "aws_iam_role" "config_role" {
 }
 EOF
 
-  lifecycle {
-    ignore_changes    = [name, assume_role_policy]
-    prevent_destroy   = true
-  }
+  // lifecycle {
+  //   ignore_changes    = [name, assume_role_policy]
+  //   prevent_destroy   = true
+  // }
 }
 
 # Attach AWS managed policy for Config
