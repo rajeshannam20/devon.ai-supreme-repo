@@ -220,6 +220,24 @@ jobs:
             echo 'create_cloudtrail = true' >> ./src/data/manifest/terraform/tfvars_override.tfvars
           fi          
 
+      - name: Check and Release Terraform State Lock (AWS)
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          LOCK_ID="devonn/terraform.tfstate"
+          TABLE_NAME="terraform-locks"
+          echo "Checking for Terraform state lock in DynamoDB..."
+          LOCK_EXISTS=$(aws dynamodb get-item --table-name "$TABLE_NAME" --key "{\"LockID\": {\"S\": \"$LOCK_ID\"}}" --region "$AWS_REGION" --query 'Item.LockID.S' --output text 2>/dev/null)
+          if [ "$LOCK_EXISTS" = "$LOCK_ID" ]; then
+            echo "Lock found, attempting to release..."
+            aws dynamodb delete-item --table-name "$TABLE_NAME" --key "{\"LockID\": {\"S\": \"$LOCK_ID\"}}" --region "$AWS_REGION" || true
+            echo "Lock released."
+          else
+            echo "No lock found, continuing workflow."
+          fi
+
       - name: Generate Terraform Plan for Policy Evaluation
         working-directory: ./src/data/manifest/terraform
         env:
