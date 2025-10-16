@@ -609,7 +609,6 @@ jobs:
 
             import_or_create module.rds.module.db_instance.aws_iam_role.enhanced_monitoring[0] devonn-rds-monitoring-role-prod "aws iam get-role --role-name devonn-rds-monitoring-role-prod | grep devonn-rds-monitoring-role-prod" "terraform apply -target=module.rds.module.db_instance.aws_iam_role.enhanced_monitoring[0] -auto-approve"
 
-            import_or_create module.eks.module.kms.aws_kms_alias.this["cluster"] "$KMS_ALIAS_ARN" "aws kms list-aliases --query 'Aliases[?AliasName==`alias/eks/devonn-eks-prod`].AliasArn' | grep $KMS_ALIAS_ARN" "terraform apply -target=module.eks.module.kms.aws_kms_alias.this[\"cluster\"] -auto-approve"
             import_or_create module.eks.aws_cloudwatch_log_group.this[0] /aws/eks/devonn-eks-prod/cluster "aws logs describe-log-groups --log-group-name-prefix /aws/eks/devonn-eks-prod/cluster | grep /aws/eks/devonn-eks-prod/cluster" "terraform apply -target=module.eks.aws_cloudwatch_log_group.this[0] -auto-approve"
 
             # Add missing imports for VPC, log groups, etc. with fallback
