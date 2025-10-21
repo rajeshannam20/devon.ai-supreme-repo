@@ -25,7 +25,7 @@ resource "aws_appmesh_virtual_node" "api_node" {
     
     service_discovery {
       dns {
-        hostname = "api.devonn.local"
+        hostname = "api-canary.devonn.local"
       }
     }
     

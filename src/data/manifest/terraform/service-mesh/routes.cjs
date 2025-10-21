@@ -1,7 +1,8 @@
 
-// Virtual router and routes configuration
+
 
 export const routesYaml = `# Virtual router and routes
+// Virtual router and routes configuration
 resource "aws_appmesh_virtual_router" "api_router" {
   name      = "api-router"
   mesh_name = aws_appmesh_mesh.devonn_mesh.name
@@ -16,8 +17,8 @@ resource "aws_appmesh_virtual_router" "api_router" {
   }
 }
 
-resource "aws_appmesh_virtual_node" "api_canary_node" {
-  name      = "api-canary-node"
+resource "aws_appmesh_virtual_node" "api_canary_node_1" {
+  name      = "api-canary-node-1"
   mesh_name = aws_appmesh_mesh.devonn_mesh.name
 
   spec {
@@ -29,7 +30,26 @@ resource "aws_appmesh_virtual_node" "api_canary_node" {
     }
     service_discovery {
       dns {
-        hostname = "api-canary-node.local"
+        hostname = "api-canary-node-1.local"
+      }
+    }
+  }
+}
+
+resource "aws_appmesh_virtual_node" "api_canary_node_2" {
+  name      = "api-canary-node-2"
+  mesh_name = aws_appmesh_mesh.devonn_mesh.name
+
+  spec {
+    listener {
+      port_mapping {
+        port     = 8000
+        protocol = "http"
+      }
+    }
+    service_discovery {
+      dns {
+        hostname = "api-canary-node-2.local"
       }
     }
   }
@@ -48,11 +68,11 @@ resource "aws_appmesh_route" "api_route" {
 
       action {
         weighted_target {
-          virtual_node = aws_appmesh_virtual_node.api_node.name
+          virtual_node = aws_appmesh_virtual_node.api_canary_node_1.name
           weight       = 90
         }
         weighted_target {
-          virtual_node = "api-canary-node"
+          virtual_node = aws_appmesh_virtual_node.api_canary_node_2.name
           weight       = 10
         }
       }
@@ -79,7 +99,10 @@ resource "aws_appmesh_route" "api_route" {
       }
     }
   }
+
+  // depends_on = [aws_appmesh_virtual_node.api_canary_node_1, aws_appmesh_virtual_node.api_canary_node_2]
 }
+
 
 
 `

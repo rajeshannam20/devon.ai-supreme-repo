@@ -54,7 +54,7 @@ module "rds" {
   copy_tags_to_snapshot = true
   
   # Parameter group for PostgreSQL optimizations
-  parameter_group_name = var.environment == "prod" ? aws_db_parameter_group.postgres_production[0].name : "devonn-postgres-param-production"
+  parameter_group_name = var.environment == "prod" ? aws_db_parameter_group.postgres_production[0].name : "default.postgres14"
 
   # Enhanced disaster recovery for production
   enabled_cloudwatch_logs_exports = var.environment == "prod" ? ["postgresql", "upgrade"] : []
@@ -111,13 +111,18 @@ resource "aws_db_parameter_group" "postgres_production" {
   
   parameter {
     name  = "wal_buffers"
-    value = "16777216"
+    value = "16384"
   }
   
   parameter {
     name  = "checkpoint_timeout"
     value = "15"
   }
+
+  lifecycle {
+    ignore_changes = [name]
+    create_before_destroy = true
+  }  
 }
 
 # Read replica for production environment to improve read performance and act as failover standby
@@ -360,7 +365,7 @@ resource "aws_backup_selection" "rds_backup_selection" {
   count        = var.environment == "prod" ? 1 : 0
   name         = "devonn-rds-backup-selection"
   plan_id      = aws_backup_plan.rds_backup_plan[0].id
-  iam_role_arn = var.create_backup_role ? aws_iam_role.backup_role[0].arn : ""
+  iam_role_arn = aws_iam_role.backup_role[0].arn
 
   resources = [
     module.rds.db_instance_arn
@@ -389,10 +394,9 @@ resource "aws_iam_role" "backup_role" {
     ]
   })
 
-  // lifecycle {
-  //   ignore_changes    = [name, assume_role_policy]
-  //   prevent_destroy   = true
-  // }
+  lifecycle {
+    ignore_changes    = [name]
+  }
 }
 
 resource "aws_iam_role_policy_attachment" "backup_role_policy" {

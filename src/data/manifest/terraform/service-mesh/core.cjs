@@ -19,6 +19,6 @@ resource "aws_appmesh_mesh" "devonn_mesh" {
   }
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }`;

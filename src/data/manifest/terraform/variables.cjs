@@ -33,6 +33,12 @@ variable "environment" {
   default     = "prod"
 }
 
+variable "admin_cidr" {
+  description = "CIDR block for admin access to EKS API (e.g., CI/CD pipeline or admin IPs)"
+  type        = string
+  default     = "0.0.0.0/0"  
+}
+
 variable "vpc_cidr" {
   description = "CIDR block for the VPC"
   type        = string
@@ -78,7 +84,7 @@ variable "node_min_capacity" {
 variable "node_instance_types" {
   description = "EC2 instance types for worker nodes"
   type        = list(string)
-  default     = ["t2.micro"]
+  default     = ["t3.small"]
 }
 
 variable "node_disk_size" {

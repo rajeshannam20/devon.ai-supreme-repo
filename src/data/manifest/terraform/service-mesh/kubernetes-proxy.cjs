@@ -2,12 +2,24 @@
 // Envoy proxy configuration for Kubernetes
 
 export const kubernetesProxyYaml = `# Envoy proxy configuration for EKS
+
+resource "kubernetes_namespace" "devonn" {
+  metadata {
+    name = "devonn"
+  }
+}
+
 resource "kubernetes_deployment" "envoy_proxy" {
   count = var.environment == "prod" ? 1 : 0
+
+  depends_on = [
+    module.eks,
+    kubernetes_namespace.devonn
+  ]  
   
   metadata {
     name      = "envoy-proxy"
-    namespace = "devonn"
+    namespace = kubernetes_namespace.devonn.metadata[0].name
     
     labels = {
       app = "envoy-proxy"

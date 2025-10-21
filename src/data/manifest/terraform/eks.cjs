@@ -9,11 +9,15 @@ module "eks" {
   source          = "terraform-aws-modules/eks/aws"
   version         = "21.4.0"
 
-  name    = "devonn-eks-\${var.environment}"
+  name    = "devonn-eks-prod"
   kubernetes_version = local.kubernetes_version
 
   vpc_id          = module.vpc.vpc_id
   subnet_ids      = module.vpc.private_subnets
+
+  endpoint_public_access       = true
+  endpoint_public_access_cidrs = [var.admin_cidr]  
+  endpoint_private_access      = true
 
   eks_managed_node_groups = {
     dev_nodes = {
@@ -21,7 +25,7 @@ module "eks" {
       max_capacity     = var.node_max_capacity
       min_capacity     = var.node_min_capacity
       instance_types   = var.node_instance_types
-      disk_size        = var.node_disk_size
+      disk_size        = var.node_disk_size   
     }
   }
 
@@ -62,6 +66,12 @@ resource "aws_iam_openid_connect_provider" "eks" {
   client_id_list  = ["sts.amazonaws.com"]
   thumbprint_list = ["9e99a48a9960b14926bb7f3b02e22da0afd10df6"]
   url             = module.eks.cluster_oidc_issuer_url
+  
+  lifecycle {
+    ignore_changes = [url]  
+  }  
+
+ depends_on = [module.eks]  
 }
 
 # 5. Connect to your EKS cluster after provisioning
