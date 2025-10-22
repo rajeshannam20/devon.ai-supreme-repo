@@ -47,8 +47,10 @@ resource "null_resource" "check_rds_snapshot" {
       --output text)
 
     if [[ -z "$snap" ]]; then
-      echo '{"snapshot_id": "null"}' > snapshot_id.json
+      # Write null without quotes as a valid JSON null
+      echo '{"snapshot_id": null}' > snapshot_id.json
     else
+      # Ensure the snapshot id is written correctly as a string
       echo "{\"snapshot_id\": \"$snap\"}" > snapshot_id.json
     fi
     EOT
