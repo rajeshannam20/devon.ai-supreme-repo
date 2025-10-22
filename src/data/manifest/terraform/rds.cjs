@@ -47,12 +47,15 @@ resource "null_resource" "check_rds_snapshot" {
       --output text)
 
     if [[ -z "$snap" ]]; then
-      # Write null without quotes as a valid JSON null
+      # Ensure valid JSON output when no snapshot is found
       echo '{"snapshot_id": null}' > snapshot_id.json
     else
-      # Ensure the snapshot id is written correctly as a string
+      # Ensure valid JSON output when snapshot is found
       echo "{\"snapshot_id\": \"$snap\"}" > snapshot_id.json
     fi
+
+    # Debugging output: Output the content of the file
+    cat snapshot_id.json
     EOT
   }
 
@@ -60,7 +63,6 @@ resource "null_resource" "check_rds_snapshot" {
     always_run = "\${timestamp()}"
   }
 }
-
 
 data "external" "snapshot_loader" {
   depends_on = [null_resource.check_rds_snapshot]
