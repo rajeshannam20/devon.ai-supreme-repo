@@ -121,9 +121,11 @@ provider "kubernetes" {
 }
 
 data "aws_eks_cluster" "cluster" {
+  provider = aws 
   name = module.eks.cluster_name
 }
 data "aws_eks_cluster_auth" "cluster" {
+  provider = aws 
   name = module.eks.cluster_name
 }
 
