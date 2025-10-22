@@ -4,13 +4,74 @@
 export const rdsConfigYaml = `# --- RDS PostgreSQL Configuration ---
 
 # 3. RDS PostgreSQL Configuration
+
+locals {
+  parameter_group_name = var.environment == "prod" ? (
+    length(aws_db_parameter_group.postgres_production) > 0 ?
+    aws_db_parameter_group.postgres_production[0].name :
+    data.aws_db_parameter_group.existing_pg.name
+  ) : "default.postgres14"
+}
+
+resource "aws_security_group" "rds_sg" {
+  name        = "rds-sg-\${var.environment}"
+  description = "Security group for RDS in correct VPC"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress {
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16"] # match your internal VPC range
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "rds-sg-\${var.environment}"
+  }
+}
+
+
+resource "null_resource" "check_rds_snapshot" {
+  provisioner "local-exec" {
+    command = <<EOT
+      $snap = aws rds describe-db-snapshots --snapshot-type manual --query "DBSnapshots[?DBSnapshotIdentifier=='devonn-postgres-final-production'].DBSnapshotIdentifier" --output text
+      if ([string]::IsNullOrWhiteSpace($snap)) {
+        '{"snapshot_id": "null"}' | Out-File -FilePath snapshot_id.json -Encoding ascii
+      } else {
+        '{"snapshot_id": "' + $snap + '"}' | Out-File -FilePath snapshot_id.json -Encoding ascii
+      }
+    EOT
+    interpreter = ["PowerShell", "-Command"]
+  }
+
+  triggers = {
+    always_run = "\${timestamp()}"
+  }
+}
+
+data "external" "snapshot_loader" {
+  depends_on = [null_resource.check_rds_snapshot]
+  program    = ["PowerShell", "-Command", "Get-Content snapshot_id.json | ConvertFrom-Json | ConvertTo-Json -Compress"]
+}
+
+locals {
+  snapshot_to_use = data.external.snapshot_loader.result.snapshot_id != "null" ? data.external.snapshot_loader.result.snapshot_id : null
+}
+
 module "rds" {
   source  = "terraform-aws-modules/rds/aws"
   version = "5.2.2"
 
   identifier = "devonn-postgres-\${var.environment}"
   engine     = "postgres"
-  engine_version = "14.9"
+  engine_version = "14"
   instance_class = var.db_instance_class
   family = var.family
 
@@ -18,12 +79,12 @@ module "rds" {
   max_allocated_storage = var.db_max_allocated_storage
   storage_encrypted = true
 
-  username = "admin"
+  username = "devonn"
   password = var.db_password
   port     = 5432
 
-  vpc_security_group_ids = [module.vpc.default_security_group_id]
-  db_subnet_group_name   = module.vpc.database_subnet_group
+  vpc_security_group_ids = [aws_security_group.rds_sg.id]
+  db_subnet_group_name   = aws_db_subnet_group.rds_subnet_group.name
   publicly_accessible    = false
   
   # Backup configuration - enhanced for production
@@ -54,13 +115,13 @@ module "rds" {
   copy_tags_to_snapshot = true
   
   # Parameter group for PostgreSQL optimizations
-  parameter_group_name = var.environment == "prod" ? aws_db_parameter_group.postgres_production[0].name : "default.postgres14"
+  parameter_group_name = local.parameter_group_name
 
   # Enhanced disaster recovery for production
   enabled_cloudwatch_logs_exports = var.environment == "prod" ? ["postgresql", "upgrade"] : []
   
   # Cross-region snapshot replication for disaster recovery
-  snapshot_identifier = var.use_snapshot ? var.snapshot_identifier : "devonn-postgres-final-production"
+  snapshot_identifier = local.snapshot_to_use
   
   # Reserved instances configuration through tagging
   tags = {
@@ -72,9 +133,22 @@ module "rds" {
   }
 }
 
+data "aws_db_parameter_group" "existing_pg" {
+  name = "devonn-postgres-params-prod"
+}
+
+resource "aws_db_subnet_group" "rds_subnet_group" {
+  name       = "devonn-db-subnet-group"
+  subnet_ids = module.vpc.private_subnets
+
+  tags = {
+    Name = "devonn-db-subnet-group"
+  }
+}
+
 # Production-optimized parameter group (only created for production environment)
 resource "aws_db_parameter_group" "postgres_production" {
-  count = var.environment == "prod" ? 1 : 0
+  count = var.environment == "prod" && can(data.aws_db_parameter_group.existing_pg.name) ? 0 : 1
   
   name   = "devonn-postgres-params-\${var.environment}"
   family = var.family
@@ -125,9 +199,39 @@ resource "aws_db_parameter_group" "postgres_production" {
   }  
 }
 
+locals {
+  create_replica = var.environment == "prod"
+}
+
+resource "null_resource" "wait_for_rds_replica_ready" {
+  provisioner "local-exec" {
+    command = <<EOT
+      echo "Waiting for RDS to become ready for replication..."
+
+      while true; do
+        status=$(aws rds describe-db-instances --db-instance-identifier devonn-postgres-prod --query "DBInstances[0].DBInstanceStatus" --output text)
+        restore_time=$(aws rds describe-db-instances --db-instance-identifier devonn-postgres-prod --query "DBInstances[0].LatestRestorableTime" --output text)
+
+        echo "Current status: $status"
+        echo "LatestRestorableTime: $restore_time"
+
+        if [[ "$status" == "available" && "$restore_time" != "None" && "$restore_time" != "null" ]]; then
+          echo "RDS instance is fully ready."
+          break
+        fi
+
+        sleep 30
+      done
+    EOT
+    interpreter = ["bash", "-c"]
+  }
+
+  depends_on = [module.rds]
+}
+
 # Read replica for production environment to improve read performance and act as failover standby
 resource "aws_db_instance" "postgres_read_replica" {
-  count = var.environment == "prod" ? 1 : 0
+  for_each = local.create_replica ? { "replica" = "replica" } : {}
   
   identifier           = "devonn-postgres-replica-\${var.environment}"
   replicate_source_db  = module.rds.db_instance_id
@@ -148,6 +252,8 @@ resource "aws_db_instance" "postgres_read_replica" {
     CostCenter = "database-\${var.environment}"
     Project = "devonn"
   }
+
+  depends_on = [null_resource.wait_for_rds_replica_ready]  
 }
 
 # Cross-region replica for disaster recovery
@@ -180,7 +286,7 @@ resource "aws_db_instance" "postgres_cross_region_replica" {
 
 # DB Event Subscription to get notified about important RDS events
 resource "aws_db_event_subscription" "default" {
-  count     = var.environment == "prod" ? 1 : 0
+  for_each = local.create_replica ? { "sub" = "sub" } : {}
   name      = "devonn-rds-event-subscription"
   sns_topic = aws_sns_topic.db_events[0].arn
   
@@ -202,6 +308,9 @@ resource "aws_db_event_subscription" "default" {
     Name = "Devonn RDS Event Subscription"
     Environment = var.environment
   }
+	
+  depends_on = [null_resource.wait_for_rds_replica_ready]
+  
 }
 
 # SNS Topic for RDS Events
@@ -365,7 +474,7 @@ resource "aws_backup_selection" "rds_backup_selection" {
   count        = var.environment == "prod" ? 1 : 0
   name         = "devonn-rds-backup-selection"
   plan_id      = aws_backup_plan.rds_backup_plan[0].id
-  iam_role_arn = var.create_backup_role ? aws_iam_role.backup_role[0].arn : ""
+  iam_role_arn = aws_iam_role.backup_role[0].arn
 
   resources = [
     module.rds.db_instance_arn

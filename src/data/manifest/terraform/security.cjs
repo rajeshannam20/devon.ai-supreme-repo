@@ -512,7 +512,7 @@ resource "aws_cloudwatch_metric_alarm" "eks_node_failure_alarm" {
 
 # 7. Cross-region replication for RDS instance
 resource "aws_db_instance_automated_backups_replication" "rds_backup_replication" {
-  count                      = var.environment == "prod" ? 1 : 0
+  count                      = var.aws_region != "us-west-2" ? 1 : 0
   source_db_instance_arn     = module.rds.db_instance_arn
   retention_period           = 7
   kms_key_id                 = aws_kms_key.rds_backup_key[0].arn

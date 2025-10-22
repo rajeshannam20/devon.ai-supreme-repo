@@ -62,7 +62,15 @@ resource "aws_kms_key" "eks" {
 }
 
 # 4. IAM OIDC Provider for EKS
+
+data "aws_iam_openid_connect_provider" "existing" {
+  url = "https://oidc.eks.us-west-2.amazonaws.com/id/9511538CAE2D0B7802D49BB5AFC1C3DE"
+}
+
 resource "aws_iam_openid_connect_provider" "eks" {
+  count = (
+    try(data.aws_iam_openid_connect_provider.existing.arn, "") == "" ? 1 : 0
+  )  
   client_id_list  = ["sts.amazonaws.com"]
   thumbprint_list = ["9e99a48a9960b14926bb7f3b02e22da0afd10df6"]
   url             = module.eks.cluster_oidc_issuer_url

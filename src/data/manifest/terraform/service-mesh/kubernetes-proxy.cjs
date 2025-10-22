@@ -7,6 +7,7 @@ resource "kubernetes_namespace" "devonn" {
   metadata {
     name = "devonn"
   }
+  depends_on = [module.eks]    
 }
 
 resource "kubernetes_deployment" "envoy_proxy" {

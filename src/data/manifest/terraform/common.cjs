@@ -105,11 +105,9 @@ provider "aws" {
 
 # Add this after your AWS providers
 provider "kubernetes" {
-  host                   = module.eks.cluster_endpoint
-  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
-  token                  = data.aws_eks_cluster_auth.cluster.token
+  host                   = data.aws_eks_cluster.cluster.endpoint
+  cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority[0].data)
 
-  # Wait for EKS cluster to be ready
   exec {
     api_version = "client.authentication.k8s.io/v1beta1"
     command     = "aws"
@@ -117,9 +115,13 @@ provider "kubernetes" {
       "eks",
       "get-token",
       "--cluster-name",
-      module.eks.cluster_name
+      data.aws_eks_cluster.cluster.name
     ]
   }
+}
+
+data "aws_eks_cluster" "cluster" {
+  name = module.eks.cluster_name
 }
 data "aws_eks_cluster_auth" "cluster" {
   name = module.eks.cluster_name
