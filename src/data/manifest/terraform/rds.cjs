@@ -41,20 +41,20 @@ resource "aws_security_group" "rds_sg" {
 resource "null_resource" "check_rds_snapshot" {
   provisioner "local-exec" {
     command = <<EOT
-      $snap = aws rds describe-db-snapshots --snapshot-type manual --query "DBSnapshots[?DBSnapshotIdentifier=='devonn-postgres-final-production'].DBSnapshotIdentifier" --output text
-      if ([string]::IsNullOrWhiteSpace($snap)) {
-        '{"snapshot_id": "null"}' | Out-File -FilePath snapshot_id.json -Encoding ascii
-      } else {
-        '{"snapshot_id": "' + $snap + '"}' | Out-File -FilePath snapshot_id.json -Encoding ascii
-      }
-    EOT
-    interpreter = ["PowerShell", "-Command"]
-  }
+    snap=$(aws rds describe-db-snapshots \
+      --snapshot-type manual \
+      --query "DBSnapshots[?DBSnapshotIdentifier=='devonn-postgres-final-production'].DBSnapshotIdentifier" \
+      --output text)
 
-  triggers = {
-    always_run = "\${timestamp()}"
+    if [[ -z "$snap" ]]; then
+      echo '{"snapshot_id": "null"}' > snapshot_id.json
+    else
+      echo '{"snapshot_id": "'$snap'"}' > snapshot_id.json
+    fi
+    EOT
   }
 }
+
 
 data "external" "snapshot_loader" {
   depends_on = [null_resource.check_rds_snapshot]
