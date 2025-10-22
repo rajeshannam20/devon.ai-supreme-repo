@@ -49,11 +49,12 @@ resource "null_resource" "check_rds_snapshot" {
     if [[ -z "$snap" ]]; then
       echo '{"snapshot_id": "null"}' > snapshot_id.json
     else
-      echo '{"snapshot_id": "'$snap'"}' > snapshot_id.json
+      echo "{\"snapshot_id\": \"$snap\"}" > snapshot_id.json
     fi
     EOT
   }
 }
+
 
 
 data "external" "snapshot_loader" {
