@@ -203,38 +203,23 @@ locals {
   create_replica = var.environment == "prod"
 }
 
-resource "null_resource" "wait_for_rds_replica_ready" {
+resource "null_resource" "wait_for_rds_instance_ready" {
   provisioner "local-exec" {
     command = <<EOT
-      echo "Waiting for RDS to become ready for replication..."
-
-      while true; do
-        status=$(aws rds describe-db-instances --db-instance-identifier devonn-postgres-prod --query "DBInstances[0].DBInstanceStatus" --output text)
-        restore_time=$(aws rds describe-db-instances --db-instance-identifier devonn-postgres-prod --query "DBInstances[0].LatestRestorableTime" --output text)
-
-        echo "Current status: $status"
-        echo "LatestRestorableTime: $restore_time"
-
-        if [[ "$status" == "available" && "$restore_time" != "None" && "$restore_time" != "null" ]]; then
-          echo "RDS instance is fully ready."
-          break
-        fi
-
-        sleep 30
-      done
+      echo "Waiting for RDS instance to become available..."
+      aws rds wait db-instance-available --db-instance-identifier=devonn-postgres-\${var.environment} --region=\${var.aws_region}
+      echo "RDS instance is now available."
     EOT
-    interpreter = ["bash", "-c"]
   }
-
   depends_on = [module.rds]
 }
 
 # Read replica for production environment to improve read performance and act as failover standby
 resource "aws_db_instance" "postgres_read_replica" {
-  for_each = local.create_replica ? { "replica" = "replica" } : {}
+  count = var.environment == "prod" ? 1 : 0
   
   identifier           = "devonn-postgres-replica-\${var.environment}"
-  replicate_source_db  = module.rds.db_instance_id
+  replicate_source_db = "devonn-postgres-\${var.environment}"
   instance_class       = var.db_replica_instance_class
   
   publicly_accessible  = false
@@ -253,7 +238,10 @@ resource "aws_db_instance" "postgres_read_replica" {
     Project = "devonn"
   }
 
-  depends_on = [null_resource.wait_for_rds_replica_ready]  
+  depends_on = [null_resource.wait_for_rds_instance_ready]
+  lifecycle {
+    ignore_changes = [identifier]
+  }  
 }
 
 # Cross-region replica for disaster recovery
@@ -286,12 +274,12 @@ resource "aws_db_instance" "postgres_cross_region_replica" {
 
 # DB Event Subscription to get notified about important RDS events
 resource "aws_db_event_subscription" "default" {
-  for_each = local.create_replica ? { "sub" = "sub" } : {}
+  count = var.environment == "prod" ? 1 : 0
   name      = "devonn-rds-event-subscription"
   sns_topic = aws_sns_topic.db_events[0].arn
   
   source_type = "db-instance"
-  source_ids  = [module.rds.db_instance_id]
+  source_ids  = ["devonn-postgres-\${var.environment}"]
   
   event_categories = [
     "availability",
@@ -309,7 +297,7 @@ resource "aws_db_event_subscription" "default" {
     Environment = var.environment
   }
 	
-  depends_on = [null_resource.wait_for_rds_replica_ready]
+  depends_on = [null_resource.wait_for_rds_instance_ready]
   
 }
 
