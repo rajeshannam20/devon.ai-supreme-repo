@@ -58,7 +58,7 @@ resource "null_resource" "check_rds_snapshot" {
 
 data "external" "snapshot_loader" {
   depends_on = [null_resource.check_rds_snapshot]
-  program    = ["PowerShell", "-Command", "Get-Content snapshot_id.json | ConvertFrom-Json | ConvertTo-Json -Compress"]
+  program    = ["bash", "-c", "cat snapshot_id.json | jq ."]
 }
 
 locals {
