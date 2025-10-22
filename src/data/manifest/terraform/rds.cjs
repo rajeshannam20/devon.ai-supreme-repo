@@ -64,11 +64,6 @@ resource "null_resource" "check_rds_snapshot" {
   }
 }
 
-  triggers = {
-    always_run = "\${timestamp()}"
-  }
-}
-
 data "external" "snapshot_loader" {
   depends_on = [null_resource.check_rds_snapshot]
   program = ["bash", "-c", "cat snapshot_id.json | jq ."]
