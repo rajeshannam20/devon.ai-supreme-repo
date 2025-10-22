@@ -139,6 +139,9 @@ module "rds" {
     CostCenter = "database-\${var.environment}"
     Project = "devonn"
   }
+
+  depends_on = [aws_db_subnet_group.rds_subnet_group]
+
 }
 
 # data "aws_db_parameter_group" "existing_pg" {
