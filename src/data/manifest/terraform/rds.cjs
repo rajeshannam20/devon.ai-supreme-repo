@@ -46,7 +46,7 @@ resource "null_resource" "check_rds_snapshot" {
       --query "DBSnapshots[?DBSnapshotIdentifier=='devonn-postgres-final-production'].DBSnapshotIdentifier" \
       --output text)
 
-    if [[ -z "$snap" ]]; then
+    if [ -z "$snap" ]; then
       # Ensure valid JSON output when no snapshot is found
       echo '{"snapshot_id": null}' > snapshot_id.json
     else
@@ -54,10 +54,15 @@ resource "null_resource" "check_rds_snapshot" {
       echo "{\"snapshot_id\": \"$snap\"}" > snapshot_id.json
     fi
 
-    # Debugging output: Output the content of the file
+    # Debugging output: Output the content of the file to verify
     cat snapshot_id.json
     EOT
   }
+
+  triggers = {
+    always_run = "\${timestamp()}"
+  }
+}
 
   triggers = {
     always_run = "\${timestamp()}"
