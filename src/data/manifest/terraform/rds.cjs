@@ -238,7 +238,7 @@ resource "aws_db_instance" "postgres_read_replica" {
     Project = "devonn"
   }
 
-  depends_on = [null_resource.wait_for_rds_instance_ready]
+  depends_on = [module.rds] 
   lifecycle {
     ignore_changes = [identifier]
   }  
@@ -297,7 +297,7 @@ resource "aws_db_event_subscription" "default" {
     Environment = var.environment
   }
 	
-  depends_on = [null_resource.wait_for_rds_instance_ready]
+  depends_on = [module.rds]
   
 }
 
