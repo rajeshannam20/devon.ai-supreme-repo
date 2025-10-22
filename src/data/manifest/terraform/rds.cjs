@@ -5,13 +5,13 @@ export const rdsConfigYaml = `# --- RDS PostgreSQL Configuration ---
 
 # 3. RDS PostgreSQL Configuration
 
-locals {
-  parameter_group_name = var.environment == "prod" ? (
-    length(aws_db_parameter_group.postgres_production) > 0 ?
-    aws_db_parameter_group.postgres_production[0].name :
-    data.aws_db_parameter_group.existing_pg.name
-  ) : "default.postgres14"
-}
+// locals {
+//   parameter_group_name = var.environment == "prod" ? (
+//     length(aws_db_parameter_group.postgres_production) > 0 ?
+//     aws_db_parameter_group.postgres_production[0].name :
+//     data.aws_db_parameter_group.existing_pg.name
+//   ) : "default.postgres14"
+// }
 
 resource "aws_security_group" "rds_sg" {
   name        = "rds-sg-\${var.environment}"
@@ -53,13 +53,16 @@ resource "null_resource" "check_rds_snapshot" {
     fi
     EOT
   }
-}
 
+  triggers = {
+    always_run = "\${timestamp()}"
+  }
+}
 
 
 data "external" "snapshot_loader" {
   depends_on = [null_resource.check_rds_snapshot]
-  program    = ["bash", "-c", "cat snapshot_id.json | jq ."]
+  program = ["bash", "-c", "cat snapshot_id.json | jq ."]
 }
 
 locals {
@@ -116,7 +119,7 @@ module "rds" {
   copy_tags_to_snapshot = true
   
   # Parameter group for PostgreSQL optimizations
-  parameter_group_name = local.parameter_group_name
+  parameter_group_name = length(aws_db_parameter_group.postgres_production) > 0 ? aws_db_parameter_group.postgres_production[0].name : null 
 
   # Enhanced disaster recovery for production
   enabled_cloudwatch_logs_exports = var.environment == "prod" ? ["postgresql", "upgrade"] : []
@@ -134,8 +137,19 @@ module "rds" {
   }
 }
 
-data "aws_db_parameter_group" "existing_pg" {
-  name = "devonn-postgres-params-prod"
+# data "aws_db_parameter_group" "existing_pg" {
+#   name = "devonn-postgres-params-\${var.environment}"
+# }
+
+resource "null_resource" "check_parameter_group_exists" {
+  provisioner "local-exec" {
+    command = "aws rds describe-db-parameter-groups --db-parameter-group-name devonn-postgres-params-\${var.environment} --query 'DBParameterGroups[0].DBParameterGroupName' --output text"
+  }
+
+  # Create before destroy ensures the check happens even before any state changes
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "aws_db_subnet_group" "rds_subnet_group" {
@@ -149,7 +163,7 @@ resource "aws_db_subnet_group" "rds_subnet_group" {
 
 # Production-optimized parameter group (only created for production environment)
 resource "aws_db_parameter_group" "postgres_production" {
-  count = var.environment == "prod" && can(data.aws_db_parameter_group.existing_pg.name) ? 0 : 1
+  count  = (length([for output in null_resource.check_parameter_group_exists.*.id : output]) > 0) ? 0 : 1
   
   name   = "devonn-postgres-params-\${var.environment}"
   family = var.family
