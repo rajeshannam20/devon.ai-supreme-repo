@@ -685,12 +685,14 @@ jobs:
         id: outputs
         if: success()
         run: |
-          export TF_LOG=OFF
-          echo "Extracting outputs..."
+          # Fetch and print all outputs
+          terraform output
+      
+          # Set individual outputs as environment variables for further use in the pipeline
           RDS_ENDPOINT=$(terraform output -raw rds_endpoint)
           CLUSTER_NAME=$(terraform output -raw eks_cluster_name)
       
-          # Output to GitHub Actions environment
+          # Output to GitHub Actions environment variables
           echo "rds_endpoint=${RDS_ENDPOINT}" >> $GITHUB_ENV
           echo "cluster_name=${CLUSTER_NAME}" >> $GITHUB_ENV
       
@@ -734,6 +736,9 @@ jobs:
       - name: Check Database Connectivity
         env:
           DB_ENDPOINT: ${{ needs.apply.outputs.rds_endpoint }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
           # Install PostgreSQL client
           sudo apt-get update
@@ -747,7 +752,7 @@ jobs:
           CLUSTER_NAME: ${{ needs.apply.outputs.cluster_name }}
         run: |
           # Configure kubectl
-          aws eks update-kubeconfig --name $CLUSTER_NAME --region us-east-1
+          aws eks update-kubeconfig --name $CLUSTER_NAME --region us-west-2
           
           # Check node status
           kubectl get nodes
