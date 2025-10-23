@@ -685,6 +685,9 @@ jobs:
         id: outputs
         if: success()
         run: |
+          echo "Refreshing Terraform state..."
+          terraform refresh -lock=false
+
           # Fetch and print all outputs
           terraform output
       
