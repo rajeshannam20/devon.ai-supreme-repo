@@ -684,6 +684,7 @@ jobs:
       - name: Extract Terraform Outputs
         id: outputs
         if: success()
+        working-directory: ./src/data/manifest/terraform        
         run: |
           echo "Refreshing Terraform state..."
           terraform refresh -lock=false
