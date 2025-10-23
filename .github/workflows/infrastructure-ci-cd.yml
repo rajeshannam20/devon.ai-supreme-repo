@@ -646,11 +646,6 @@ jobs:
           echo "Implementing canary deployment strategy..."
           terraform apply -auto-approve ./tfplan
           
-          echo "Waiting 2 minutes to verify canary deployment..."
-          sleep 120
-          
-          echo "Proceeding with full deployment..."
-          terraform apply -auto-approve ./tfplan
       
       - name: Blue-Green Deployment
         if: github.event.inputs.deployment_strategy == 'blue-green'
