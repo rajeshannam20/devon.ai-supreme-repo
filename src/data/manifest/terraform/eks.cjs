@@ -69,7 +69,7 @@ resource "aws_eks_cluster_addon" "vpc_cni" {
   addon_version = "v1.11.0"
   resolve_conflicts = "OVERWRITE"
 }
-}
+
 
 
 # KMS key for EKS secrets encryption
