@@ -58,6 +58,19 @@ output "connection_instructions" {
   value       = "Run: aws eks update-kubeconfig --name devonn-eks-\${var.environment} --region \${var.aws_region}"
 }
 
+# New Outputs for rds_endpoint and eks_cluster_name
+output "rds_endpoint" {
+  description = "Endpoint for the RDS instance"
+  value       = module.rds.db_instance_address
+  sensitive   = false
+}
+
+output "eks_cluster_name" {
+  description = "The name of the EKS cluster"
+  value       = module.eks.cluster_name
+  sensitive   = false
+}
+
 # Example tfvars file structure (create these in environments/prod.tfvars, environments/staging.tfvars, etc)
 # aws_region = "us-west-2"
 # environment = "prod"

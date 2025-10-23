@@ -555,64 +555,66 @@ jobs:
           env: ${{ github.event.inputs.environment || 'production' }}
           ref: ${{ github.ref }}
       
-      - name: Terraform Import Existing Resources
-        working-directory: ./src/data/manifest/terraform
-        env:
-          TF_VAR_aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          TF_VAR_aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          TF_VAR_aws_region: ${{ secrets.AWS_REGION }}
-          TF_VAR_db_password: ${{ secrets.RDS_DB_PASSWORD }}
-        run: |
-            VPC_ID=$(aws ec2 describe-vpcs --filters "Name=tag:Name,Values=devonn-vpc-*" --query 'Vpcs[0].VpcId' --output text)
-            PRIVATE_SUBNET_IDS=( $(aws ec2 describe-subnets --filters "Name=vpc-id,Values=$VPC_ID" "Name=tag:Type,Values=private" --query 'Subnets[].SubnetId' --output text) )
-            PUBLIC_SUBNET_IDS=( $(aws ec2 describe-subnets --filters "Name=vpc-id,Values=$VPC_ID" "Name=tag:Type,Values=public" --query 'Subnets[].SubnetId' --output text) )
-            EIP_ALLOC_IDS=( $(aws ec2 describe-addresses --query 'Addresses[].AllocationId' --output text) )
-            KMS_ALIAS_ARN=$(aws kms list-aliases --query 'Aliases[?AliasName==`alias/eks/devonn-eks-prod`].AliasArn' --output text)
+      # - name: Terraform Import Existing Resources
+        # working-directory: ./src/data/manifest/terraform
+        # env:
+        #   TF_VAR_aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        #   TF_VAR_aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        #   TF_VAR_aws_region: ${{ secrets.AWS_REGION }}
+        #   TF_VAR_db_password: ${{ secrets.RDS_DB_PASSWORD }}
+        #   TF_VAR_aws_envoy_crt: ${{ secrets.AWS_ENVOY_CRT }}
+        #   TF_VAR_aws_envoy_key: ${{ secrets.AWS_ENVOY_KEY }}
+        # run: |
+        #     VPC_ID=$(aws ec2 describe-vpcs --filters "Name=tag:Name,Values=devonn-vpc-*" --query 'Vpcs[0].VpcId' --output text)
+        #     PRIVATE_SUBNET_IDS=( $(aws ec2 describe-subnets --filters "Name=vpc-id,Values=$VPC_ID" "Name=tag:Type,Values=private" --query 'Subnets[].SubnetId' --output text) )
+        #     PUBLIC_SUBNET_IDS=( $(aws ec2 describe-subnets --filters "Name=vpc-id,Values=$VPC_ID" "Name=tag:Type,Values=public" --query 'Subnets[].SubnetId' --output text) )
+        #     EIP_ALLOC_IDS=( $(aws ec2 describe-addresses --query 'Addresses[].AllocationId' --output text) )
+        #     KMS_ALIAS_ARN=$(aws kms list-aliases --query 'Aliases[?AliasName==`alias/eks/devonn-eks-prod`].AliasArn' --output text)
 
-            # Helper function for import with AWS existence check and fallback create
-            import_or_create() {
-              RESOURCE="$1"
-              ID="$2"
-              EXISTS_CMD="$3"
-              CREATE_CMD="$4"
-              echo "Importing $RESOURCE with ID $ID..."
-              terraform import $RESOURCE "$ID" && return
-              echo "Import failed, checking if resource exists in AWS..."
-              if eval "$EXISTS_CMD"; then
-                echo "Resource exists in AWS, skipping create."
-              else
-                echo "Resource does not exist, attempting to create $RESOURCE..."
-                eval "$CREATE_CMD"
-              fi
-            }
+        #     # Helper function for import with AWS existence check and fallback create
+        #     import_or_create() {
+        #       RESOURCE="$1"
+        #       ID="$2"
+        #       EXISTS_CMD="$3"
+        #       CREATE_CMD="$4"
+        #       echo "Importing $RESOURCE with ID $ID..."
+        #       terraform import $RESOURCE "$ID" && return
+        #       echo "Import failed, checking if resource exists in AWS..."
+        #       if eval "$EXISTS_CMD"; then
+        #         echo "Resource exists in AWS, skipping create."
+        #       else
+        #         echo "Resource does not exist, attempting to create $RESOURCE..."
+        #         eval "$CREATE_CMD"
+        #       fi
+        #     }
 
-            # Import with AWS existence check and fallback create
-            import_or_create aws_db_parameter_group.postgres_production[0] devonn-postgres-params-prod "aws rds describe-db-parameter-groups --db-parameter-group-name devonn-postgres-params-prod | grep devonn-postgres-params-prod" "terraform apply -target=aws_db_parameter_group.postgres_production[0] -auto-approve"
-            import_or_create aws_backup_vault.rds_backup_vault[0] devonn-rds-backup-vault-prod "aws backup describe-backup-vault --backup-vault-name devonn-rds-backup-vault-prod | grep devonn-rds-backup-vault-prod" "terraform apply -target=aws_backup_vault.rds_backup_vault[0] -auto-approve"
-            import_or_create aws_iam_role.backup_role[0] devonn-backup-role-prod "aws iam get-role --role-name devonn-backup-role-prod | grep devonn-backup-role-prod" "terraform apply -target=aws_iam_role.backup_role[0] -auto-approve"
-            import_or_create aws_cloudtrail.devonn_cloudtrail[0] devonn-cloudtrail-prod "aws cloudtrail describe-trails --trail-name-list devonn-cloudtrail-prod | grep devonn-cloudtrail-prod" "terraform apply -target=aws_cloudtrail.devonn_cloudtrail[0] -auto-approve"
-            import_or_create aws_cloudwatch_log_group.flow_log_group[0] /aws/vpc-flow-logs/devonn-vpc-prod "aws logs describe-log-groups --log-group-name-prefix /aws/vpc-flow-logs/devonn-vpc-prod | grep /aws/vpc-flow-logs/devonn-vpc-prod" "terraform apply -target=aws_cloudwatch_log_group.flow_log_group[0] -auto-approve"
-            import_or_create aws_iam_role.vpc_flow_log_role[0] devonn-vpc-flow-log-role-prod "aws iam get-role --role-name devonn-vpc-flow-log-role-prod | grep devonn-vpc-flow-log-role-prod" "terraform apply -target=aws_iam_role.vpc_flow_log_role[0] -auto-approve"
-            import_or_create aws_iam_role.config_role[0] devonn-config-role-prod "aws iam get-role --role-name devonn-config-role-prod | grep devonn-config-role-prod" "terraform apply -target=aws_iam_role.config_role[0] -auto-approve"
-            import_or_create aws_appmesh_mesh.devonn_mesh devonn-mesh-prod "aws appmesh describe-mesh --mesh-name devonn-mesh-prod | grep devonn-mesh-prod" "terraform apply -target=aws_appmesh_mesh.devonn_mesh -auto-approve"
-            import_or_create aws_iam_role.xray_role[0] devonn-xray-role-prod "aws iam get-role --role-name devonn-xray-role-prod | grep devonn-xray-role-prod" "terraform apply -target=aws_iam_role.xray_role[0] -auto-approve"
-            import_or_create aws_kms_alias.this["cluster"] "$KMS_ALIAS_ARN" "aws kms list-aliases --query 'Aliases[?AliasName==`alias/eks/devonn-eks-prod`].AliasArn' | grep $KMS_ALIAS_ARN || true" "terraform apply -target=aws_kms_alias.this[\"cluster\"] -auto-approve || true"
-            import_or_create module.eks.module.kms.aws_kms_alias.this["cluster"] "$KMS_ALIAS_ARN" "aws kms list-aliases --query 'Aliases[?AliasName==`alias/eks/devonn-eks-prod`].AliasArn' | grep $KMS_ALIAS_ARN || true" "terraform apply -target=module.eks.module.kms.aws_kms_alias.this[\"cluster\"] -auto-approve || true"
-            import_or_create aws_cloudwatch_log_group.this[0] /aws/eks/devonn-eks-prod/cluster "aws logs describe-log-groups --log-group-name-prefix /aws/eks/devonn-eks-prod/cluster | grep /aws/eks/devonn-eks-prod/cluster" "terraform apply -target=aws_cloudwatch_log_group.this[0] -auto-approve"
+        #     # Import with AWS existence check and fallback create
+        #     import_or_create aws_db_parameter_group.postgres_production[0] devonn-postgres-params-prod "aws rds describe-db-parameter-groups --db-parameter-group-name devonn-postgres-params-prod | grep devonn-postgres-params-prod" "terraform apply -target=aws_db_parameter_group.postgres_production[0] -auto-approve"
+        #     import_or_create aws_backup_vault.rds_backup_vault[0] devonn-rds-backup-vault-prod "aws backup describe-backup-vault --backup-vault-name devonn-rds-backup-vault-prod | grep devonn-rds-backup-vault-prod" "terraform apply -target=aws_backup_vault.rds_backup_vault[0] -auto-approve"
+        #     import_or_create aws_iam_role.backup_role[0] devonn-backup-role-prod "aws iam get-role --role-name devonn-backup-role-prod | grep devonn-backup-role-prod" "terraform apply -target=aws_iam_role.backup_role[0] -auto-approve"
+        #     import_or_create aws_cloudtrail.devonn_cloudtrail[0] devonn-cloudtrail-prod "aws cloudtrail describe-trails --trail-name-list devonn-cloudtrail-prod | grep devonn-cloudtrail-prod" "terraform apply -target=aws_cloudtrail.devonn_cloudtrail[0] -auto-approve"
+        #     import_or_create aws_cloudwatch_log_group.flow_log_group[0] /aws/vpc-flow-logs/devonn-vpc-prod "aws logs describe-log-groups --log-group-name-prefix /aws/vpc-flow-logs/devonn-vpc-prod | grep /aws/vpc-flow-logs/devonn-vpc-prod" "terraform apply -target=aws_cloudwatch_log_group.flow_log_group[0] -auto-approve"
+        #     import_or_create aws_iam_role.vpc_flow_log_role[0] devonn-vpc-flow-log-role-prod "aws iam get-role --role-name devonn-vpc-flow-log-role-prod | grep devonn-vpc-flow-log-role-prod" "terraform apply -target=aws_iam_role.vpc_flow_log_role[0] -auto-approve"
+        #     import_or_create aws_iam_role.config_role[0] devonn-config-role-prod "aws iam get-role --role-name devonn-config-role-prod | grep devonn-config-role-prod" "terraform apply -target=aws_iam_role.config_role[0] -auto-approve"
+        #     import_or_create aws_appmesh_mesh.devonn_mesh devonn-mesh-prod "aws appmesh describe-mesh --mesh-name devonn-mesh-prod | grep devonn-mesh-prod" "terraform apply -target=aws_appmesh_mesh.devonn_mesh -auto-approve"
+        #     import_or_create aws_iam_role.xray_role[0] devonn-xray-role-prod "aws iam get-role --role-name devonn-xray-role-prod | grep devonn-xray-role-prod" "terraform apply -target=aws_iam_role.xray_role[0] -auto-approve"
+        #     import_or_create aws_kms_alias.this["cluster"] "$KMS_ALIAS_ARN" "aws kms list-aliases --query 'Aliases[?AliasName==`alias/eks/devonn-eks-prod`].AliasArn' | grep $KMS_ALIAS_ARN || true" "terraform apply -target=aws_kms_alias.this[\"cluster\"] -auto-approve || true"
+        #     import_or_create module.eks.module.kms.aws_kms_alias.this["cluster"] "$KMS_ALIAS_ARN" "aws kms list-aliases --query 'Aliases[?AliasName==`alias/eks/devonn-eks-prod`].AliasArn' | grep $KMS_ALIAS_ARN || true" "terraform apply -target=module.eks.module.kms.aws_kms_alias.this[\"cluster\"] -auto-approve || true"
+        #     import_or_create aws_cloudwatch_log_group.this[0] /aws/eks/devonn-eks-prod/cluster "aws logs describe-log-groups --log-group-name-prefix /aws/eks/devonn-eks-prod/cluster | grep /aws/eks/devonn-eks-prod/cluster" "terraform apply -target=aws_cloudwatch_log_group.this[0] -auto-approve"
 
-            import_or_create module.vpc.aws_subnet.private[0] ${PRIVATE_SUBNET_IDS[0]} "aws ec2 describe-subnets --subnet-ids ${PRIVATE_SUBNET_IDS[0]} | grep ${PRIVATE_SUBNET_IDS[0]}" "terraform apply -target=module.vpc.aws_subnet.private[0] -auto-approve"
-            import_or_create module.vpc.aws_subnet.private[1] ${PRIVATE_SUBNET_IDS[1]} "aws ec2 describe-subnets --subnet-ids ${PRIVATE_SUBNET_IDS[1]} | grep ${PRIVATE_SUBNET_IDS[1]}" "terraform apply -target=module.vpc.aws_subnet.private[1] -auto-approve"
-            import_or_create module.vpc.aws_subnet.public[0] ${PUBLIC_SUBNET_IDS[0]} "aws ec2 describe-subnets --subnet-ids ${PUBLIC_SUBNET_IDS[0]} | grep ${PUBLIC_SUBNET_IDS[0]}" "terraform apply -target=module.vpc.aws_subnet.public[0] -auto-approve"
-            import_or_create module.vpc.aws_subnet.public[1] ${PUBLIC_SUBNET_IDS[1]} "aws ec2 describe-subnets --subnet-ids ${PUBLIC_SUBNET_IDS[1]} | grep ${PUBLIC_SUBNET_IDS[1]}" "terraform apply -target=module.vpc.aws_subnet.public[1] -auto-approve"
+        #     import_or_create module.vpc.aws_subnet.private[0] ${PRIVATE_SUBNET_IDS[0]} "aws ec2 describe-subnets --subnet-ids ${PRIVATE_SUBNET_IDS[0]} | grep ${PRIVATE_SUBNET_IDS[0]}" "terraform apply -target=module.vpc.aws_subnet.private[0] -auto-approve"
+        #     import_or_create module.vpc.aws_subnet.private[1] ${PRIVATE_SUBNET_IDS[1]} "aws ec2 describe-subnets --subnet-ids ${PRIVATE_SUBNET_IDS[1]} | grep ${PRIVATE_SUBNET_IDS[1]}" "terraform apply -target=module.vpc.aws_subnet.private[1] -auto-approve"
+        #     import_or_create module.vpc.aws_subnet.public[0] ${PUBLIC_SUBNET_IDS[0]} "aws ec2 describe-subnets --subnet-ids ${PUBLIC_SUBNET_IDS[0]} | grep ${PUBLIC_SUBNET_IDS[0]}" "terraform apply -target=module.vpc.aws_subnet.public[0] -auto-approve"
+        #     import_or_create module.vpc.aws_subnet.public[1] ${PUBLIC_SUBNET_IDS[1]} "aws ec2 describe-subnets --subnet-ids ${PUBLIC_SUBNET_IDS[1]} | grep ${PUBLIC_SUBNET_IDS[1]}" "terraform apply -target=module.vpc.aws_subnet.public[1] -auto-approve"
 
-            import_or_create module.vpc.aws_eip.nat[0] ${EIP_ALLOC_IDS[0]} "aws ec2 describe-addresses --allocation-ids ${EIP_ALLOC_IDS[0]} | grep ${EIP_ALLOC_IDS[0]}" "terraform apply -target=module.vpc.aws_eip.nat[0] -auto-approve"
+        #     import_or_create module.vpc.aws_eip.nat[0] ${EIP_ALLOC_IDS[0]} "aws ec2 describe-addresses --allocation-ids ${EIP_ALLOC_IDS[0]} | grep ${EIP_ALLOC_IDS[0]}" "terraform apply -target=module.vpc.aws_eip.nat[0] -auto-approve"
 
-            import_or_create module.rds.module.db_instance.aws_iam_role.enhanced_monitoring[0] devonn-rds-monitoring-role-prod "aws iam get-role --role-name devonn-rds-monitoring-role-prod | grep devonn-rds-monitoring-role-prod" "terraform apply -target=module.rds.module.db_instance.aws_iam_role.enhanced_monitoring[0] -auto-approve"
+        #     import_or_create module.rds.module.db_instance.aws_iam_role.enhanced_monitoring[0] devonn-rds-monitoring-role-prod "aws iam get-role --role-name devonn-rds-monitoring-role-prod | grep devonn-rds-monitoring-role-prod" "terraform apply -target=module.rds.module.db_instance.aws_iam_role.enhanced_monitoring[0] -auto-approve"
 
-            import_or_create module.eks.aws_cloudwatch_log_group.this[0] /aws/eks/devonn-eks-prod/cluster "aws logs describe-log-groups --log-group-name-prefix /aws/eks/devonn-eks-prod/cluster | grep /aws/eks/devonn-eks-prod/cluster" "terraform apply -target=module.eks.aws_cloudwatch_log_group.this[0] -auto-approve"
+        #     import_or_create module.eks.aws_cloudwatch_log_group.this[0] /aws/eks/devonn-eks-prod/cluster "aws logs describe-log-groups --log-group-name-prefix /aws/eks/devonn-eks-prod/cluster | grep /aws/eks/devonn-eks-prod/cluster" "terraform apply -target=module.eks.aws_cloudwatch_log_group.this[0] -auto-approve"
 
-            # Add missing imports for VPC, log groups, etc. with fallback
-            import_or_create module.vpc.aws_vpc.this[0] $VPC_ID "aws ec2 describe-vpcs --vpc-ids $VPC_ID | grep $VPC_ID" "terraform apply -target=module.vpc.aws_vpc.this[0] -auto-approve"
+        #     # Add missing imports for VPC, log groups, etc. with fallback
+        #     import_or_create module.vpc.aws_vpc.this[0] $VPC_ID "aws ec2 describe-vpcs --vpc-ids $VPC_ID | grep $VPC_ID" "terraform apply -target=module.vpc.aws_vpc.this[0] -auto-approve"
 
       - name: Terraform Refresh
         working-directory: ./src/data/manifest/terraform
@@ -620,7 +622,9 @@ jobs:
           TF_VAR_aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
           TF_VAR_aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           TF_VAR_aws_region: ${{ secrets.AWS_REGION }}
-          TF_VAR_db_password: ${{ secrets.RDS_DB_PASSWORD }}        
+          TF_VAR_db_password: ${{ secrets.RDS_DB_PASSWORD }}     
+          TF_VAR_aws_envoy_crt: ${{ secrets.AWS_ENVOY_CRT }}
+          TF_VAR_aws_envoy_key: ${{ secrets.AWS_ENVOY_KEY }}
         run: terraform refresh
 
       - name: Terraform Plan (fresh)
@@ -630,6 +634,8 @@ jobs:
           TF_VAR_aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           TF_VAR_aws_region: ${{ secrets.AWS_REGION }}
           TF_VAR_db_password: ${{ secrets.RDS_DB_PASSWORD }}
+          TF_VAR_aws_envoy_crt: ${{ secrets.AWS_ENVOY_CRT }}
+          TF_VAR_aws_envoy_key: ${{ secrets.AWS_ENVOY_KEY }}          
         run: terraform plan -out=./tfplan
 
       - name: Download tfvars override
@@ -642,6 +648,9 @@ jobs:
       - name: Canary Deployment
         if: github.event.inputs.deployment_strategy == 'canary' || github.event.inputs.deployment_strategy == null
         working-directory: ./src/data/manifest/terraform
+        env:
+          TF_VAR_aws_envoy_crt: ${{ secrets.AWS_ENVOY_CRT }}
+          TF_VAR_aws_envoy_key: ${{ secrets.AWS_ENVOY_KEY }}
         run: |
           echo "Implementing canary deployment strategy..."
           terraform apply -auto-approve ./tfplan
