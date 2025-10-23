@@ -10,19 +10,20 @@ resource "kubernetes_namespace" "devonn" {
   depends_on = [module.eks]    
 }
 
-// resource "kubernetes_secret" "envoy_certs" {
-//   metadata {
-//     name      = "envoy-certs"
-//     namespace = "devonn"
-//   }
+# Kubernetes Secret for Envoy Certificates
+resource "kubernetes_secret" "envoy_certs" {
+  metadata {
+    name      = "envoy-certs"
+    namespace = "devonn"  
+  }
 
-//   type = "Opaque"
+  data = {
+    "cert.crt" = base64encode(file("\${path.module}/certs/cert.crt"))
+    "cert.key" = base64encode(file("\${path.module}/certs/cert.key"))
+  }
 
-//   data = {
-//     "cert.crt" = base64decode(var.AWS_ENVOY_CRT)
-//     "cert.key" = base64decode(var.AWS_ENVOY_KEY)
-//   }
-// }
+  type = "Opaque"
+}
 
 resource "kubernetes_deployment" "envoy_proxy" {
   count = var.environment == "prod" ? 1 : 0
