@@ -23,6 +23,12 @@ resource "kubernetes_secret" "envoy_certs" {
   }
 
   type = "Opaque"
+
+  lifecycle {
+    ignore_changes = [
+      data
+    ]
+  }  
 }
 
 resource "kubernetes_deployment" "envoy_proxy" {
