@@ -1,30 +1,21 @@
 export const eksConfigYaml = `# --- EKS Cluster Configuration ---
 
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = ">= 3.50"
-    }
-  }
-}
-
 locals {
   kubernetes_version = var.kubernetes_version != null ? var.kubernetes_version : "1.33"
 }
 
-module "eks_addons" {
-  source          = "terraform-aws-modules/eks/aws//modules/addons"
-  cluster_name    = module.eks.cluster_name
-  cluster_version = module.eks.cluster_version
-  addons = {
-    vpc_cni = {
-      addon_name   = "vpc-cni"
-      addon_version = "v1.11.0"
-      resolve_conflicts = "OVERWRITE"
-    }
-  }
-}
+// module "eks_addons" {
+//   source          = "terraform-aws-modules/eks/aws//modules/addons"
+//   cluster_name    = module.eks.cluster_name
+//   cluster_version = module.eks.cluster_version
+//   addons = {
+//     vpc_cni = {
+//       addon_name   = "vpc-cni"
+//       addon_version = "v1.11.0"
+//       resolve_conflicts = "OVERWRITE"
+//     }
+//   }
+// }
 
 # 2. EKS Cluster Configuration
 module "eks" {
@@ -76,12 +67,12 @@ module "eks" {
 }
 }
 
-resource "aws_eks_cluster_addon" "vpc_cni" {
-  cluster_name  = module.eks.cluster_name
-  addon_name    = "vpc-cni"
-  addon_version = "v1.11.0"
-  resolve_conflicts = "OVERWRITE"
-}
+// resource "aws_eks_cluster_addon" "vpc_cni" {
+//   cluster_name  = module.eks.cluster_name
+//   addon_name    = "vpc-cni"
+//   addon_version = "v1.11.0"
+//   resolve_conflicts = "OVERWRITE"
+// }
 
 
 
