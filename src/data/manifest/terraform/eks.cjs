@@ -67,12 +67,31 @@ module "eks" {
 }
 }
 
-// resource "aws_eks_cluster_addon" "vpc_cni" {
-//   cluster_name  = module.eks.cluster_name
-//   addon_name    = "vpc-cni"
-//   addon_version = "v1.11.0"
-//   resolve_conflicts = "OVERWRITE"
-// }
+# IAM Role for VPC CNI
+resource "aws_iam_role" "vpc_cni_role" {
+  name = "vpc-cni-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Principal = {
+          Service = "eks.amazonaws.com"
+        }
+        Effect = "Allow"
+        Sid = ""
+      }
+    ]
+  })
+}
+
+# EKS Add-on: VPC CNI
+resource "aws_eks_addon" "vpc_cni" {
+  cluster_name = module.eks.cluster_name
+  addon_name   = "vpc-cni"
+  addon_version = "v1.11.5-eksbuild.1"
+  service_account_role_arn = aws_iam_role.vpc_cni_role.arn
+}
 
 
 

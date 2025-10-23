@@ -682,8 +682,14 @@ jobs:
         id: outputs
         if: success()
         run: |
-          echo "rds_endpoint=$(terraform output -raw rds_endpoint)" >> $GITHUB_OUTPUT
-          echo "cluster_name=$(terraform output -raw eks_cluster_name)" >> $GITHUB_OUTPUT
+          export TF_LOG=OFF
+          echo "Extracting outputs..."
+          RDS_ENDPOINT=$(terraform output -raw rds_endpoint)
+          CLUSTER_NAME=$(terraform output -raw eks_cluster_name)
+      
+          # Output to GitHub Actions environment
+          echo "rds_endpoint=${RDS_ENDPOINT}" >> $GITHUB_ENV
+          echo "cluster_name=${CLUSTER_NAME}" >> $GITHUB_ENV
       
       - name: Update deployment status
         if: always()
