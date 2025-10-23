@@ -260,7 +260,7 @@ jobs:
           TF_VAR_db_password: ${{ secrets.RDS_DB_PASSWORD }}
         run: |
           terraform init -reconfigure
-          terraform plan -out=tfplan -lock=false -var-file=./secrets.tfvars
+          terraform plan -out=tfplan -lock=false
           if [ $? -ne 0 ]; then
             echo "Terraform plan failed"
             exit 1
@@ -416,7 +416,7 @@ jobs:
           TF_VAR_db_password: ${{ secrets.RDS_DB_PASSWORD }}
         id: plan
         run: |
-          terraform plan -out=tfplan -lock=false -var-file=./secrets.tfvars
+          terraform plan -out=tfplan -lock=false
           terraform show -json tfplan > tfplan.json
         
       - name: List Terraform directory after plan
@@ -635,7 +635,7 @@ jobs:
           TF_VAR_aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           TF_VAR_aws_region: ${{ secrets.AWS_REGION }}
           TF_VAR_db_password: ${{ secrets.RDS_DB_PASSWORD }}       
-        run: terraform plan -out=tfplan -lock=false -var-file=./secrets.tfvars
+        run: terraform plan -out=tfplan -lock=false
 
       # - name: Download tfvars override
       #   uses: actions/download-artifact@v4
@@ -648,7 +648,15 @@ jobs:
         if: github.event.inputs.deployment_strategy == 'canary' || github.event.inputs.deployment_strategy == null
         working-directory: ./src/data/manifest/terraform
         run: |
+
           echo "Implementing canary deployment strategy..."
+          # Apply changes to a subset of resources first (canary pattern)
+          terraform apply -target=module.vpc -target=module.eks -auto-approve -lock=false ./tfplan
+          
+          echo "Waiting 2 minutes to verify canary deployment..."
+          sleep 120
+          
+          echo "Proceeding with full deployment..."
           terraform apply -auto-approve -lock=false ./tfplan
           
       
@@ -661,7 +669,9 @@ jobs:
           
           # Setup blue environment
           terraform workspace new $BLUE_ENV || terraform workspace select $BLUE_ENV
-          terraform apply -var-file=environments/${{ github.event.inputs.environment || 'production' }}.tfvars -auto-approve
+          
+          # Apply configuration directly with variables passed through -var
+          terraform apply -var "environment=${{ github.event.inputs.environment || 'production' }}" -var "aws_region=${{ secrets.AWS_REGION }}" -auto-approve -lock=false ./tfplan
           
           echo "Blue environment deployed, waiting for validation..."
           sleep 180
@@ -676,7 +686,7 @@ jobs:
         if: github.event.inputs.deployment_strategy == 'standard'
         run: |
           echo "Implementing standard deployment strategy..."
-          terraform apply tfplan
+          terraform apply -auto-approve -lock=false ./tfplan
       
       - name: Extract Terraform Outputs
         id: outputs
