@@ -1,5 +1,14 @@
 export const eksConfigYaml = `# --- EKS Cluster Configuration ---
 
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 3.50"
+    }
+  }
+}
+
 locals {
   kubernetes_version = var.kubernetes_version != null ? var.kubernetes_version : "1.33"
 }
@@ -54,12 +63,12 @@ module "eks" {
 }
 }
 
-# Addon for VPC CNI
 resource "aws_eks_cluster_addon" "vpc_cni" {
-  cluster_name = module.eks.cluster_name
-  addon_name   = "vpc-cni"
-  addon_version = "v1.11.0"  
+  cluster_name  = module.eks.cluster_name
+  addon_name    = "vpc-cni"
+  addon_version = "v1.11.0"
   resolve_conflicts = "OVERWRITE"
+}
 }
 
 
