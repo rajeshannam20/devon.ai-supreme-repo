@@ -259,7 +259,7 @@ jobs:
           TF_VAR_db_password: ${{ secrets.RDS_DB_PASSWORD }}
         run: |
           terraform init -reconfigure
-          terraform plan -out=tfplan
+          terraform plan -out=tfplan -lock=false
           if [ $? -ne 0 ]; then
             echo "Terraform plan failed"
             exit 1
