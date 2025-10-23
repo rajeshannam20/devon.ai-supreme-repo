@@ -19,8 +19,8 @@ resource "kubernetes_secret" "envoy_certs" {
   type = "Opaque"
 
   data = {
-    cert.crt = base64decode(var.AWS_ENVOY_CRT)
-    cert.key = base64decode(var.AWS_ENVOY_KEY)
+    "cert.crt" = base64decode(var.AWS_ENVOY_CRT)
+    "cert.key" = base64decode(var.AWS_ENVOY_KEY)
   }
 }
 
