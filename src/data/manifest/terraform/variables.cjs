@@ -175,15 +175,15 @@ variable "enable_securityhub" {
   default = false
 }
 
-variable "AWS_ENVOY_CRT" {
-  description = "The certificate for Envoy"
-  type        = string
-}
+// variable "AWS_ENVOY_CRT" {
+//   description = "The certificate for Envoy"
+//   type        = string
+// }
 
-variable "AWS_ENVOY_KEY" {
-  description = "The key for Envoy"
-  type        = string
-}
+// variable "AWS_ENVOY_KEY" {
+//   description = "The key for Envoy"
+//   type        = string
+// }
 
 `;
 
