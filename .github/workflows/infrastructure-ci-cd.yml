@@ -650,13 +650,6 @@ jobs:
         run: |
 
           echo "Implementing canary deployment strategy..."
-          # Apply changes to a subset of resources first (canary pattern)
-          terraform apply -target=module.vpc -target=module.eks -auto-approve -lock=false ./tfplan
-          
-          echo "Waiting 2 minutes to verify canary deployment..."
-          sleep 120
-          
-          echo "Proceeding with full deployment..."
           terraform apply -auto-approve -lock=false ./tfplan
           
       
