@@ -54,6 +54,15 @@ module "eks" {
 }
 }
 
+# Addon for VPC CNI
+resource "aws_eks_cluster_addon" "vpc_cni" {
+  cluster_name = module.eks.cluster_name
+  addon_name   = "vpc-cni"
+  addon_version = "v1.11.0"  
+  resolve_conflicts = "OVERWRITE"
+}
+
+
 # KMS key for EKS secrets encryption
 resource "aws_kms_key" "eks" {
   description             = "EKS Secret Encryption Key"
