@@ -260,8 +260,8 @@ jobs:
           TF_VAR_aws_envoy_crt: "${{ secrets.AWS_ENVOY_CRT }}"
           TF_VAR_aws_envoy_key: "${{ secrets.AWS_ENVOY_KEY }}"
         run: |
-          echo "AWS_ENVOY_CRT: $TF_VAR_aws_envoy_crt"
-          echo "AWS_ENVOY_KEY: $TF_VAR_aws_envoy_key"
+          echo "AWS_ENVOY_CRT length: ${#TF_VAR_aws_envoy_crt}"
+          echo "AWS_ENVOY_KEY length: ${#TF_VAR_aws_envoy_key}"
 
       - name: Generate Terraform Plan for Policy Evaluation
         working-directory: ./src/data/manifest/terraform
@@ -273,6 +273,10 @@ jobs:
           TF_VAR_aws_envoy_crt: "${{ secrets.AWS_ENVOY_CRT }}"
           TF_VAR_aws_envoy_key: "${{ secrets.AWS_ENVOY_KEY }}"
         run: |
+          # Escape newlines in the certificate value
+          export TF_VAR_aws_envoy_crt=$(echo "${TF_VAR_aws_envoy_crt}" | sed ':a;N;$!ba;s/\n/\\n/g')
+          export TF_VAR_aws_envoy_key=$(echo "${TF_VAR_aws_envoy_key}" | sed ':a;N;$!ba;s/\n/\\n/g')
+
           terraform init -reconfigure
           terraform plan -out=tfplan -lock=false
           if [ $? -ne 0 ]; then
