@@ -437,20 +437,22 @@ jobs:
         run: |
           echo "Fetching Terraform outputs..."
           export TF_LOG=ERROR
-      
-          # Capture output cleanly, suppress STDERR logs
+          
+          # Extract and clean eks_cluster_name
           CLUSTER_NAME=$(terraform output -raw eks_cluster_name 2>/dev/null | tr -d '\n' | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-          echo "Cleaned CLUSTER_NAME: $CLUSTER_NAME"
-      
-          # Save the clean output for further steps
           echo "cluster_name=${CLUSTER_NAME}" >> $GITHUB_ENV
-          # Optional: save for debugging without logs
-          echo "$CLUSTER_NAME" > cluster_name_clean.txt
+          
+          # Extract RDS endpoint (make sure output name matches your terraform output)
+          # RDS_ENDPOINT=$(terraform output -raw rds_endpoint 2>/dev/null | tr -d '\n' | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+          # echo "rds_endpoint=${RDS_ENDPOINT}" >> $GITHUB_ENV
+          
+          echo "Extracted cluster_name: ${CLUSTER_NAME}"
+          # echo "Extracted rds_endpoint: ${RDS_ENDPOINT}"
       
       - name: Check Value of cluster_name from GitHub Environment Variables
         run: |
           # Print the value of cluster_name from the GitHub environment variables
-          echo "Using cluster_name in next steps: ${{ env.cluster_name }}"
+          echo "Cluster name: ${{ env.cluster_name }}"
 
       - name: List Terraform directory after plan
         working-directory: ./src/data/manifest/terraform
