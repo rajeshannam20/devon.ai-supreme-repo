@@ -438,14 +438,16 @@ jobs:
           echo "Fetching Terraform outputs..."
           export TF_LOG=ERROR
           
-          CLUSTER_NAME_RAW=$(terraform output -raw eks_cluster_name 2>&1)
+          # Try suppressing debug logs by redirecting stderr or filtering
+          CLUSTER_NAME_RAW=$(terraform output -raw eks_cluster_name 2>/dev/null)
           TF_EXIT=$?
-          echo "Raw command output:"
-          echo "${CLUSTER_NAME_RAW}"
+          
           echo "Terraform exit code: $TF_EXIT"
+          echo "Captured raw cluster name output:"
+          echo "$CLUSTER_NAME_RAW"
           
           if [ "$TF_EXIT" -ne 0 ]; then
-            echo "ERROR: terraform output failed (exit code $TF_EXIT)."
+            echo "Error: terraform output failed"
             exit $TF_EXIT
           fi
           
