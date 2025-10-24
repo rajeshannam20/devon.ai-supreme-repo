@@ -835,6 +835,8 @@ jobs:
     needs: [apply]
     if: success()
     runs-on: ubuntu-latest
+    env:
+      COMPLIANCE_STANDARDS: "cis_1.5_aws,iso27001_2022_aws,pci_3.2.1_aws"
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
