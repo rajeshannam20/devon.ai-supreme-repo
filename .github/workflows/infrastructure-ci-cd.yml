@@ -527,7 +527,7 @@ jobs:
       cancel-in-progress: false
     outputs:
       rds_endpoint: ${{ steps.outputs.outputs.rds_endpoint }}
-      cluster_name: ${{ steps.outputs.outputs.cluster_name }}
+      # cluster_name: ${{ steps.outputs.outputs.cluster_name }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
