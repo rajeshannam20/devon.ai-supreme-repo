@@ -437,11 +437,15 @@ jobs:
         run: |
           echo "Fetching Terraform output after apply..."
           export TF_LOG=ERROR
-          CLUSTER_NAME=$(terraform output -raw eks_cluster_name 2>/dev/null)
-          if [ $? -ne 0 ] || [ -z "$CLUSTER_NAME" ]; then
-            echo "Error: Failed to get eks_cluster_name from terraform output"
+      
+          # Get terraform output, filter only valid cluster name line (strip debug/noise)
+          CLUSTER_NAME=$(terraform output -raw eks_cluster_name 2>&1 | grep -E '^[a-zA-Z0-9._-]+$' | head -n1)
+      
+          if [ -z "$CLUSTER_NAME" ]; then
+            echo "Error: Failed to obtain clean eks_cluster_name from terraform output"
             exit 1
           fi
+      
           echo "cluster_name=$CLUSTER_NAME" >> $GITHUB_ENV
           echo "Extracted cluster_name: $CLUSTER_NAME"
             
