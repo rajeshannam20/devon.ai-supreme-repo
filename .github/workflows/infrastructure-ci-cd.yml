@@ -784,8 +784,8 @@ jobs:
           PGPASSWORD=${{ secrets.DB_PASSWORD }} psql -h $DB_ENDPOINT -U ${{ secrets.DB_USERNAME }} -d ${{ secrets.DB_NAME }} -c "SELECT 1 AS connectivity_test;"
       
       - name: Check EKS Cluster Health
-        env:
-          CLUSTER_NAME: ${{ needs.apply.outputs.cluster_name }}
+        # env:
+        #   CLUSTER_NAME: ${{ needs.apply.outputs.cluster_name }}
         run: |
           # Configure kubectl
           aws eks update-kubeconfig --name $CLUSTER_NAME --region us-west-2
