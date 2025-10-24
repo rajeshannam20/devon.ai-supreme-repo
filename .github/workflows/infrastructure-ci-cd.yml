@@ -443,7 +443,7 @@ jobs:
       
           # Capture the outputs and suppress debug information
           # RDS_ENDPOINT=$(terraform output -raw rds_endpoint 2>/dev/null)
-          CLUSTER_NAME=$(terraform output -raw eks_cluster_name | awk '{print $1}' | xargs)
+          CLUSTER_NAME=$(terraform output -raw eks_cluster_name | sed 's/::debug::.*//g' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' )
           
           # Print the values to check them before writing to $GITHUB_ENV
           # echo "RDS_ENDPOINT: $RDS_ENDPOINT"
