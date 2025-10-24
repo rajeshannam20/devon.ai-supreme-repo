@@ -418,6 +418,26 @@ jobs:
         run: |
           terraform plan -out=tfplan -lock=false
           terraform show -json tfplan > tfplan.json
+
+      - name: Extract Terraform Outputs
+        id: outputs
+        if: success()
+        working-directory: ./src/data/manifest/terraform
+        run: |
+          echo "Fetching Terraform outputs..."
+
+          # Disable logging so we avoid polluting stdout with [INFO] logs
+          export TF_LOG=ERROR
+
+          # Store Terraform outputs in variables
+          RDS_ENDPOINT=$(terraform output -raw rds_endpoint)
+          CLUSTER_NAME=$(terraform output -raw eks_cluster_name)
+
+          # Write clean values only to GitHub env file
+          {
+            echo "rds_endpoint=${RDS_ENDPOINT}"
+            echo "cluster_name=${CLUSTER_NAME}"
+          } >> "$GITHUB_ENV"  
         
       - name: List Terraform directory after plan
         working-directory: ./src/data/manifest/terraform
