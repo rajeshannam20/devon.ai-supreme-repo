@@ -442,11 +442,11 @@ jobs:
       
           # Capture the outputs and suppress debug information
           # RDS_ENDPOINT=$(terraform output -raw rds_endpoint 2>/dev/null)
-          CLUSTER_NAME=$(terraform output -raw eks_cluster_name 2>&1 | sed 's/::debug::.*//g' | xargs)
+          CLUSTER_NAME=$(terraform output -raw eks_cluster_name 2>&1 | sed -E 's/::debug::.*//g' | xargs)
           
           # Print the values to check them before writing to $GITHUB_ENV
           # echo "RDS_ENDPOINT: $RDS_ENDPOINT"
-          echo "CLUSTER_NAME: $CLUSTER_NAME"
+          echo "Before saving to $GITHUB_ENV, CLUSTER_NAME: $CLUSTER_NAME"
           
           # Write clean values only to GitHub env file
           # echo "rds_endpoint=${RDS_ENDPOINT}" >> "$GITHUB_ENV"
