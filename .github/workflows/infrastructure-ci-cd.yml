@@ -451,6 +451,13 @@ jobs:
           # Write clean values only to GitHub env file
           # echo "rds_endpoint=${RDS_ENDPOINT}" >> "$GITHUB_ENV"
           echo "cluster_name=${CLUSTER_NAME}" >> "$GITHUB_ENV"
+
+          # Print confirmation that the value was saved to $GITHUB_ENV
+          echo "Saving cluster_name to $GITHUB_ENV..."
+      
+          # Simulate reading the saved value (this will be available in subsequent steps)
+          echo "Checking the value saved to GitHub environment variables"
+          echo "cluster_name=${CLUSTER_NAME}"    
           echo "The value saved to cluster_name in $GITHUB_ENV is: $cluster_name"
         
       - name: List Terraform directory after plan
