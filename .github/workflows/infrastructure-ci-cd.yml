@@ -426,12 +426,12 @@ jobs:
         run: |
           echo "Fetching Terraform outputs..."
           
-          # Disable logging so we avoid polluting stdout with [INFO] logs
+          # Disable logging to avoid unnecessary logs in stdout
           export TF_LOG=ERROR
-          
+      
           # Capture the outputs and suppress debug information
-          RDS_ENDPOINT=$(terraform output -raw rds_endpoint 2>&1 | awk -F'::debug::' '{print $1}' | xargs)
-          CLUSTER_NAME=$(terraform output -raw eks_cluster_name 2>&1 | awk -F'::debug::' '{print $1}' | xargs)
+          RDS_ENDPOINT=$(terraform output -raw rds_endpoint 2>/dev/null)
+          CLUSTER_NAME=$(terraform output -raw eks_cluster_name 2>/dev/null)
           
           # Print the values to check them before writing to $GITHUB_ENV
           echo "RDS_ENDPOINT: $RDS_ENDPOINT"
