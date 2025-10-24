@@ -439,11 +439,16 @@ jobs:
           export TF_LOG=ERROR
           
           RAW=$(terraform output -raw eks_cluster_name 2>&1)
+          
           echo "------------ BEGIN RAW OUTPUT ------------"
           echo "$RAW"
           echo "------------- END RAW OUTPUT -------------"
           
-          CLUSTER_NAME=$(echo "$RAW" | grep -E '^[a-zA-Z0-9._-]+$' | head -n1)
+          # Remove the first line which is the command itself
+          RAW_CLEAN=$(echo "$RAW" | tail -n +2)
+          
+          # Filter out lines with debug info
+          CLUSTER_NAME=$(echo "$RAW_CLEAN" | grep -E '^[a-zA-Z0-9._-]+$' | head -n1)
           
           if [ -z "$CLUSTER_NAME" ]; then
             echo "Error: Failed to obtain clean eks_cluster_name from terraform output"
