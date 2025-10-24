@@ -648,7 +648,6 @@ jobs:
         if: github.event.inputs.deployment_strategy == 'canary' || github.event.inputs.deployment_strategy == null
         working-directory: ./src/data/manifest/terraform
         run: |
-
           echo "Implementing canary deployment strategy..."
           terraform apply -auto-approve -lock=false ./tfplan
           
@@ -686,9 +685,6 @@ jobs:
         if: success()
         working-directory: ./src/data/manifest/terraform        
         run: |
-          echo "Refreshing Terraform state..."
-          terraform refresh -lock=false
-
           # Fetch and print all outputs
           terraform output
       
