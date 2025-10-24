@@ -437,8 +437,20 @@ jobs:
         run: |
           echo "Fetching Terraform outputs..."
           export TF_LOG=ERROR
-          CLUSTER_NAME=$(terraform output -raw eks_cluster_name | tr -d '\n' | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-          echo "Before saving to \$GITHUB_ENV, CLUSTER_NAME: $CLUSTER_NAME"
+          
+          # Save raw output to file for inspection
+          terraform output -raw eks_cluster_name > cluster_name_raw.txt
+          
+          # Now cat the file to see its contents in logs
+          echo "Raw output saved in cluster_name_raw.txt:"
+          cat cluster_name_raw.txt
+          
+          # Capture raw output and clean it up (trim whitespace and newlines)
+          CLUSTER_NAME=$(cat cluster_name_raw.txt | tr -d '\n' | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+          
+          echo "Cleaned CLUSTER_NAME: $CLUSTER_NAME"
+          
+          # Save the clean value to GitHub environment
           echo "cluster_name=${CLUSTER_NAME}" >> $GITHUB_ENV
 
       - name: Check Value of cluster_name from GitHub Environment Variables
