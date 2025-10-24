@@ -430,8 +430,8 @@ jobs:
           export TF_LOG=ERROR
           
           # Capture the outputs and suppress debug information
-          RDS_ENDPOINT=$(terraform output -raw rds_endpoint 2>&1 | sed -E 's/::debug::.*//g' | xargs)
-          CLUSTER_NAME=$(terraform output -raw eks_cluster_name 2>&1 | sed -E 's/::debug::.*//g' | xargs)
+          RDS_ENDPOINT=$(terraform output -raw rds_endpoint 2>&1 | awk -F'::debug::' '{print $1}' | xargs)
+          CLUSTER_NAME=$(terraform output -raw eks_cluster_name 2>&1 | awk -F'::debug::' '{print $1}' | xargs)
           
           # Print the values to check them before writing to $GITHUB_ENV
           echo "RDS_ENDPOINT: $RDS_ENDPOINT"
