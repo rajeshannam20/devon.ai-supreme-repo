@@ -435,13 +435,16 @@ jobs:
         if: success()
         working-directory: ./src/data/manifest/terraform
         run: |
+          echo "Fetching Terraform outputs..."
+          export TF_LOG=ERROR
           CLUSTER_NAME=$(terraform output -raw eks_cluster_name | tr -d '\n' | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+          echo "Before saving to \$GITHUB_ENV, CLUSTER_NAME: $CLUSTER_NAME"
           echo "cluster_name=${CLUSTER_NAME}" >> $GITHUB_ENV
 
       - name: Check Value of cluster_name from GitHub Environment Variables
         run: |
           # Print the value of cluster_name from the GitHub environment variables
-          run: echo "Cluster name is ${{ env.cluster_name }}"
+          echo "Using cluster_name in next steps: ${{ env.cluster_name }}"
 
       - name: List Terraform directory after plan
         working-directory: ./src/data/manifest/terraform
