@@ -450,9 +450,9 @@ jobs:
           echo "Before saving to $GITHUB_ENV, CLUSTER_NAME: $CLUSTER_NAME"
           
           # Write clean values only to GitHub env file
-          # echo "rds_endpoint=${RDS_ENDPOINT}" >> "$GITHUB_ENV"
-          echo "cluster_name=${CLUSTER_NAME}" >> "$GITHUB_ENV"
-        
+          # echo "rds_endpoint=${RDS_ENDPOINT}" >> $GITHUB_ENV
+          echo "cluster_name=${CLUSTER_NAME}" >> $GITHUB_ENV
+
       - name: Check Value of cluster_name from GitHub Environment Variables
         run: |
           # Print the value of cluster_name from the GitHub environment variables
