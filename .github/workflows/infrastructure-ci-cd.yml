@@ -425,17 +425,17 @@ jobs:
         working-directory: ./src/data/manifest/terraform
         run: |
           echo "Fetching Terraform outputs..."
-      
+          
           # Disable logging so we avoid polluting stdout with [INFO] logs
           export TF_LOG=ERROR
       
-          # Capture the outputs
+          # Capture the outputs (suppress error output if it occurs)
           RDS_ENDPOINT=$(terraform output -raw rds_endpoint 2>/dev/null)
           CLUSTER_NAME=$(terraform output -raw eks_cluster_name 2>/dev/null)
       
-          # Clean any extraneous data from output (like debug or extra logs)
-          RDS_ENDPOINT_CLEANED=$(echo "$RDS_ENDPOINT" | sed 's/::debug::.*//g')
-          CLUSTER_NAME_CLEANED=$(echo "$CLUSTER_NAME" | sed 's/::debug::.*//g')
+          # Trim any leading/trailing spaces or newlines
+          RDS_ENDPOINT_CLEANED=$(echo "$RDS_ENDPOINT" | xargs)
+          CLUSTER_NAME_CLEANED=$(echo "$CLUSTER_NAME" | xargs)
       
           # Write clean values only to GitHub env file
           echo "rds_endpoint=${RDS_ENDPOINT_CLEANED}" >> "$GITHUB_ENV"
