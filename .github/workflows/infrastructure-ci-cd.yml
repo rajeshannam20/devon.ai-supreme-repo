@@ -430,20 +430,16 @@ jobs:
           export TF_LOG=ERROR
           
           # Capture the outputs and suppress debug information
-          RDS_ENDPOINT=$(terraform output -raw rds_endpoint 2>/dev/null)
-          CLUSTER_NAME=$(terraform output -raw eks_cluster_name 2>/dev/null)
+          RDS_ENDPOINT=$(terraform output -raw rds_endpoint 2>&1 | sed -E 's/::debug::.*//g' | xargs)
+          CLUSTER_NAME=$(terraform output -raw eks_cluster_name 2>&1 | sed -E 's/::debug::.*//g' | xargs)
           
-          # Trim any leading/trailing spaces or newlines
-          RDS_ENDPOINT_CLEANED=$(echo "$RDS_ENDPOINT" | xargs)
-          CLUSTER_NAME_CLEANED=$(echo "$CLUSTER_NAME" | xargs)
-      
           # Print the values to check them before writing to $GITHUB_ENV
-          echo "RDS_ENDPOINT: $RDS_ENDPOINT_CLEANED"
-          echo "CLUSTER_NAME: $CLUSTER_NAME_CLEANED"
-      
+          echo "RDS_ENDPOINT: $RDS_ENDPOINT"
+          echo "CLUSTER_NAME: $CLUSTER_NAME"
+          
           # Write clean values only to GitHub env file
-          echo "rds_endpoint=${RDS_ENDPOINT_CLEANED}" >> "$GITHUB_ENV"
-          echo "cluster_name=${CLUSTER_NAME_CLEANED}" >> "$GITHUB_ENV"
+          echo "rds_endpoint=${RDS_ENDPOINT}" >> "$GITHUB_ENV"
+          echo "cluster_name=${CLUSTER_NAME}" >> "$GITHUB_ENV"
         
       - name: List Terraform directory after plan
         working-directory: ./src/data/manifest/terraform
