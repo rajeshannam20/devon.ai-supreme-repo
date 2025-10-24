@@ -436,7 +436,8 @@ jobs:
         working-directory: ./src/data/manifest/terraform
         run: |
           echo "Fetching Terraform outputs..."
-          
+          terraform output
+
           # Disable logging to avoid unnecessary logs in stdout
           export TF_LOG=ERROR
       
