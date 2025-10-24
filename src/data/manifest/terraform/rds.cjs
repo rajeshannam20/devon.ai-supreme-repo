@@ -116,7 +116,7 @@ module "rds" {
   deletion_protection = var.environment == "production"
   
   # Snapshots for production
-  skip_final_snapshot = var.environment != "production"
+  skip_final_snapshot = var.environment != "prod"
   final_snapshot_identifier_prefix = var.environment == "prod" ? "devonn-postgres-final-\${var.environment}" : "devonn-postgres-final-production"
   
   # Automated backups
