@@ -437,25 +437,28 @@ jobs:
         run: |
           echo "Fetching Terraform output after apply..."
           export TF_LOG=ERROR
-          
+      
+          # Capture the raw output for eks_cluster_name
           RAW=$(terraform output -raw eks_cluster_name 2>&1)
-          
+      
           echo "------------ BEGIN RAW OUTPUT ------------"
           echo "$RAW"
           echo "------------- END RAW OUTPUT -------------"
-          
-          # Remove the first line which is the command itself
+      
+          # Remove the first line which contains the command
           RAW_CLEAN=$(echo "$RAW" | tail -n +2)
-          
-          # Filter out lines with debug info
-          CLUSTER_NAME=$(echo "$RAW_CLEAN" | grep -E '^[a-zA-Z0-9._-]+$' | head -n1)
-          
+      
+          # Filter out lines with debug info and ensure we capture only the actual value
+          CLUSTER_NAME=$(echo "$RAW_CLEAN" | sed 's/::debug::.*//g' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+      
+          # If the value is still empty after cleaning, exit with error
           if [ -z "$CLUSTER_NAME" ]; then
             echo "Error: Failed to obtain clean eks_cluster_name from terraform output"
             exit 1
           fi
-          
-          echo "cluster_name=$CLUSTER_NAME" >> $GITHUB_ENV
+      
+          # Save the cleaned value to $GITHUB_ENV
+          echo "cluster_name=${CLUSTER_NAME}" >> $GITHUB_ENV
           echo "Extracted cluster_name: $CLUSTER_NAME"
 
             
