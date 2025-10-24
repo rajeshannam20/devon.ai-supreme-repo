@@ -435,31 +435,29 @@ jobs:
         if: success()
         working-directory: ./src/data/manifest/terraform
         run: |
-          echo "Fetching Terraform output after apply..."
-          export TF_LOG=ERROR
-      
           # Capture the raw output for eks_cluster_name
-          RAW=$(terraform output -raw eks_cluster_name 2>&1)
+          CLUSTER_NAME=$(terraform output -raw eks_cluster_name | sed 's/::debug::.*//g' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
       
-          echo "------------ BEGIN RAW OUTPUT ------------"
-          echo "$RAW"
-          echo "------------- END RAW OUTPUT -------------"
-      
-          # Remove the first line which contains the command
-          RAW_CLEAN=$(echo "$RAW" | tail -n +2)
-      
-          # Filter out lines with debug info and ensure we capture only the actual value
-          CLUSTER_NAME=$(echo "$RAW_CLEAN" | sed 's/::debug::.*//g' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-      
-          # If the value is still empty after cleaning, exit with error
+          # Check if the cluster_name is valid
           if [ -z "$CLUSTER_NAME" ]; then
-            echo "Error: Failed to obtain clean eks_cluster_name from terraform output"
+            echo "Error: Failed to obtain eks_cluster_name from terraform output"
             exit 1
           fi
       
-          # Save the cleaned value to $GITHUB_ENV
+          # Save the cluster_name to GitHub environment variables
           echo "cluster_name=${CLUSTER_NAME}" >> $GITHUB_ENV
-          echo "Extracted cluster_name: $CLUSTER_NAME"
+      
+          # Capture the raw output for rds_endpoint
+          RDS_ENDPOINT=$(terraform output -raw rds_endpoint | sed 's/::debug::.*//g' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+      
+          # Check if the rds_endpoint is valid
+          if [ -z "$RDS_ENDPOINT" ]; then
+            echo "Error: Failed to obtain rds_endpoint from terraform output"
+            exit 1
+          fi
+      
+          # Save the rds_endpoint to GitHub environment variables
+          echo "rds_endpoint=${RDS_ENDPOINT}" >> $GITHUB_ENV
 
             
       - name: Check Value of cluster_name from GitHub Environment Variables
@@ -544,7 +542,7 @@ jobs:
       cancel-in-progress: false
     outputs:
       rds_endpoint: ${{ steps.outputs.outputs.rds_endpoint }}
-      # cluster_name: ${{ steps.outputs.outputs.cluster_name }}
+      cluster_name: ${{ steps.outputs.outputs.cluster_name }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -797,8 +795,8 @@ jobs:
           PGPASSWORD=${{ secrets.DB_PASSWORD }} psql -h $DB_ENDPOINT -U ${{ secrets.DB_USERNAME }} -d ${{ secrets.DB_NAME }} -c "SELECT 1 AS connectivity_test;"
       
       - name: Check EKS Cluster Health
-        # env:
-        #   CLUSTER_NAME: ${{ needs.apply.outputs.cluster_name }}
+        env:
+          CLUSTER_NAME: ${{ needs.apply.outputs.cluster_name }}
         run: |
           # Configure kubectl
           aws eks update-kubeconfig --name $CLUSTER_NAME --region us-west-2
