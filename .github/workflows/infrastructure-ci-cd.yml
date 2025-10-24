@@ -438,16 +438,21 @@ jobs:
           echo "Fetching Terraform outputs..."
           export TF_LOG=ERROR
           
-          # Extract and clean eks_cluster_name
-          CLUSTER_NAME=$(terraform output -raw eks_cluster_name 2>/dev/null | tr -d '\n' | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+          CLUSTER_NAME_RAW=$(terraform output -raw eks_cluster_name 2>&1)
+          TF_EXIT=$?
+          echo "Raw command output:"
+          echo "${CLUSTER_NAME_RAW}"
+          echo "Terraform exit code: $TF_EXIT"
+          
+          if [ "$TF_EXIT" -ne 0 ]; then
+            echo "ERROR: terraform output failed (exit code $TF_EXIT)."
+            exit $TF_EXIT
+          fi
+          
+          CLUSTER_NAME=$(echo "${CLUSTER_NAME_RAW}" | tr -d '\n' | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+          
           echo "cluster_name=${CLUSTER_NAME}" >> $GITHUB_ENV
-          
-          # Extract RDS endpoint (make sure output name matches your terraform output)
-          # RDS_ENDPOINT=$(terraform output -raw rds_endpoint 2>/dev/null | tr -d '\n' | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-          # echo "rds_endpoint=${RDS_ENDPOINT}" >> $GITHUB_ENV
-          
           echo "Extracted cluster_name: ${CLUSTER_NAME}"
-          # echo "Extracted rds_endpoint: ${RDS_ENDPOINT}"
       
       - name: Check Value of cluster_name from GitHub Environment Variables
         run: |
