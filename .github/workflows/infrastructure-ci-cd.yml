@@ -437,6 +437,10 @@ jobs:
           RDS_ENDPOINT_CLEANED=$(echo "$RDS_ENDPOINT" | xargs)
           CLUSTER_NAME_CLEANED=$(echo "$CLUSTER_NAME" | xargs)
       
+          # Print the values to check them before writing to $GITHUB_ENV
+          echo "RDS_ENDPOINT: $RDS_ENDPOINT_CLEANED"
+          echo "CLUSTER_NAME: $CLUSTER_NAME_CLEANED"
+
           # Write clean values only to GitHub env file
           echo "rds_endpoint=${RDS_ENDPOINT_CLEANED}" >> "$GITHUB_ENV"
           echo "cluster_name=${CLUSTER_NAME_CLEANED}" >> "$GITHUB_ENV"
