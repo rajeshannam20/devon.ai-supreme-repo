@@ -435,17 +435,15 @@ jobs:
         if: success()
         working-directory: ./src/data/manifest/terraform
         run: |
-          echo "Fetching Terraform output for cluster name..."
+          echo "Fetching Terraform output after apply..."
           export TF_LOG=ERROR
-          # Capture the output quietly, suppressing errors
           CLUSTER_NAME=$(terraform output -raw eks_cluster_name 2>/dev/null)
           if [ $? -ne 0 ] || [ -z "$CLUSTER_NAME" ]; then
-            echo "Failed to get eks_cluster_name. Check Terraform outputs."
+            echo "Error: Failed to get eks_cluster_name from terraform output"
             exit 1
           fi
-          echo "Cluster Name: $CLUSTER_NAME"
-          # Save to GitHub Environment
           echo "cluster_name=$CLUSTER_NAME" >> $GITHUB_ENV
+          echo "Extracted cluster_name: $CLUSTER_NAME"
             
       - name: Check Value of cluster_name from GitHub Environment Variables
         run: |
