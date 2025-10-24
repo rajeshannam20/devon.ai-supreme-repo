@@ -685,16 +685,17 @@ jobs:
         if: success()
         working-directory: ./src/data/manifest/terraform        
         run: |
-          # Fetch and print all outputs
-          terraform output
-      
-          # Set individual outputs as environment variables for further use in the pipeline
+          echo "Fetching Terraform outputs..."
+          
+          # Store Terraform outputs in variables
           RDS_ENDPOINT=$(terraform output -raw rds_endpoint)
           CLUSTER_NAME=$(terraform output -raw eks_cluster_name)
-      
-          # Output to GitHub Actions environment variables
-          echo "rds_endpoint=${RDS_ENDPOINT}" >> $GITHUB_ENV
-          echo "cluster_name=${CLUSTER_NAME}" >> $GITHUB_ENV
+          
+          # Create a clean temporary file for GitHub env output
+          {
+            echo "rds_endpoint=${RDS_ENDPOINT}"
+            echo "cluster_name=${CLUSTER_NAME}"
+          } >> $GITHUB_ENV
       
       - name: Update deployment status
         if: always()
