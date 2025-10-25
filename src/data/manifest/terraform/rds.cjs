@@ -246,7 +246,6 @@ resource "aws_db_instance" "postgres_read_replica" {
   
   publicly_accessible  = true
   skip_final_snapshot  = false
-  final_snapshot_identifier = "devonn-postgres-replica-\${var.environment}"
   apply_immediately    = false
   storage_encrypted     = true
   max_allocated_storage = var.db_max_allocated_storage  
