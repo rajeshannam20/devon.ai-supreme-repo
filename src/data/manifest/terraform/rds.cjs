@@ -276,7 +276,7 @@ resource "aws_db_instance" "postgres_cross_region_replica" {
   instance_class       = var.db_dr_instance_class
   
   publicly_accessible  = false
-  skip_final_snapshot  = false
+  skip_final_snapshot  = true
   // final_snapshot_identifier_prefix = "devonn-postgres-dr-final-\${var.environment}"
   
   # Performance settings
