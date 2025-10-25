@@ -245,7 +245,8 @@ resource "aws_db_instance" "postgres_read_replica" {
   instance_class       = var.db_replica_instance_class
   
   publicly_accessible  = false
-  skip_final_snapshot  = true
+  skip_final_snapshot  = false
+  final_snapshot_identifier = "devonn-postgres-replica-\${var.environment}"
   apply_immediately    = false
   
   # Performance settings
@@ -277,7 +278,7 @@ resource "aws_db_instance" "postgres_cross_region_replica" {
   
   publicly_accessible  = false
   skip_final_snapshot  = true
-  // final_snapshot_identifier_prefix = "devonn-postgres-dr-final-\${var.environment}"
+  final_snapshot_identifier = "devonn-postgres-dr-final-\${var.environment}"
   
   # Performance settings
   monitoring_interval = 60
