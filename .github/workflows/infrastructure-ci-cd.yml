@@ -855,7 +855,7 @@ jobs:
       - name: Run Compliance Checks
         run: |
           # Run compliance checks focused on database services
-          prowler aws --services rds eks --compliance ${{ env.COMPLIANCE_STANDARDS }} --output-formats html --output-filename compliance-report
+          prowler aws --services rds eks --compliance cis_1.5_aws --compliance iso27001_2022_aws --compliance pci_3.2.1_aws --output-formats html --output-filename compliance-report
       
       - name: Upload Compliance Report
         uses: actions/upload-artifact@v4
