@@ -38,40 +38,40 @@ resource "aws_security_group" "rds_sg" {
 }
 
 
-resource "null_resource" "check_rds_snapshot" {
-  provisioner "local-exec" {
-    command = <<EOT
-    snap=$(aws rds describe-db-snapshots \
-      --snapshot-type manual \
-      --query "DBSnapshots[?DBSnapshotIdentifier=='devonn-postgres-final-production'].DBSnapshotIdentifier" \
-      --output text)
+// resource "null_resource" "check_rds_snapshot" {
+//   provisioner "local-exec" {
+//     command = <<EOT
+//     snap=$(aws rds describe-db-snapshots \
+//       --snapshot-type manual \
+//       --query "DBSnapshots[?DBSnapshotIdentifier=='devonn-postgres-final-production'].DBSnapshotIdentifier" \
+//       --output text)
 
-    if [ -z "$snap" ]; then
-      # Ensure valid JSON output when no snapshot is found
-      echo '{"snapshot_id": null}' > snapshot_id.json
-    else
-      # Ensure valid JSON output when snapshot is found
-      echo "{\"snapshot_id\": \"$snap\"}" > snapshot_id.json
-    fi
+//     if [ -z "$snap" ]; then
+//       # Ensure valid JSON output when no snapshot is found
+//       echo '{"snapshot_id": null}' > snapshot_id.json
+//     else
+//       # Ensure valid JSON output when snapshot is found
+//       echo "{\"snapshot_id\": \"$snap\"}" > snapshot_id.json
+//     fi
 
-    # Debugging output: Output the content of the file to verify
-    cat snapshot_id.json
-    EOT
-  }
+//     # Debugging output: Output the content of the file to verify
+//     cat snapshot_id.json
+//     EOT
+//   }
 
-  triggers = {
-    always_run = "\${timestamp()}"
-  }
-}
+//   triggers = {
+//     always_run = "\${timestamp()}"
+//   }
+// }
 
-data "external" "snapshot_loader" {
-  depends_on = [null_resource.check_rds_snapshot]
-  program = ["bash", "-c", "cat snapshot_id.json | jq ."]
-}
+// data "external" "snapshot_loader" {
+//   depends_on = [null_resource.check_rds_snapshot]
+//   program = ["bash", "-c", "cat snapshot_id.json | jq ."]
+// }
 
-locals {
-  snapshot_to_use = data.external.snapshot_loader.result.snapshot_id != "null" ? data.external.snapshot_loader.result.snapshot_id : null
-}
+// locals {
+//   snapshot_to_use = data.external.snapshot_loader.result.snapshot_id != "null" ? data.external.snapshot_loader.result.snapshot_id : null
+// }
 
 module "rds" {
   source  = "terraform-aws-modules/rds/aws"
@@ -116,8 +116,8 @@ module "rds" {
   deletion_protection = var.environment == "production"
   
   # Snapshots for production
-  skip_final_snapshot = var.environment != "prod"
-  final_snapshot_identifier_prefix = var.environment == "prod" ? "devonn-postgres-final-\${var.environment}" : "devonn-postgres-final-production"
+  skip_final_snapshot = true
+  // final_snapshot_identifier_prefix = var.environment == "prod" ? "devonn-postgres-final-\${var.environment}" : "devonn-postgres-final-production"
   
   # Automated backups
   copy_tags_to_snapshot = true
@@ -129,7 +129,7 @@ module "rds" {
   enabled_cloudwatch_logs_exports = var.environment == "prod" ? ["postgresql", "upgrade"] : []
   
   # Cross-region snapshot replication for disaster recovery
-  snapshot_identifier = local.snapshot_to_use
+  snapshot_identifier = null
   
   # Reserved instances configuration through tagging
   tags = {
@@ -244,10 +244,14 @@ resource "aws_db_instance" "postgres_read_replica" {
   replicate_source_db = "devonn-postgres-\${var.environment}"
   instance_class       = var.db_replica_instance_class
   
-  publicly_accessible  = false
+  publicly_accessible  = true
   skip_final_snapshot  = false
   final_snapshot_identifier = "devonn-postgres-replica-\${var.environment}"
   apply_immediately    = false
+  storage_encrypted     = true
+  max_allocated_storage = var.db_max_allocated_storage  
+  final_snapshot_identifier = "devonn-postgres-replica-\${var.environment}-final-\${replace(timestamp(), ":", "-")}"
+
   
   # Performance settings
   monitoring_interval = 30
@@ -262,9 +266,9 @@ resource "aws_db_instance" "postgres_read_replica" {
   }
 
   depends_on = [module.rds] 
-  lifecycle {
-    ignore_changes = [identifier]
-  }  
+  // lifecycle {
+  //   ignore_changes = [identifier]
+  // }  
 }
 
 # Cross-region replica for disaster recovery
@@ -277,8 +281,8 @@ resource "aws_db_instance" "postgres_cross_region_replica" {
   instance_class       = var.db_dr_instance_class
   
   publicly_accessible  = false
-  skip_final_snapshot  = true
-  final_snapshot_identifier = "devonn-postgres-dr-final-\${var.environment}"
+  skip_final_snapshot  = false
+  final_snapshot_identifier = "devonn-postgres-dr-final-\${var.environment}-\${replace(timestamp(), ":", "-")}"
   
   # Performance settings
   monitoring_interval = 60
