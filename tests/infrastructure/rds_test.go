@@ -64,24 +64,17 @@ func TestRDSModule(t *testing.T) {
 		},
 	}
 
-	rdsEndpoint := terraform.Output(t, terraformOptions, "rds_endpoint")
+	// Use the RDS endpoint stored in GitHub's environment variables
+	rdsEndpoint := os.Getenv("rds_endpoint")
 	assert.NotEmpty(t, rdsEndpoint, "RDS endpoint must not be empty")
 
 	// ✅ Try to get rds_instance_id, and handle gracefully if not found
-	rdsId, err := terraform.OutputE(t, terraformOptions, "rds_instance_id")
-	if err != nil {
-		t.Logf("Warning: rds_instance_id output not found. Skipping RDS instance validation. Error: %v", err)
-		return
-	}
+	rdsId := os.Getenv("rds_instance_id")
 	assert.NotEmpty(t, rdsId, "RDS instance ID must not be empty")
 
 	// ✅ Try to get EKS cluster name
-	eksClusterName, err := terraform.OutputE(t, terraformOptions, "eks_cluster_name")
-	if err != nil {
-		t.Logf("Warning: eks_cluster_name output not found. Skipping EKS validation. Error: %v", err)
-	} else {
-		t.Logf("EKS Cluster Name: %s", eksClusterName)
-	}
+	eksClusterName := os.Getenv("eks_cluster_name")
+	assert.NotEmpty(t, eksClusterName, "EKS cluster name must not be empty")
 
 	client := createAWSSession(terraformOptions.EnvVars["AWS_DEFAULT_REGION"])
 

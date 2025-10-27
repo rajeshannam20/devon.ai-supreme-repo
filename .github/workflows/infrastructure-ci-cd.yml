@@ -879,7 +879,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: compliance-reports
-          path: compliance-report*
+          path: output/compliance-report*
       
       - name: Generate Compliance Dashboard
         run: |
@@ -891,7 +891,7 @@ jobs:
           from bs4 import BeautifulSoup
           
           # Read HTML report
-          with open('compliance-report.html', 'r') as f:
+          with open('./output/compliance-report.html', 'r') as f:
               html = f.read()
           
           soup = BeautifulSoup(html, 'html.parser')
