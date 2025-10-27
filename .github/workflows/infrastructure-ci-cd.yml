@@ -734,6 +734,46 @@ jobs:
           echo "rds_endpoint=${RDS_ENDPOINT}" >> $GITHUB_ENV
           echo "Extracted rds_endpoint: $RDS_ENDPOINT"
       
+      - name: Terraform Outputs 
+        working-directory: ./src/data/manifest/terraform
+        env:
+          TF_VAR_aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          TF_VAR_aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          TF_VAR_aws_region: ${{ secrets.AWS_REGION }}
+          TF_VAR_db_password: ${{ secrets.RDS_DB_PASSWORD }}     
+        run: |
+          terraform output
+          RAW_CLUSTER_NAME=$(terraform output -raw eks_cluster_name 2>&1)
+          
+          echo "------------ BEGIN RAW OUTPUT (CLUSTER_NAME) ------------"
+          echo "$RAW_CLUSTER_NAME"
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+      
+      - name: Run Infrastructure Tests
+        run: |
+          cd tests/infrastructure
+          go mod init infrastructure-tests
+          go mod tidy
+          go test -v -timeout 30m -tags=integration
+      
+      - name: Check Database Connectivity
+        env:
+          DB_ENDPOINT: ${{ needs.apply.outputs.rds_endpoint }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: |
+          # Install PostgreSQL client
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          
+          # Test connection (password would be securely retrieved from secrets manager in real scenario)
+          PGPASSWORD=${{ secrets.DB_PASSWORD }} psql -h $DB_ENDPOINT -U ${{ secrets.DB_USERNAME }} -d ${{ secrets.DB_NAME }} -c "SELECT 1 AS connectivity_test;"
+
       - name: Update deployment status
         if: always()
         uses: bobheadxi/deployments@v1
