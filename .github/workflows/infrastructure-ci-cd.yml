@@ -787,7 +787,8 @@ jobs:
         run: |
           echo "Fetching Terraform output after apply..."
           export TF_LOG=ERROR
-  
+
+          terraform init -reconfigure
           terraform refresh -lock=false
           terraform plan -lock=false
 
