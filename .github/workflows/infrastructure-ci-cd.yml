@@ -866,6 +866,15 @@ jobs:
         run: |
           prowler aws --services rds eks --output-formats html --output-filename compliance-report-services || true
       
+      - name: List files for debug
+        run: ls -alh
+      
+      - name: List files for debug
+        run: |
+          pwd
+          cd output/
+          ls -alh
+
       - name: Upload Compliance Report
         uses: actions/upload-artifact@v4
         with:
