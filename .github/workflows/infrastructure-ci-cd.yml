@@ -774,6 +774,12 @@ jobs:
         with:
           go-version: '1.21'
       
+      - name: Download Terraform Config Files
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-config
+          path: ./src/data/manifest/terraform  
+
       - name: Extract Terraform Outputs
         id: outputs
         if: success()
