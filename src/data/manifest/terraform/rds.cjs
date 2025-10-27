@@ -138,6 +138,7 @@ module "rds" {
     Environment = var.environment
     CostCenter = "database-\${var.environment}"
     Project = "devonn"
+    Compliance = "cis-1.5"      
   }
 
   depends_on = [aws_db_subnet_group.rds_subnet_group]
