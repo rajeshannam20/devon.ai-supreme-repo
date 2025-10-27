@@ -734,10 +734,15 @@ jobs:
           echo "rds_endpoint=${RDS_ENDPOINT}" >> $GITHUB_ENV
           echo "Extracted rds_endpoint: $RDS_ENDPOINT"
 
+          echo "::set-output name=cluster_name::${RAW_CLUSTER_NAME}"
+          echo "::set-output name=rds_endpoint::${RAW_RDS_ENDPOINT}"
+
       - name: Debug environment variables
         run: |
           echo "cluster_name: ${{ env.cluster_name }}"
           echo "rds_endpoint: ${{ env.rds_endpoint }}"
+          echo "DEBUG - cluster_name: ${{ needs.apply.outputs.cluster_name }}"
+          echo "DEBUG - rds_endpoint: ${{ needs.apply.outputs.rds_endpoint }}"
 
       - name: Update deployment status
         if: always()
@@ -776,8 +781,8 @@ jobs:
       
       - name: Run Infrastructure Tests
         env:
-          eks_cluster_name: ${{ env.cluster_name }}
-          rds_endpoint: ${{ env.rds_endpoint }}
+          eks_cluster_name: ${{ needs.apply.outputs.cluster_name }}
+          rds_endpoint: ${{ needs.apply.outputs.rds_endpoint }}
         run: |
           cd tests/infrastructure
           go mod init infrastructure-tests
@@ -786,7 +791,7 @@ jobs:
       
       - name: Check Database Connectivity
         env:
-          DB_ENDPOINT: ${{ env.rds_endpoint }}
+          DB_ENDPOINT: ${{ needs.apply.outputs.rds_endpoint }}
           DB_USERNAME: ${{ secrets.DB_USERNAME }}
           DB_NAME: ${{ secrets.DB_NAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
