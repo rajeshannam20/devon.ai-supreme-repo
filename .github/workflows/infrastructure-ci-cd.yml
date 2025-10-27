@@ -734,6 +734,11 @@ jobs:
           echo "rds_endpoint=${RDS_ENDPOINT}" >> $GITHUB_ENV
           echo "Extracted rds_endpoint: $RDS_ENDPOINT"
 
+      - name: Debug environment variables
+        run: |
+          echo "cluster_name: ${{ env.cluster_name }}"
+          echo "rds_endpoint: ${{ env.rds_endpoint }}"
+
       - name: Update deployment status
         if: always()
         uses: bobheadxi/deployments@v1
