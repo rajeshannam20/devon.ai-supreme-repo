@@ -111,23 +111,16 @@ resource "aws_kms_key" "eks" {
 
 # 4. IAM OIDC Provider for EKS
 
-data "aws_iam_openid_connect_provider" "existing" {
-  url = "https://oidc.eks.us-west-2.amazonaws.com/id/9511538CAE2D0B7802D49BB5AFC1C3DE"
-}
-
-resource "aws_iam_openid_connect_provider" "eks" {
-  count = (
-    try(data.aws_iam_openid_connect_provider.existing.arn, "") == "" ? 1 : 0
-  )  
-  client_id_list  = ["sts.amazonaws.com"]
+resource "aws_iam_openid_connect_provider" "eks_oidc" {
+  client_id_list  = ["sts.amazonaws.com"]  # Required client_id_list for OIDC provider
   thumbprint_list = ["9e99a48a9960b14926bb7f3b02e22da0afd10df6"]
-  url             = module.eks.cluster_oidc_issuer_url
-  
-  lifecycle {
-    ignore_changes = [url]  
-  }  
+  url             = "https://oidc.eks.\${var.aws_region}.amazonaws.com/id/\${module.eks.cluster_oidc_issuer_url}"
 
- depends_on = [module.eks]  
+  lifecycle {
+    ignore_changes = [url]  # Ignore changes to the URL in the future
+  }
+
+  depends_on = [module.eks]  # Ensure the EKS cluster is created first
 }
 
 # 5. Connect to your EKS cluster after provisioning
