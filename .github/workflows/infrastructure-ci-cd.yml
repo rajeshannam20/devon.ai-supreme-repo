@@ -787,9 +787,10 @@ jobs:
         run: |
           echo "Fetching Terraform output after apply..."
           export TF_LOG=ERROR
-
+  
           terraform refresh -lock=false
-          
+          terraform plan -lock=false
+
           # Capture the raw output for eks_cluster_name
           RAW_CLUSTER_NAME=$(terraform output -raw eks_cluster_name 2>&1)
           
