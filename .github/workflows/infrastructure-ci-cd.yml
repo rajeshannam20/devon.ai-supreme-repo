@@ -850,8 +850,8 @@ jobs:
 
       - name: Run Infrastructure Tests
         env:
-          eks_cluster_name: ${{ needs.apply.outputs.cluster_name }}
-          rds_endpoint: ${{ needs.apply.outputs.rds_endpoint }}
+          eks_cluster_name: ${{ env.cluster_name }}
+          rds_endpoint: ${{ env.rds_endpoint }}
         run: |
           cd tests/infrastructure
           go mod init infrastructure-tests
