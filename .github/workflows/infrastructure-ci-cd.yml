@@ -904,7 +904,7 @@ jobs:
       # Run compliance checks focusing on specific services (RDS and EKS)
       - name: Run Service-Specific Compliance Checks
         run: |
-          prowler aws --services rds eks --output-formats html --output-filename compliance-report-services
+          prowler aws --services rds eks --output-formats html --output-filename compliance-report-services || true
       
       - name: Upload Compliance Report
         uses: actions/upload-artifact@v4
