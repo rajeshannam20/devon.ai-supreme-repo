@@ -691,51 +691,20 @@ jobs:
           # Capture the raw output for eks_cluster_name
           RAW_CLUSTER_NAME=$(terraform output -raw eks_cluster_name 2>&1)
           
-          echo "------------ BEGIN RAW OUTPUT (CLUSTER_NAME) ------------"
-          echo "$RAW_CLUSTER_NAME"
-          echo "------------- END RAW OUTPUT (CLUSTER_NAME) -------------"
-          
-          # Remove the first line which contains the command for cluster_name
-          RAW_CLEAN_CLUSTER_NAME=$(echo "$RAW_CLUSTER_NAME" | tail -n +2)
-          
-          # Filter out lines with debug info and ensure we capture only the actual value for cluster_name
-          CLUSTER_NAME=$(echo "$RAW_CLEAN_CLUSTER_NAME" | sed 's/::debug::.*//g' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-          
-          # If the value is still empty after cleaning for cluster_name, exit with error
-          if [ -z "$CLUSTER_NAME" ]; then
-            echo "Error: Failed to obtain clean eks_cluster_name from terraform output"
-            exit 1
-          fi
-          
-          # Save the cleaned value of cluster_name to $GITHUB_ENV
+          # Clean and save eks_cluster_name
+          CLUSTER_NAME=$(echo "$RAW_CLUSTER_NAME" | sed 's/::debug::.*//g' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
           echo "cluster_name=${CLUSTER_NAME}" >> $GITHUB_ENV
-          echo "Extracted cluster_name: $CLUSTER_NAME"
           
           # Capture the raw output for rds_endpoint
           RAW_RDS_ENDPOINT=$(terraform output -raw rds_endpoint 2>&1)
           
-          echo "------------ BEGIN RAW OUTPUT (RDS_ENDPOINT) ------------"
-          echo "$RAW_RDS_ENDPOINT"
-          echo "------------- END RAW OUTPUT (RDS_ENDPOINT) -------------"
-          
-          # Remove the first line which contains the command for rds_endpoint
-          RAW_CLEAN_RDS_ENDPOINT=$(echo "$RAW_RDS_ENDPOINT" | tail -n +2)
-          
-          # Filter out lines with debug info and ensure we capture only the actual value for rds_endpoint
-          RDS_ENDPOINT=$(echo "$RAW_CLEAN_RDS_ENDPOINT" | sed 's/::debug::.*//g' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-          
-          # If the value is still empty after cleaning for rds_endpoint, exit with error
-          if [ -z "$RDS_ENDPOINT" ]; then
-            echo "Error: Failed to obtain clean rds_endpoint from terraform output"
-            exit 1
-          fi
-          
-          # Save the cleaned value of rds_endpoint to $GITHUB_ENV
+          # Clean and save rds_endpoint
+          RDS_ENDPOINT=$(echo "$RAW_RDS_ENDPOINT" | sed 's/::debug::.*//g' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
           echo "rds_endpoint=${RDS_ENDPOINT}" >> $GITHUB_ENV
-          echo "Extracted rds_endpoint: $RDS_ENDPOINT"
 
-          echo "::set-output name=cluster_name::${RAW_CLUSTER_NAME}"
-          echo "::set-output name=rds_endpoint::${RAW_RDS_ENDPOINT}"
+          # Debug the values to ensure correctness
+          echo "cluster_name=$CLUSTER_NAME"
+          echo "rds_endpoint=$RDS_ENDPOINT"
 
       - name: Debug environment variables
         run: |
