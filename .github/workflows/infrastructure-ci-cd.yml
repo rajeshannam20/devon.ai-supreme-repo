@@ -770,6 +770,9 @@ jobs:
           go-version: '1.21'
       
       - name: Run Infrastructure Tests
+        env:
+          eks_cluster_name: ${{ env.cluster_name }}
+          rds_endpoint: ${{ env.rds_endpoint }}
         run: |
           cd tests/infrastructure
           go mod init infrastructure-tests
@@ -778,7 +781,7 @@ jobs:
       
       - name: Check Database Connectivity
         env:
-          DB_ENDPOINT: ${{ needs.apply.outputs.rds_endpoint }}
+          DB_ENDPOINT: ${{ env.rds_endpoint }}
           DB_USERNAME: ${{ secrets.DB_USERNAME }}
           DB_NAME: ${{ secrets.DB_NAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
@@ -792,7 +795,7 @@ jobs:
       
       - name: Check EKS Cluster Health
         env:
-          CLUSTER_NAME: ${{ needs.apply.outputs.cluster_name }}
+          CLUSTER_NAME: ${{ env.cluster_name }}
         run: |
           # Configure kubectl
           aws eks update-kubeconfig --name $CLUSTER_NAME --region us-west-2
@@ -866,15 +869,6 @@ jobs:
         run: |
           prowler aws --services rds eks --output-formats html --output-filename compliance-report-services || true
       
-      - name: List files for debug
-        run: ls -alh
-      
-      - name: List files for debug
-        run: |
-          pwd
-          cd output/
-          ls -alh
-
       - name: Upload Compliance Report
         uses: actions/upload-artifact@v4
         with:
