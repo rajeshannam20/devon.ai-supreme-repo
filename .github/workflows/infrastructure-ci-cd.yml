@@ -885,7 +885,7 @@ jobs:
       
       - name: Check Database Connectivity
         env:
-          DB_ENDPOINT: ${{ needs.apply.outputs.rds_endpoint }}
+          DB_ENDPOINT: ${{ env.rds_endpoint }}
           DB_USERNAME: ${{ secrets.DB_USERNAME }}
           DB_NAME: ${{ secrets.DB_NAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
