@@ -12,7 +12,11 @@ import { randomItem, randomIntBetween } from 'https://jslib.k6.io/k6-utils/1.2.0
  */
 
 // Configuration
-const API_ENDPOINT = __ENV.API_ENDPOINT || 'https://api.devonn.ai';
+
+const BACKEND_IP = __ENV.APPLICATION_IP || 'default-backend-ip';
+const API_ENDPOINT = `http://${BACKEND_IP}`;
+
+// const API_ENDPOINT = __ENV.API_ENDPOINT || 'https://api.devonn.ai';
 const API_KEY = __ENV.API_KEY || 'test-api-key';
 
 // Custom metrics
