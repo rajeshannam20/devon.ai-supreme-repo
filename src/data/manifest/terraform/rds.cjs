@@ -93,7 +93,7 @@ module "rds" {
 
   vpc_security_group_ids = [aws_security_group.rds_sg.id]
   db_subnet_group_name   = aws_db_subnet_group.rds_subnet_group.name
-  publicly_accessible    = false
+  publicly_accessible    = true
   
   # Backup configuration - enhanced for production
   backup_retention_period = var.environment == "prod" ? 30 : 7
@@ -280,7 +280,7 @@ resource "aws_db_instance" "postgres_cross_region_replica" {
   replicate_source_db  = module.rds.db_instance_arn
   instance_class       = var.db_dr_instance_class
   
-  publicly_accessible  = false
+  publicly_accessible  = true
   skip_final_snapshot  = false
   final_snapshot_identifier = "devonn-postgres-dr-final-\${var.environment}-\${replace(timestamp(), ":", "-")}"
   
