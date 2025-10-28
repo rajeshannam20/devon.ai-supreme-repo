@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: devonn-backend-service
+spec:
+  selector:
+    app: devonn-backend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: devonn-frontend-service
+spec:
+  selector:
+    app: devonn-frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: LoadBalancer

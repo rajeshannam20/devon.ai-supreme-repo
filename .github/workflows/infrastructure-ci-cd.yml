@@ -503,11 +503,14 @@ jobs:
 
       - name: Build and Push Backend & Frontend Docker Images
         run: |
-          docker build -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/production/devonn-ai-backend:latest -f Dockerfile .
-          docker build -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/production/devonn-ai-frontend:latest -f Dockerfile.frontend .
+          docker build -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/production/devonn-ai:backend-latest -f Dockerfile .
+          docker build -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/production/devonn-ai:frontend-latest -f Dockerfile.frontend .
 
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/production/devonn-ai-backend:latest
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/production/devonn-ai-frontend:latest
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/production/devonn-ai:backend-latest
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/production/devonn-ai:frontend-latest
+          
+          echo "BACKEND_IMAGE=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/production/devonn-ai:backend-latest" >> $GITHUB_ENV
+          echo "FRONTEND_IMAGE=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/production/devonn-ai:frontend-latest" >> $GITHUB_ENV
 
       - name: Update kubeconfig for EKS Cluster
         run: |
@@ -515,9 +518,12 @@ jobs:
 
       - name: Deploy to EKS
         run: |
-          kubectl apply -f k8s/backend-deployment.yaml
-          kubectl apply -f k8s/frontend-deployment.yaml
-          kubectl apply -f k8s/services.yaml
+          sed -i "s|${BACKEND_IMAGE}|${BACKEND_IMAGE}|g" k8s/backend-deployment.yaml
+          sed -i "s|${FRONTEND_IMAGE}|${FRONTEND_IMAGE}|g" k8s/frontend-deployment.yaml
+
+          kubectl apply -f infrastructure/kubernetes/backend-deployment.yaml
+          kubectl apply -f infrastructure/kubernetes/frontend-deployment.yaml
+          kubectl apply -f infrastructure/kubernetes/services.yaml
 
   apply:
     name: Terraform Apply
