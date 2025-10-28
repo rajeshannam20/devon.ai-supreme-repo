@@ -891,7 +891,7 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
           # Check RDS instance status using AWS CLI
-          RDS_STATUS=$(aws rds describe-db-instances --db-instance-identifier $DB_ENDPOINT --query 'DBInstances[0].DBInstanceStatus' --output text)
+          RDS_STATUS=$(aws rds describe-db-instances --db-instance-identifier devonn-postgres-prod --query 'DBInstances[0].DBInstanceStatus' --output text)
           
           echo "RDS Instance Status: $RDS_STATUS"
       
