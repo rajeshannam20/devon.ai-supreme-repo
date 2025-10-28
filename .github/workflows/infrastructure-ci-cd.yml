@@ -843,15 +843,40 @@ jobs:
           echo "rds_endpoint=${RDS_ENDPOINT}" >> $GITHUB_ENV
           echo "Extracted rds_endpoint: $RDS_ENDPOINT"
 
+          # Capture the raw output for rds_endpoint_id
+          RAW_RDS_ENDPOINT_ID=$(terraform output -raw rds_endpoint_id 2>&1)
+      
+          echo "------------ BEGIN RAW OUTPUT (RDS_ENDPOINT_ID) ------------"
+          echo "$RAW_RDS_ENDPOINT_ID"
+          echo "------------- END RAW OUTPUT (RDS_ENDPOINT_ID) -------------"
+          
+          # Remove the first line which contains the command for rds_endpoint_id
+          RAW_CLEAN_RDS_ENDPOINT_ID=$(echo "$RAW_RDS_ENDPOINT_ID" | tail -n +2)
+          
+          # Filter out lines with debug info and ensure we capture only the actual value for rds_endpoint_id
+          RDS_ENDPOINT_ID=$(echo "$RAW_CLEAN_RDS_ENDPOINT_ID" | sed 's/::debug::.*//g' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+          
+          # If the value is still empty after cleaning for rds_endpoint_id, exit with error
+          if [ -z "$RDS_ENDPOINT_ID" ]; then
+            echo "Error: Failed to obtain clean rds_endpoint_id from terraform output"
+            exit 1
+          fi
+          
+          # Save the cleaned value of rds_endpoint_id to $GITHUB_ENV
+          echo "rds_endpoint_id=${RDS_ENDPOINT_ID}" >> $GITHUB_ENV
+          echo "Extracted rds_endpoint_id: $RDS_ENDPOINT_ID"          
+
       - name: Debug environment variables
         run: |
           echo "DEBUG - cluster_name: ${{ env.cluster_name }}"
           echo "DEBUG - rds_endpoint: ${{ env.rds_endpoint }}"
+          echo "DEBUG - rds_endpoint_id: ${{ env.rds_endpoint_id }}"
 
       - name: Run Infrastructure Tests
         env:
           eks_cluster_name: ${{ env.cluster_name }}
           rds_endpoint: ${{ env.rds_endpoint }}
+          rds_endpoint_id: ${{ env.rds_endpoint_id }}
         run: |
           cd tests/infrastructure
           go mod init infrastructure-tests

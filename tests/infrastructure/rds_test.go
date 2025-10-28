@@ -68,9 +68,9 @@ func TestRDSModule(t *testing.T) {
 	rdsEndpoint := os.Getenv("rds_endpoint")
 	assert.NotEmpty(t, rdsEndpoint, "RDS endpoint must not be empty")
 
-	// ✅ Try to get rds_instance_id, and handle gracefully if not found
-	rdsId := os.Getenv("rds_endpoint")
-	assert.NotEmpty(t, rdsId, "RDS instance ID must not be empty")
+	// ✅ Try to get rds_endpoint_id, and handle gracefully if not found
+	rdsId := os.Getenv("rds_endpoint_id")
+	assert.NotEmpty(t, rdsId, "RDS endpoint ID must not be empty")
 
 	// ✅ Try to get EKS cluster name
 	eksClusterName := os.Getenv("eks_cluster_name")

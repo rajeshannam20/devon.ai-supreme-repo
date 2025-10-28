@@ -71,6 +71,11 @@ output "eks_cluster_name" {
   sensitive   = false
 }
 
+output "rds_endpoint_id" {
+  value = module.rds.db_instance_id
+  description = "The ID of the RDS instance"
+}
+
 # Example tfvars file structure (create these in environments/prod.tfvars, environments/staging.tfvars, etc)
 # aws_region = "us-west-2"
 # environment = "prod"
