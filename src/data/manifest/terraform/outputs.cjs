@@ -72,7 +72,7 @@ output "eks_cluster_name" {
 }
 
 output "rds_endpoint_id" {
-  value = module.rds.db_instance_id
+  value = module.rds.db_instance_arn
   description = "The ID of the RDS instance"
 }
 
