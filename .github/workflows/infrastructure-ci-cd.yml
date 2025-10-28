@@ -484,8 +484,6 @@ jobs:
         run: echo "Deployment to production has been approved"
   
   deploy-to-eks:
-    name: Deployment to EKS
-    needs: approval
     runs-on: ubuntu-latest
 
     steps:
