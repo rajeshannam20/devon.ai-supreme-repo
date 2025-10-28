@@ -4,7 +4,7 @@ import { sleep, check } from 'k6';
 // Configuration
 const BACKEND_IP = __ENV.APPLICATION_IP || 'default-backend-ip';
 const API_ENDPOINT = `http://${BACKEND_IP}`; // Using backend IP
-// const API_KEY = __ENV.API_KEY || 'test-api-key'; // Optional API Key
+const API_KEY = __ENV.API_KEY || 'test-api-key'; // Optional API Key
 
 // Simple headers for testing
 const params = {
