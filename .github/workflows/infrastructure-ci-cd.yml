@@ -907,9 +907,6 @@ jobs:
           
           # Check pod status
           kubectl get pods --all-namespaces
-          
-          # Check service mesh status
-          kubectl get meshes -A
       
       - name: Load Testing
         run: |
