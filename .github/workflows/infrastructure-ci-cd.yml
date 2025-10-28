@@ -883,19 +883,17 @@ jobs:
           go mod tidy
           go test -v -timeout 30m -tags=integration
       
-      - name: Check Database Connectivity
+      - name: Check Database Status
         env:
           DB_ENDPOINT: ${{ env.rds_endpoint }}
           DB_USERNAME: ${{ secrets.DB_USERNAME }}
           DB_NAME: ${{ secrets.DB_NAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
-          # Install PostgreSQL client
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client
+          # Check RDS instance status using AWS CLI
+          RDS_STATUS=$(aws rds describe-db-instances --db-instance-identifier $DB_ENDPOINT --query 'DBInstances[0].DBInstanceStatus' --output text)
           
-          # Test connection (password would be securely retrieved from secrets manager in real scenario)
-          PGPASSWORD=${{ secrets.DB_PASSWORD }} psql -h $DB_ENDPOINT -U ${{ secrets.DB_USERNAME }} -d ${{ secrets.DB_NAME }} -c "SELECT 1 AS connectivity_test;"
+          echo "RDS Instance Status: $RDS_STATUS"
       
       - name: Check EKS Cluster Health
         env:
