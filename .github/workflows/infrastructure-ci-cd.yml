@@ -522,6 +522,7 @@ jobs:
           env: ${{ github.event.inputs.environment || 'production' }}
   
   deploy-to-eks:
+    name: Deploy to EKS
     needs: apply  
     runs-on: ubuntu-latest
 
