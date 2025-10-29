@@ -907,6 +907,27 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
       
+      - name: Download Terraform Lock File
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-lock
+          path: ./src/data/manifest/terraform
+
+      - name: Download Terraform Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-plan
+          path: ./src/data/manifest/terraform
+
+      - name: Download Terraform Config Files
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-config
+          path: ./src/data/manifest/terraform          
+
+      - name: Debug Terraform Files
+        run: ls -alh ./src/data/manifest/terraform
+
       - name: Terraform Init
         working-directory: ./src/data/manifest/terraform
         env:
