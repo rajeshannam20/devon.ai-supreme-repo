@@ -565,6 +565,14 @@ jobs:
           kubectl apply -f infrastructure/kubernetes/frontend-deployment.yaml -n devonn
           kubectl apply -f infrastructure/kubernetes/services.yaml -n devonn
 
+      - name: Get application IP
+        id: app_ip
+        run: |
+          APPLICATION_IP=$(kubectl get svc devonn-frontend-service -n devonn -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          echo "Application IP: $APPLICATION_IP"
+          echo "::set-output name=app_ip::$APPLICATION_IP"
+
+
   post-deploy-validation:
     name: Post-Deployment Validation
     needs: deploy-to-eks
