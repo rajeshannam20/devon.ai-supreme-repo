@@ -570,7 +570,20 @@ jobs:
         run: |
           APPLICATION_IP=$(kubectl get svc devonn-frontend-service -n devonn -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
           echo "Application IP: $APPLICATION_IP"
-          echo "::set-output name=app_ip::$APPLICATION_IP"
+          
+          # Save the application IP for future steps using environment file (new method)
+          echo "APPLICATION_IP=$APPLICATION_IP" >> $GITHUB_ENV
+  
+      - name: Expose application URL
+        id: app_url
+        run: |
+          APPLICATION_URL="http://${{ env.APPLICATION_IP }}"
+          echo "Application URL: $APPLICATION_URL"
+          echo "APPLICATION_URL=$APPLICATION_URL" >> $GITHUB_ENV
+  
+      - name: Display Application URL in Job Summary
+        run: |
+          echo "Application URL: ${{ env.APPLICATION_URL }}"
 
 
   post-deploy-validation:
