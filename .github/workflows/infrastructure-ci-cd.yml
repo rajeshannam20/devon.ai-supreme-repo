@@ -947,9 +947,9 @@ jobs:
         run: |
           echo "Deployment failed! Rolling back to last known good state..."
           # terraform workspace select ${{ github.event.inputs.environment || 'production' }}
-          terraform plan -refresh-only -lock=false -out=rollback.tfplan
-          terraform apply rollback.tfplan -lock=false
-      
+          terraform plan -refresh-only -out=tfplan -lock=false 
+          terraform apply tfplan -lock=false
+
       - name: Send Rollback Notification
         uses: slackapi/slack-github-action@v1
         with:
