@@ -153,34 +153,6 @@ jobs:
             -backend-config="container_name=tfstate" \
             -backend-config="key=${{ github.event.inputs.environment || 'development' }}.terraform.tfstate"
 
-      # - name: Install Azure CLI
-      #   run: |
-      #     curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-      
-      # - name: Check Lease on Terraform State and Break if Exists
-      #   env:
-      #     AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
-      #     AZURE_STORAGE_ACCOUNT: ${{ secrets.AZURE_STORAGE_ACCOUNT }}
-      #   run: |
-      #     # Set default environment if not provided
-      #     ENVIRONMENT=${{ github.event.inputs.environment || 'development' }}
-      
-      #     # Check the environment and handle lease breaking for development or production
-      #     LEASE_BREAK_OUTPUT=$(az storage blob lease break --blob-name "${ENVIRONMENT}.terraform.tfstate" \
-      #       --container-name tfstate \
-      #       --account-name ${{ secrets.AZURE_STORAGE_ACCOUNT }} \
-      #       --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
-      #       --output tsv --only-show-errors || true)  
-      
-      #     # Check if the output contains an error related to the lease not being present
-      #     if [[ "$LEASE_BREAK_OUTPUT" == *"LeaseNotPresentWithLeaseOperation"* ]]; then
-      #       echo "No lease found, skipping lease break."
-      #     elif [[ "$LEASE_BREAK_OUTPUT" == *"Lease broken"* ]]; then
-      #       echo "Lease found and broken."
-      #     else
-      #       echo "Unknown error: $LEASE_BREAK_OUTPUT"
-      #     fi
-
       - name: Terraform Plan
         working-directory: ./src/data/manifest/terraform/azure
         env:
