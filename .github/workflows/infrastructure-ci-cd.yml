@@ -485,6 +485,7 @@ jobs:
       
       - name: Blue-Green Deployment
         if: github.event.inputs.deployment_strategy == 'blue-green'
+        working-directory: ./src/data/manifest/terraform        
         run: |
           echo "Implementing blue-green deployment strategy..."
           # Clone current environment as blue environment
@@ -494,7 +495,7 @@ jobs:
           terraform workspace new $BLUE_ENV || terraform workspace select $BLUE_ENV
           
           # Apply configuration directly with variables passed through -var
-          terraform apply -var "environment=${{ github.event.inputs.environment || 'production' }}" -var "aws_region=${{ secrets.AWS_REGION }}" -auto-approve -lock=false ./tfplan
+          terraform apply -auto-approve -lock=false ./tfplan
           
           echo "Blue environment deployed, waiting for validation..."
           sleep 180
