@@ -924,7 +924,7 @@ jobs:
           TF_VAR_db_password: ${{ secrets.RDS_DB_PASSWORD }}        
         run: |
           echo "Deployment failed! Rolling back to last known good state..."
-          terraform workspace select ${{ github.event.inputs.environment || 'production' }}
+          # terraform workspace select ${{ github.event.inputs.environment || 'production' }}
           terraform plan -refresh-only -lock=false -out=rollback.tfplan
           terraform apply rollback.tfplan -lock=false
       
