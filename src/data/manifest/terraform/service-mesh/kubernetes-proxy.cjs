@@ -37,7 +37,7 @@ resource "kubernetes_namespace" "devonn" {
 
 # Kubernetes Secret for Envoy Certificates
 resource "kubernetes_secret" "envoy_certs" {
-  count = var.environment == "prod" ? 1 : 0
+  count = var.environment == "prod" ? 0 : 0 // Added manually for cluster communication
   metadata {
     name      = "envoy-certs"
     namespace = "devonn"  
